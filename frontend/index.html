@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Job Hunter — Internship Discovery Assistant</title>
+  <meta name="description" content="AI-powered internship discovery, ranking and outreach assistant. Find, rank, and apply for internships with personalised email drafts." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/src/styles/main.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <span class="logo-icon">⚡</span>
+        <span class="logo-text">JobHunter</span>
+      </div>
+      <nav class="sidebar-nav">
+        <button class="nav-item active" id="nav-dashboard" data-page="dashboard">
+          <span class="nav-icon">📊</span> Dashboard
+        </button>
+        <button class="nav-item" id="nav-profile" data-page="profile">
+          <span class="nav-icon">👤</span> My Profile
+        </button>
+        <button class="nav-item" id="nav-jobs" data-page="jobs">
+          <span class="nav-icon">🔍</span> Ranked Jobs
+        </button>
+        <button class="nav-item" id="nav-drafts" data-page="drafts">
+          <span class="nav-icon">✉️</span> Review Queue
+        </button>
+        <button class="nav-item" id="nav-sent" data-page="sent">
+          <span class="nav-icon">📬</span> Sent Log
+        </button>
+        <button class="nav-item" id="nav-applied" data-page="applied">
+          <span class="nav-icon">✅</span> Applied Jobs
+        </button>
+      </nav>
+      <div class="sidebar-footer">
+        <span class="version-badge">v1.0.0 · Phase 1</span>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main-content" id="main-content">
+      <!-- Header -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <h1 class="page-title" id="page-title">Dashboard</h1>
+          <span class="page-subtitle" id="page-subtitle">Overview of your job hunt</span>
+        </div>
+        <div class="topbar-right">
+          <div class="user-chip">
+            <span class="user-avatar">K</span>
+            <span class="user-name">Keshav</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page containers -->
+      <div id="page-dashboard" class="page active"></div>
+      <div id="page-profile" class="page"></div>
+      <div id="page-jobs" class="page"></div>
+      <div id="page-drafts" class="page"></div>
+      <div id="page-sent" class="page"></div>
+      <div id="page-applied" class="page"></div>
+    </main>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div class="modal" id="modal">
+      <button class="modal-close" id="modal-close">✕</button>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
