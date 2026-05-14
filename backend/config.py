@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     database_url: str = "sqlite+aiosqlite:///./data/job_hunter.db"
+    website_url: str = "http://localhost:8000"
     secret_key: str = "changeme"
 
     openai_api_key: str = ""

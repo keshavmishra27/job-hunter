@@ -35,7 +35,7 @@ function statusChip(status: string) {
   return `<span class="badge ${map[status] || "badge-new"}">${status}</span>`;
 }
 
-// ─── Dashboard ─────────────────────────────────────────────────────────────
+// dashboard page
 
 export async function renderDashboard() {
   const el = document.getElementById("page-dashboard")!;
@@ -71,8 +71,8 @@ export async function renderDashboard() {
         <span class="section-title">Quick Actions</span>
       </div>
       <div style="display:flex;gap:12px;flex-wrap:wrap">
-        <button class="btn btn-primary" id="dash-fetch-btn">⚡ Fetch & Rank Jobs</button>
-        <button class="btn btn-secondary" id="dash-drafts-btn">✉️ Review Drafts</button>
+        <button class="btn btn-primary" id="dash-fetch-btn"> Fetch & Rank Jobs</button>
+        <button class="btn btn-secondary" id="dash-drafts-btn"> Review Drafts</button>
       </div>
     `;
 
@@ -83,12 +83,11 @@ export async function renderDashboard() {
       (document.querySelector('[data-page="drafts"]') as HTMLButtonElement)?.click();
     });
   } catch (e: any) {
-    el.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Backend offline</div><div class="empty-sub">Start the FastAPI server first: <code>uvicorn backend.main:app --reload</code></div></div>`;
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon"></div><div class="empty-title">Backend offline</div><div class="empty-sub">Start the FastAPI server first: <code>uvicorn backend.main:app --reload</code></div></div>`;
   }
 }
 
-// ─── Profile ────────────────────────────────────────────────────────────────
-
+// Profile page 
 export async function renderProfile() {
   const el = document.getElementById("page-profile")!;
   el.innerHTML = `
@@ -97,7 +96,7 @@ export async function renderProfile() {
         <div class="section-header"><span class="section-title">Upload Resume</span></div>
         <div class="card">
           <div class="upload-zone" id="upload-zone">
-            <div class="upload-icon">📄</div>
+            <div class="upload-icon"></div>
             <div class="upload-text">Drop your PDF resume here</div>
             <div class="upload-sub">or click to browse</div>
             <input type="file" id="resume-file-input" accept=".pdf" style="display:none" />
@@ -109,7 +108,7 @@ export async function renderProfile() {
         <div class="section-header"><span class="section-title">Current Profile</span></div>
         <div class="card" id="profile-card">
           <div class="empty-state" style="padding:32px">
-            <div class="empty-icon">👤</div>
+            <div class="empty-icon"></div>
             <div class="empty-title">No profile yet</div>
             <div class="empty-sub">Upload and parse your resume to build your profile.</div>
           </div>
@@ -142,7 +141,7 @@ export async function renderProfile() {
       statusEl.innerHTML = `<div style="display:flex;align-items:center;gap:8px"><div class="spinner"></div> Parsing…</div>`;
       const parseRes = await api.parseResume(uploadRes.resume_id);
       toast("Resume parsed successfully!", "success");
-      statusEl.innerHTML = `<button class="btn btn-primary btn-sm" id="refresh-profile-btn">🔄 Refresh Profile</button>`;
+      statusEl.innerHTML = `<button class="btn btn-primary btn-sm" id="refresh-profile-btn"> Refresh Profile</button>`;
       document.getElementById("refresh-profile-btn")?.addEventListener("click", loadProfile);
       loadProfile();
     } catch (e: any) {
@@ -171,7 +170,7 @@ export async function renderProfile() {
         <div class="form-group">
           <div class="card-title">Location Rules</div>
           <div style="font-size:13px;color:var(--text-secondary)">
-            Remote: ${profile.location_rule?.remote_allowed ? "✅ Allowed" : "❌ Not allowed"}<br/>
+            Remote: ${profile.location_rule?.remote_allowed ? "Allowed" : "Not allowed"}<br/>
             Offline cities: ${(profile.location_rule?.offline_allowed || []).join(", ")}
           </div>
         </div>
@@ -181,15 +180,14 @@ export async function renderProfile() {
         </div>
       `;
     } catch {
-      // no profile yet, keep placeholder
+      
     }
   }
 
   loadProfile();
 }
 
-// ─── Jobs ────────────────────────────────────────────────────────────────────
-
+// Job list page
 export async function renderJobs() {
   const el = document.getElementById("page-jobs")!;
   const sources = ["internshala", "indeed", "linkedin"];
@@ -203,7 +201,7 @@ export async function renderJobs() {
       <div class="source-chips">
         ${sources.map((s) => `<button class="source-chip ${selected.has(s) ? "selected" : ""}" data-source="${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</button>`).join("")}
       </div>
-      <button class="btn btn-primary" id="fetch-btn">⚡ Fetch & Rank</button>
+      <button class="btn btn-primary" id="fetch-btn"> Fetch & Rank</button>
       <span id="fetch-status" style="font-size:13px;color:var(--text-secondary);margin-left:12px"></span>
     </div>
     <div id="jobs-list" class="job-list"></div>
@@ -233,13 +231,13 @@ export async function renderJobs() {
     try {
       const res = await api.fetchJobs(USER_ID, [...selected]);
       toast(`Fetched ${res.fetched} jobs, ${res.new_unique} new, ${res.ranked} ranked`, "success");
-      status.textContent = `✅ ${res.ranked} ranked`;
+      status.textContent = ` ${res.ranked} ranked`;
       loadJobs();
     } catch (e: any) {
       toast(e.message, "error");
     } finally {
       btn.disabled = false;
-      btn.innerHTML = "⚡ Fetch & Rank";
+      btn.innerHTML = " Fetch & Rank";
     }
   });
 
@@ -249,7 +247,7 @@ export async function renderJobs() {
     try {
       const jobs = await api.getRankedJobs(USER_ID, 30, showApplied);
       if (!jobs.length) {
-        list.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">No jobs yet</div><div class="empty-sub">Click "Fetch & Rank" to pull internships.</div></div>`;
+        list.innerHTML = `<div class="empty-state"><div class="empty-icon"></div><div class="empty-title">No jobs yet</div><div class="empty-sub">Click "Fetch & Rank" to pull internships.</div></div>`;
         return;
       }
       list.innerHTML = jobs.map((j: any) => `
@@ -258,17 +256,17 @@ export async function renderJobs() {
           <div class="job-info">
             <div class="job-title">${j.title} ${j.is_applied ? '<span class="badge badge-applied">✓ Applied</span>' : ''}</div>
             <div class="job-meta">
-              <span>🏢 ${j.company}</span>
-              <span>📍 ${j.location || "—"}</span>
+              <span> ${j.company}</span>
+              <span>${j.location || "—"}</span>
               <span>${modeChip(j.mode || "offline")}</span>
               <span style="color:var(--text-muted);font-size:11px">${j.source}</span>
             </div>
           </div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
-            <div class="job-score">⭐ ${scorePct(j.score)}</div>
+            <div class="job-score"> ${scorePct(j.score)}</div>
             <div style="display:flex;gap:6px">
               <button class="btn btn-secondary btn-sm view-job-btn" data-job-id="${j.job_id}" data-job='${JSON.stringify(j).replace(/'/g, "&#39;")}'>Details</button>
-              <button class="btn btn-primary btn-sm gen-draft-btn" data-job-id="${j.job_id}">Draft ✉️</button>
+              <button class="btn btn-primary btn-sm gen-draft-btn" data-job-id="${j.job_id}">Draft </button>
               ${!j.is_applied ? `<button class="btn btn-success btn-sm mark-applied-btn" data-job-id="${j.job_id}">✓ Applied</button>` : ''}
             </div>
           </div>
@@ -293,7 +291,7 @@ export async function renderJobs() {
           } catch (e: any) {
             toast(e.message, "error");
           } finally {
-            btn.textContent = "Draft ✉️";
+            btn.textContent = "Draft ";
             (btn as HTMLButtonElement).disabled = false;
           }
         });
@@ -316,7 +314,7 @@ export async function renderJobs() {
         });
       });
     } catch (e: any) {
-      list.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">${e.message}</div></div>`;
+      list.innerHTML = `<div class="empty-state"><div class="empty-icon"></div><div class="empty-title">${e.message}</div></div>`;
     }
   }
 
@@ -325,7 +323,7 @@ export async function renderJobs() {
     openModal(`
       <div class="modal-title">${j.title}</div>
       <div style="margin-bottom:16px">
-        <span style="font-size:15px;color:var(--text-secondary)">🏢 ${j.company}</span>
+        <span style="font-size:15px;color:var(--text-secondary)"> ${j.company}</span>
         <span style="margin-left:12px">${modeChip(j.mode || "offline")}</span>
       </div>
       <div class="card-title">Score Breakdown</div>
@@ -345,8 +343,7 @@ export async function renderJobs() {
   loadJobs();
 }
 
-// ─── Drafts ──────────────────────────────────────────────────────────────────
-
+// Drafts for the comapany/startup page
 export async function renderDrafts() {
   const el = document.getElementById("page-drafts")!;
   el.innerHTML = `<div style="display:flex;align-items:center;gap:8px"><div class="spinner"></div> Loading drafts…</div>`;
@@ -355,7 +352,7 @@ export async function renderDrafts() {
     const drafts = await api.getDrafts(USER_ID) as any[];
 
     if (!drafts.length) {
-      el.innerHTML = `<div class="empty-state"><div class="empty-icon">✉️</div><div class="empty-title">No drafts yet</div><div class="empty-sub">Generate drafts from the Ranked Jobs page.</div></div>`;
+      el.innerHTML = `<div class="empty-state"><div class="empty-icon"></div><div class="empty-title">No drafts yet</div><div class="empty-sub">Generate drafts from the Ranked Jobs page.</div></div>`;
       return;
     }
 
@@ -370,7 +367,7 @@ export async function renderDrafts() {
         <div class="draft-header">
           <div>
             <div class="draft-subject">${d.subject || "(no subject)"}</div>
-            <div style="font-size:13px;color:var(--text-secondary);margin-top:4px">🏢 ${d.company} · ${d.job_title}</div>
+            <div style="font-size:13px;color:var(--text-secondary);margin-top:4px">${d.company} · ${d.job_title}</div>
           </div>
           <div style="display:flex;align-items:center;gap:8px">
             ${statusChip(d.status)}
@@ -445,7 +442,7 @@ export async function renderDrafts() {
             <input class="form-input" id="recipient-email" type="email" placeholder="hr@company.com" />
           </div>
           <div style="display:flex;gap:8px">
-            <button class="btn btn-primary" id="confirm-send-btn" data-draft-id="${draftId}">Send Now 🚀</button>
+            <button class="btn btn-primary" id="confirm-send-btn" data-draft-id="${draftId}">Send Now </button>
             <button class="btn btn-secondary" onclick="document.getElementById('modal-overlay').classList.add('hidden')">Cancel</button>
           </div>
         `);
@@ -464,12 +461,11 @@ export async function renderDrafts() {
       });
     });
   } catch (e: any) {
-    el.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">${e.message}</div></div>`;
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon"></div><div class="empty-title">${e.message}</div></div>`;
   }
 }
 
-// ─── Sent Log ────────────────────────────────────────────────────────────────
-
+// mail sent page
 export async function renderSent() {
   const el = document.getElementById("page-sent")!;
   el.innerHTML = `<div style="display:flex;gap:8px;align-items:center"><div class="spinner"></div> Loading…</div>`;
@@ -491,7 +487,7 @@ export async function renderSent() {
               <div>
                 <div class="draft-subject">${s.subject || "—"}</div>
                 <div style="font-size:13px;color:var(--text-secondary);margin-top:4px">
-                  📧 ${s.recipient} · ${s.sent_at ? new Date(s.sent_at).toLocaleString() : "—"}
+                   ${s.recipient} · ${s.sent_at ? new Date(s.sent_at).toLocaleString() : "—"}
                 </div>
               </div>
               ${statusChip(s.status)}
@@ -501,13 +497,12 @@ export async function renderSent() {
       </div>
     `;
   } catch (e: any) {
-    el.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">${e.message}</div></div>`;
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon"></div><div class="empty-title">${e.message}</div></div>`;
   }
 }
 
 
-// \u2500\u2500\u2500 Applied Jobs \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-
+//  Applied Jobs page
 const STATUS_COLORS: Record<string, string> = {
   saved: "badge-new", drafted: "badge-new", approved: "badge-approved",
   sent: "badge-sent", applied: "badge-applied", failed: "badge-failed",
