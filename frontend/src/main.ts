@@ -1,4 +1,4 @@
-import { renderDashboard, renderProfile, renderJobs, renderDrafts, renderSent, renderApplied, closeModal } from "./pages/pages";
+import { renderDashboard, renderProfile, renderJobs, renderDrafts, renderSent, renderApplied, renderRepos, closeModal } from "./pages/pages";
 
 const PAGE_MAP: Record<string, { title: string; subtitle: string; render: () => Promise<void> }> = {
   dashboard: { title: "Dashboard", subtitle: "Overview of your job hunt", render: renderDashboard },
@@ -7,6 +7,7 @@ const PAGE_MAP: Record<string, { title: string; subtitle: string; render: () => 
   drafts:    { title: "Review Queue", subtitle: "Edit, approve, and send outreach drafts", render: renderDrafts },
   sent:      { title: "Sent Log", subtitle: "Track what you've sent", render: renderSent },
   applied:   { title: "Applied Jobs", subtitle: "Track every application you've sent", render: renderApplied },
+  repos:     { title: "Repo Intelligence", subtitle: "GitHub portfolio ranked for your target role", render: renderRepos },
 };
 
 function navigate(page: string) {

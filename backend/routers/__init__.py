@@ -4,6 +4,7 @@ from backend.routers.drafts import router as drafts_router
 from backend.routers.send import router as send_router
 from backend.routers.dashboard import router as dashboard_router
 from backend.routers.applications import router as applications_router
+from backend.routers.github import router as github_router
 
 __all__ = [
     "profile_router",
@@ -12,4 +13,5 @@ __all__ = [
     "send_router",
     "dashboard_router",
     "applications_router",
+    "github_router",
 ]

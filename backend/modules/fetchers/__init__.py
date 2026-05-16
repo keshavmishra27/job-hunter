@@ -1,9 +1,8 @@
 from backend.modules.fetchers.base_fetcher import BaseFetcher, RawJob
 from backend.modules.fetchers.internshala_fetcher import InternshalaFetcher
 from backend.modules.fetchers.indeed_fetcher import IndeedFetcher
-from backend.modules.fetchers.linkedin_fetcher import LinkedInFetcher
-
-__all__ = [
+__all__ = [                                                                     
     "BaseFetcher", "RawJob",
     "InternshalaFetcher", "IndeedFetcher", "LinkedInFetcher",
+    "GitHubFetcher", "YCFetcher", "CutshortFetcher", "WellfoundFetcher",
 ]

@@ -1,9 +1,12 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from backend.database import get_db
 from backend.models import JobPost, JobMatch, UserProfile, Application
-from backend.modules.fetchers import InternshalaFetcher, IndeedFetcher, LinkedInFetcher
+from backend.models.github import RepoEntry, RepoAnalysis
+from backend.modules.fetchers import (
+    InternshalaFetcher, IndeedFetcher
+)
 from backend.modules.normalizer import normalize_many
 from backend.modules.deduper import deduplicate, job_fingerprint
 from backend.modules.ranker import rank_jobs
@@ -13,7 +16,6 @@ router = APIRouter(prefix="/jobs", tags=["Jobs"])
 FETCHERS = {
     "internshala": InternshalaFetcher,
     "indeed": IndeedFetcher,
-    "linkedin": LinkedInFetcher,
 }
 
 
@@ -78,9 +80,62 @@ async def fetch_jobs(
 
     await db.commit()
 
-    new_jobs = [j for j in unique if j.get("content_hash") not in applied_fingerprints
-                and job_fingerprint(j) not in applied_fingerprints]
-    ranked = rank_jobs(new_jobs, profile_dict)
+    # Fetch GitHub repos for project matching 
+    github_repos = []
+    try:
+        repos_result = await db.execute(
+            select(RepoEntry).where(
+                RepoEntry.user_id == user_id,
+                RepoEntry.is_archived == False,
+            )
+        )
+        repos = repos_result.scalars().all()
+        
+        # Get analysis signals for each repo
+        repo_ids = [r.id for r in repos]
+        if repo_ids:
+            analyses_result = await db.execute(
+                select(RepoAnalysis).where(RepoAnalysis.repo_id.in_(repo_ids))
+            )
+            analyses_map = {a.repo_id: a for a in analyses_result.scalars().all()}
+            
+            for repo in repos:
+                analysis = analyses_map.get(repo.id)
+                github_repos.append({
+                    "id": repo.id,
+                    "name": repo.name,
+                    "description": repo.description,
+                    "language": repo.language,
+                    "topics": repo.topics or [],
+                    "analysis_signals": analysis.analysis_signals if analysis else {},
+                })
+    except Exception as e:
+        
+        pass
+
+    # Re score ALL existing jobs for this user so that profile changes always reflect correctly
+    all_jobs_result = await db.execute(select(JobPost))
+    all_jobs = all_jobs_result.scalars().all()
+    all_jobs_dicts = [
+        {
+            "id": j.id,
+            "title": j.title,
+            "company": j.company,
+            "location": j.location,
+            "mode": j.mode,
+            "description": j.description,
+            "apply_link": j.apply_link,
+            "posted_date": j.posted_date,
+            "source": j.source,
+        }
+        for j in all_jobs
+        if job_fingerprint({"title": j.title, "company": j.company}) not in applied_fingerprints
+    ]
+
+    ranked = rank_jobs(all_jobs_dicts, profile_dict, github_repos)
+
+    # delete existing matches for this user then re-insert with fresh scores
+    await db.execute(delete(JobMatch).where(JobMatch.user_id == user_id))
 
     for job_data in ranked:
         match = JobMatch(
@@ -88,7 +143,8 @@ async def fetch_jobs(
             job_id=job_data["id"],
             score=job_data.get("score"),
             score_breakdown=job_data.get("score_breakdown"),
-            matched_skills=list(set(profile_dict.get("skills", [])))[:10],
+            matched_skills=job_data.get("matched_skills", []),
+            matched_projects=job_data.get("matched_projects", []),
         )
         db.add(match)
 
@@ -137,6 +193,8 @@ async def get_ranked_jobs(
             "source": job.source,
             "score": match.score,
             "score_breakdown": match.score_breakdown,
+            "matched_skills": match.matched_skills or [],
+            "matched_projects": match.matched_projects or [],
             "is_applied": job.id in applied_job_ids,
         }
         for match, job in rows

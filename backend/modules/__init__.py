@@ -6,6 +6,10 @@ from backend.modules.ranker import rank_jobs
 from backend.modules.draft_generator import DraftGenerator
 from backend.modules.sender import EmailSender
 from backend.modules.vector_store import VectorStore
+from backend.modules.github_client import GithubClient
+from backend.modules.repo_analyzer import analyze_repo
+from backend.modules.repo_scorer import compute_repo_score, rank_and_select_top5
+from backend.modules.role_profiles import list_roles, get_role_weights
 
 __all__ = [
     "BaseFetcher", "RawJob",
@@ -16,4 +20,8 @@ __all__ = [
     "DraftGenerator",
     "EmailSender",
     "VectorStore",
+    "GithubClient",
+    "analyze_repo",
+    "compute_repo_score", "rank_and_select_top5",
+    "list_roles", "get_role_weights",
 ]

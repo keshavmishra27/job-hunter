@@ -18,6 +18,7 @@ from backend.routers import (
     send_router,
     dashboard_router,
     applications_router,
+    github_router,
 )
 
 settings = get_settings()
@@ -56,6 +57,7 @@ app.include_router(drafts_router)
 app.include_router(send_router)
 app.include_router(dashboard_router)
 app.include_router(applications_router)
+app.include_router(github_router)
 
 
 @app.get("/health")

@@ -4,6 +4,7 @@ from backend.models.draft import Draft
 from backend.models.sent_email import SentEmail
 from backend.models.follow_up import FollowUp
 from backend.models.application import Application
+from backend.models.github import GithubAccount, RepoEntry, RepoAnalysis, RepoScore
 
 __all__ = [
     "User", "UserProfile", "Resume",
@@ -12,4 +13,5 @@ __all__ = [
     "SentEmail",
     "FollowUp",
     "Application",
+    "GithubAccount", "RepoEntry", "RepoAnalysis", "RepoScore",
 ]

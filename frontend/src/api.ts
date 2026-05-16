@@ -90,4 +90,33 @@ export const api = {
 
   unmarkApplied: (applicationId: string) =>
     req<any>(`/applications/${applicationId}`, { method: "DELETE" }),
+
+  // --- GitHub Intelligence ---
+  githubConnect: (token: string, userId = USER_ID) =>
+    req<any>("/github/connect", {
+      method: "POST",
+      body: JSON.stringify({ token, user_id: userId }),
+    }),
+
+  githubStatus: (userId = USER_ID) =>
+    req<{ connected: boolean; github_username?: string; last_synced?: string }>(
+      `/github/status?user_id=${userId}`
+    ),
+
+  githubSync: (userId = USER_ID) =>
+    req<{ status: string; repos_synced: number }>(
+      `/github/sync?user_id=${userId}`, { method: "POST" }
+    ),
+
+  githubAnalyze: (userId = USER_ID) =>
+    req<{ analyzed: number }>(`/github/analyze?user_id=${userId}`, { method: "POST" }),
+
+  githubTop5: (role: string, userId = USER_ID) =>
+    req<any>(`/github/top5?role=${role}&user_id=${userId}`),
+
+  githubRepoDetails: (repoId: string, role: string) =>
+    req<any>(`/github/repos/${repoId}/details?role=${role}`),
+
+  githubRoles: () =>
+    req<{ roles: Array<{ id: string; label: string; description: string }> }>("/github/roles"),
 };
