@@ -1,0 +1,264 @@
+from fastapi import APIRouter, HTTPException, Depends, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, delete, func
+from backend.database import get_db
+from backend.models import Notice, NoticeLink, AppliedNotice, Source
+from backend.modules.fetchers import InternshalaFetcher, IndeedFetcher, CompanyCareerFetcher, GovtPortalFetcher
+from backend.modules.normalizer import normalize_many
+from backend.modules.internship_matcher import detect_year_fit
+from backend.modules.internship_scorer import score_notice_detailed
+from backend.modules.alert_engine import alert_on_notice
+from backend.modules.notice_extractor import (
+    extract_from_html, extract_from_pdf_bytes, parse_text_fields,
+)
+from backend.modules.portal_link_extractor import clean_and_resolve_links
+from backend.config import get_settings
+import httpx
+from datetime import datetime
+
+router = APIRouter(prefix="/internships", tags=["Internships"])
+
+FETCHERS = {
+    "internshala": InternshalaFetcher,
+    "indeed": IndeedFetcher,
+    "companycareers": CompanyCareerFetcher,
+    "govtportal": GovtPortalFetcher,
+}
+
+
+@router.post("/fetch")
+async def fetch_internships(user_id: str, sources: list[str] = Query(default=["companycareers", "govtportal"]), db: AsyncSession = Depends(get_db)):
+    # very small MVP: fetch from fetchers, normalize, detect eligibility, score, and save
+    keywords = ["internship"]
+    all_raw = []
+
+    for source in sources:
+        cls = FETCHERS.get(source.lower())
+        if not cls:
+            continue
+        fetcher = cls()
+        raw = await fetcher.fetch(keywords)
+        all_raw.extend(raw)
+
+    normalized = normalize_many(all_raw)
+
+    warnings: list[str] = []
+    if "govtportal" in [s.lower() for s in sources]:
+        settings = get_settings()
+        if not settings.govt_portal_urls:
+            warnings.append("No GOVT_PORTAL_URLS configured; govt portal fetch will be skipped.")
+    if "companycareers" in [s.lower() for s in sources]:
+        settings = get_settings()
+        if not settings.company_career_hosts:
+            warnings.append("No COMPANY_CAREER_HOSTS configured; company career fetch will be skipped.")
+
+    # load user profile for scoring and alerts
+    try:
+        from backend.models.user import UserProfile
+        res = await db.execute(select(UserProfile).where(UserProfile.user_id == user_id))
+        profile = res.scalar_one_or_none()
+        profile_dict = {
+            "preferred_roles": profile.preferred_roles or [],
+            "skills": profile.skills or [],
+            "location_rule": profile.location_rule or {},
+            "preferred_companies": getattr(profile, 'preferred_companies', []) or [],
+        } if profile else {"preferred_roles": [], "skills": [], "location_rule": {}, "preferred_companies": []}
+    except Exception:
+        profile_dict = {"preferred_roles": [], "skills": [], "location_rule": {}, "preferred_companies": []}
+
+    # simple dedupe by title+company
+    seen = set()
+    added = 0
+    for item in normalized:
+        key = (item.get("title"), item.get("company"))
+        if key in seen:
+            continue
+        seen.add(key)
+        # initial eligibility from raw text
+        eligibility = detect_year_fit((item.get("title") or "") + " " + (item.get("description") or ""))
+
+        # attempt to fetch the apply/source link and extract richer fields
+        parsed = {}
+        apply_link = item.get("apply_link")
+        if apply_link:
+            try:
+                async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+                    resp = await client.get(apply_link)
+                    if resp.status_code == 200:
+                        if apply_link.lower().endswith(".pdf") or resp.headers.get("content-type", "").lower().startswith("application/pdf"):
+                            parsed = extract_from_pdf_bytes(resp.content)
+                        else:
+                            parsed = extract_from_html(resp.text, base_url=apply_link)
+                        # clean and resolve links (follow redirects, strip tracking params)
+                        try:
+                            parsed_links = parsed.get("links") or []
+                            parsed["links"] = await clean_and_resolve_links(parsed_links, base_url=apply_link, follow=True)
+                        except Exception:
+                            pass
+            except Exception:
+                parsed = {}
+        # fallback: parse description text if no parsed content
+        if not parsed:
+            parsed = parse_text_fields(item.get("description") or "")
+
+        portal = None
+        links = parsed.get("links") or []
+        # prefer explicit portal links
+        for l in links:
+            if l.get("kind") in ("portal", "google_form"):
+                portal = l.get("url")
+                break
+
+        # For government portals, require explicit eligibility and a valid future deadline
+        try:
+            if (item.get("source") or "").lower() == "govtportal":
+                # prefer parsed eligibility_text if available
+                gov_elig = parsed.get("eligibility_text") or eligibility
+                gov_deadline = parsed.get("deadline")
+                from datetime import timezone
+                now = datetime.now(tz=timezone.utc)
+                if not gov_elig:
+                    # skip notices that don't mention eligibility for target students
+                    continue
+                if not gov_deadline:
+                    # skip if no deadline found
+                    continue
+                # ensure deadline is in the future
+                try:
+                    d = gov_deadline
+                    if isinstance(d, str):
+                        d = datetime.fromisoformat(d)
+                    if d.tzinfo is None:
+                        d = d.replace(tzinfo=timezone.utc)
+                    if d < now:
+                        continue
+                except Exception:
+                    # if parsing fails, conservatively skip
+                    continue
+
+        except Exception:
+            pass
+
+        notice = Notice(
+            id=item["id"],
+            source=item.get("source"),
+            title=item.get("title"),
+            company=item.get("company"),
+            location=parsed.get("location") or item.get("location"),
+            portal_link=portal or item.get("apply_link"),
+            source_link=item.get("apply_link"),
+            raw_text=parsed.get("raw_text") or item.get("description"),
+            eligibility_text=parsed.get("eligibility_text"),
+            eligibility_status=eligibility,
+            deadline=parsed.get("deadline"),
+            stipend=parsed.get("stipend"),
+            fetched_at=datetime.utcnow(),
+            content_hash=None,
+        )
+        db.add(notice)
+        # add extracted links
+        for l in links:
+            try:
+                nl = NoticeLink(notice_id=notice.id, url=l.get("url"), kind=l.get("kind"))
+                db.add(nl)
+            except Exception:
+                continue
+
+        # score the notice immediately and create alert if relevant
+        try:
+            notice_dict = {
+                "id": notice.id,
+                "title": notice.title,
+                "company": notice.company,
+                "description": notice.raw_text,
+                "apply_link": notice.portal_link,
+                "posted_date": notice.fetched_at,
+                "mode": None,
+                "source": notice.source,
+                "eligibility_text": notice.eligibility_text,
+            }
+            scored = score_notice_detailed(notice_dict, profile_dict, github_repos=None)
+            notice.score = scored.get("score")
+            notice.score_breakdown = scored.get("breakdown")
+            await alert_on_notice(db, user_id, notice, notice.score or 0.0)
+        except Exception:
+            pass
+
+        added += 1
+
+    await db.commit()
+    response = {"fetched": len(all_raw), "saved": added}
+    if warnings:
+        response["warnings"] = warnings
+    return response
+
+
+@router.get("/ranked/{user_id}")
+async def get_ranked_internships(user_id: str, limit: int = 20, sources: list[str] = Query(default=["companycareers", "govtportal"]), db: AsyncSession = Depends(get_db)):
+    # load user profile to tailor scoring; reuse UserProfile if exists
+    try:
+        from backend.models.user import UserProfile
+        res = await db.execute(select(UserProfile).where(UserProfile.user_id == user_id))
+        profile = res.scalar_one_or_none()
+        profile_dict = {
+            "preferred_roles": profile.preferred_roles or [],
+        } if profile else {"preferred_roles": []}
+    except Exception:
+        profile_dict = {"preferred_roles": []}
+
+    if sources:
+        lowered = [s.lower() for s in sources]
+        q = await db.execute(select(Notice).where(func.lower(Notice.source).in_(lowered)))
+    else:
+        q = await db.execute(select(Notice))
+    notices = q.scalars().all()
+
+    scored = []
+    for n in notices:
+        n_dict = {
+            "id": n.id,
+            "title": n.title,
+            "company": n.company,
+            "description": n.raw_text,
+            "apply_link": n.portal_link,
+            "posted_date": n.fetched_at,
+            "mode": None,
+            "source": n.source,
+        }
+        result = score_notice_detailed(n_dict, profile_dict, github_repos=None)
+        n.score = result["score"]
+        n.score_breakdown = result["breakdown"]
+        # attach matched skills/roles if present
+        try:
+            n._matched_skills = result.get("matched_skills", [])
+            n._matched_roles = result.get("matched_roles", [])
+        except Exception:
+            pass
+        scored.append(n)
+
+    scored.sort(key=lambda x: (x.score or 0), reverse=True)
+
+    await db.commit()
+
+    out = []
+    for n in scored[:limit]:
+        out.append({
+            "notice_id": n.id,
+            "title": n.title,
+            "company": n.company,
+            "apply_link": n.portal_link,
+            "source": n.source,
+            "score": n.score,
+            "score_breakdown": n.score_breakdown,
+            "eligibility_status": n.eligibility_status,
+        })
+    return out
+
+
+@router.get("/{notice_id}")
+async def get_notice(notice_id: str, db: AsyncSession = Depends(get_db)):
+    res = await db.execute(select(Notice).where(Notice.id == notice_id))
+    n = res.scalar_one_or_none()
+    if not n:
+        raise HTTPException(404, "Notice not found")
+    return n

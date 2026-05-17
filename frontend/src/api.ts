@@ -119,4 +119,23 @@ export const api = {
 
   githubRoles: () =>
     req<{ roles: Array<{ id: string; label: string; description: string }> }>("/github/roles"),
+  // --- Internships endpoints
+  fetchInternships: (userId: string, sources: string[]) =>
+    req<any>(`/internships/fetch?user_id=${userId}&${sources.map((s) => `sources=${s}`).join("&")}`, { method: "POST" }),
+
+  getRankedInternships: (userId: string, limit = 30, sources: string[] = ['companycareers', 'govtportal']) =>
+    req<any[]>(`/internships/ranked/${userId}?limit=${limit}&${sources.map((s) => `sources=${s}`).join("&")}`),
+
+  getNotice: (noticeId: string) => req<any>(`/internships/${noticeId}`),
+
+  // applied notices (save/view/dismiss)
+  markAppliedNotice: (payload: { user_id: string; notice_id: string; status?: string; notes?: string }) =>
+    req<any>(`/applied/mark`, { method: "POST", body: JSON.stringify(payload) }),
+
+  getAppliedNotices: (userId: string) => req<any[]>(`/applied/${userId}`),
+
+  updateAppliedNotice: (appliedId: string, update: { status?: string; notes?: string }) =>
+    req<any>(`/applied/${appliedId}`, { method: "PATCH", body: JSON.stringify(update) }),
+
+  deleteAppliedNotice: (appliedId: string) => req<any>(`/applied/${appliedId}`, { method: "DELETE" }),
 };

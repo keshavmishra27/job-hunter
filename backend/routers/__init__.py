@@ -5,6 +5,8 @@ from backend.routers.send import router as send_router
 from backend.routers.dashboard import router as dashboard_router
 from backend.routers.applications import router as applications_router
 from backend.routers.github import router as github_router
+from backend.routers.internships import router as internships_router
+from backend.routers.applied_notices import router as applied_notices_router
 
 __all__ = [
     "profile_router",
@@ -14,4 +16,6 @@ __all__ = [
     "dashboard_router",
     "applications_router",
     "github_router",
+    "internships_router",
+    "applied_notices_router",
 ]

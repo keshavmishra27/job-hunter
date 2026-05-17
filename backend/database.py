@@ -24,5 +24,8 @@ async def get_db() -> AsyncSession:
 
 async def init_db():
     async with engine.begin() as conn:
-        from backend.models import user, job, draft, sent_email, follow_up, application, github  # noqa: F401
+        from backend.models import (
+            user, job, draft, sent_email, follow_up, application, github,
+            source, notice, alert, applied_notice,
+        )  # noqa: F401
         await conn.run_sync(Base.metadata.create_all)

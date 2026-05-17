@@ -1,3 +1,85 @@
+# Job Hunter — Internship Discovery (MVP)
+
+This repository contains a small FastAPI backend and a Vite-based frontend for discovering and tracking internship notices.
+
+This README covers quick setup, running locally, tests, and CI.
+
+Prerequisites
+- Python 3.10+ (virtualenv or venv recommended)
+- Node.js 18+ / npm
+
+Quick setup (Windows PowerShell)
+
+1. Create and activate a venv (PowerShell):
+
+```powershell
+python -m venv .venv
+& .venv\Scripts\Activate.ps1
+```
+
+2. Install Python dependencies:
+
+```powershell
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+3. Install frontend deps and run dev server (separate terminal):
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+4. Start backend (if not using `dev:all`):
+
+```powershell
+# from repository root with venv activated
+uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+Development helper (start both):
+
+In `frontend/package.json` there's a `dev:all` script which can start both frontend and backend concurrently. On Windows you may need to call the venv's python explicitly in the script.
+
+Testing
+
+Run tests with `pytest`:
+
+```powershell
+# with venv activated
+python -m pytest -q
+```
+
+CI
+
+A basic GitHub Actions workflow is included at `.github/workflows/ci.yml` to run tests on push and PRs.
+
+Notes & next steps
+- The frontend uses a demo `USER_ID` constant for development flows; adapt auth as needed.
+- Optional dependencies (Playwright, sentence-transformers) are used in advanced modules — tests avoid importing heavy modules during collection.
+- Consider adding Alembic migrations for DB evolution and a scheduled fetcher (cron/APScheuler) for periodic scraping.
+
+Configuration
+---------------
+You can configure the exact portals to fetch by adding values to your `.env` file in the repository root.
+
+Example `.env` values:
+
+```text
+GOVT_PORTAL_URLS=https://example.gov.in/announcements,https://another.gov.in/noticeboard
+COMPANY_CAREER_HOSTS=https://company1.com,https://company2.com
+```
+
+When these are set, the internship fetchers will use those URLs instead of placeholder defaults.
+
+- `GOVT_PORTAL_URLS`: comma-separated government announcement page URLs.
+- `COMPANY_CAREER_HOSTS`: comma-separated company career page hosts.
+
+Note: If these are not configured, the corresponding fetchers will skip fetching and log a warning.
+
+If you'd like, I can add a Windows-friendly `dev.ps1` script to start both services and open the browser automatically.
 # Job Hunter 
 
 job hunter is a website that helps to best suitable internship based on your resume plus helps you analysing current status of your repo and the further work needed to make repo a production level.

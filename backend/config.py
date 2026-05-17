@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     storage_dir: str = "./storage"
     faiss_index_path: str = "./data/faiss_index"
 
+    govt_portal_urls: list[str] = []
+    company_career_hosts: list[str] = []
+
     scheduler_interval_hours: int = 6
     max_emails_per_day: int = 20
 

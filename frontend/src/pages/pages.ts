@@ -366,6 +366,114 @@ export async function renderJobs() {
   loadJobs();
 }
 
+// Internships raw notices page
+export async function renderInternships() {
+  const el = document.getElementById("page-internships")!;
+  const sources = ["companycareers", "govtportal"];
+  let selected = new Set(["companycareers"]);
+
+  el.innerHTML = `
+    <div class="section-header"><span class="section-title">Internship Notices</span></div>
+    <div class="card" style="margin-bottom:24px">
+      <div class="card-title">Select Sources</div>
+      <div class="source-chips">
+        ${sources.map((s) => `<button class="source-chip ${selected.has(s) ? "selected" : ""}" data-source="${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</button>`).join("")}
+      </div>
+      <div style="margin-top:12px"><button class="btn btn-primary" id="intern-fetch-btn"> Fetch Notices</button><span id="intern-fetch-status" style="margin-left:12px;color:var(--text-secondary)"></span></div>
+    </div>
+    <div id="intern-list" class="job-list"></div>
+  `;
+
+  el.querySelectorAll(".source-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const src = (chip as HTMLElement).dataset.source!;
+      if (selected.has(src)) selected.delete(src);
+      else selected.add(src);
+      chip.classList.toggle("selected", selected.has(src));
+    });
+  });
+
+  document.getElementById("intern-fetch-btn")?.addEventListener("click", async () => {
+    const btn = document.getElementById("intern-fetch-btn") as HTMLButtonElement;
+    const status = document.getElementById("intern-fetch-status")!;
+    btn.disabled = true; btn.textContent = "…"; status.textContent = "";
+    try {
+      const res = await api.fetchInternships(USER_ID, [...selected]);
+      if (Array.isArray(res.warnings) && res.warnings.length > 0) {
+        res.warnings.forEach((w: string) => toast(w, "error"));
+      }
+      toast(`Fetched ${res.fetched} notices, saved ${res.saved}`, "success");
+      status.textContent = ` ${res.saved} saved`;
+      loadNotices();
+    } catch (e: any) {
+      toast(e.message, "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = " Fetch Notices";
+    }
+  });
+
+  async function loadNotices() {
+    const list = document.getElementById("intern-list")!;
+    list.innerHTML = `<div style="display:flex;gap:8px;align-items:center"><div class="spinner"></div> Loading notices…</div>`;
+    try {
+      const notices = await api.getRankedInternships(USER_ID, 50, [...selected]);
+      if (!notices.length) {
+        list.innerHTML = `<div class="empty-state"><div class="empty-icon"></div><div class="empty-title">No notices yet</div><div class="empty-sub">Click Fetch Notices to collect internship announcements.</div></div>`;
+        return;
+      }
+      list.innerHTML = notices.map((n: any) => `
+        <div class="job-card" data-notice-id="${n.notice_id}">
+          <div class="job-company-logo">${(n.company || '?')[0].toUpperCase()}</div>
+          <div class="job-info">
+            <div class="job-title">${n.title}</div>
+            <div class="job-meta"><span>${n.company}</span><span>${n.source}</span></div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+            <div class="job-score">${Math.round((n.score || 0) * 10)} / 10</div>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-secondary btn-sm view-notice-btn" data-notice-id="${n.notice_id}">Details</button>
+              <button class="btn btn-primary btn-sm save-notice-btn" data-notice-id="${n.notice_id}">Save</button>
+              ${n.apply_link ? `<a class="btn btn-success btn-sm" href="${n.apply_link}" target="_blank">Apply</a>` : ""}
+            </div>
+          </div>
+        </div>
+      `).join("");
+
+      list.querySelectorAll('.view-notice-btn').forEach((b) => {
+        b.addEventListener('click', async () => {
+          const id = (b as HTMLElement).dataset.noticeId!;
+          try {
+            const n = await api.getNotice(id);
+            openModal(`
+              <div class="modal-title">${n.title}</div>
+              <div style="margin-bottom:8px;color:var(--text-secondary)">${n.company} · ${n.source}</div>
+              <div style="margin-bottom:8px">${n.raw_text ? `<pre style="white-space:pre-wrap;max-height:300px;overflow:auto">${n.raw_text}</pre>` : "(no description)"}</div>
+              ${n.links && n.links.length ? `<div class="card-title">Links</div><div>${n.links.map((l:any)=>`<div><a href="${l.url}" target="_blank">${l.text||l.url}</a> <small style="color:var(--text-muted)">(${l.kind||''})</small></div>`).join('')}</div>` : ''}
+              ${n.deadline ? `<div style="margin-top:8px">Deadline: ${new Date(n.deadline).toLocaleDateString()}</div>` : ''}
+              <div style="margin-top:12px"><button class="btn btn-primary" id="save-notice-modal-btn" data-id="${n.id}">Save</button></div>
+            `);
+            document.getElementById('save-notice-modal-btn')?.addEventListener('click', async ()=>{
+              const nid = (document.getElementById('save-notice-modal-btn') as HTMLElement).dataset.id!;
+              try { await api.markAppliedNotice({ user_id: USER_ID, notice_id: nid, status: 'saved' }); toast('Saved notice', 'success'); closeModal(); } catch(e:any){ toast(e.message,'error'); }
+            });
+          } catch (e:any) { toast(e.message,'error'); }
+        });
+      });
+
+      list.querySelectorAll('.save-notice-btn').forEach((b) => {
+        b.addEventListener('click', async () => {
+          const id = (b as HTMLElement).dataset.noticeId!;
+          try { await api.markAppliedNotice({ user_id: USER_ID, notice_id: id, status: 'saved' }); toast('Saved notice', 'success'); } catch(e:any){ toast(e.message,'error'); }
+        });
+      });
+
+    } catch (e:any) { list.innerHTML = `<div class="empty-state"><div class="empty-icon"></div><div class="empty-title">${e.message}</div></div>`; }
+  }
+
+  loadNotices();
+}
+
 // Drafts for the comapany/startup page
 export async function renderDrafts() {
   const el = document.getElementById("page-drafts")!;
