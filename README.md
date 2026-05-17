@@ -98,14 +98,14 @@ This sequence parses unstructured PDF resumes into a clean structured schema.
 
 ```mermaid
 flowchart TD
-    A([User Uploads Resume PDF]) --> B[Extract PDF Text content using PyMuPDF]
-    B --> C{Verify Text Extracted?}
-    C -->|No| D([Raise Parsing Exception & Request Re-upload])
-    C -->|Yes| E[Run LLM-based Resume Parser]
-    E --> F[Extract Skills, Past Experience, Projects, Education, & Target Role]
-    F --> G[Generate Structured User Profile]
-    G --> H[Persist Candidate Profile in SQLite DB]
-    H --> I([Initialize Dashboard UI with Candidate Profile])
+    A(["User Uploads Resume PDF"]) --> B["Extract PDF Text content using PyMuPDF"]
+    B --> C{"Verify Text Extracted?"}
+    C -->|No| D(["Raise Parsing Exception & Request Re-upload"])
+    C -->|Yes| E["Run LLM-based Resume Parser"]
+    E --> F["Extract Skills, Past Experience, Projects, Education, & Target Role"]
+    F --> G["Generate Structured User Profile"]
+    G --> H["Persist Candidate Profile in SQLite DB"]
+    H --> I(["Initialize Dashboard UI with Candidate Profile"])
 ```
 
 ### 2. Job Fetching, Normalization, & Semantic Ranking Flow
@@ -113,17 +113,17 @@ This background execution collects jobs, normalizes schema, runs deduplication, 
 
 ```mermaid
 flowchart TD
-    A([Trigger Internship Sync]) --> B[Execute Fetchers in Parallel: Internshala, Indeed, Gov't, Custom Hosts]
-    B --> C[Pass Raw Objects to Normalizer]
-    C --> D[Standardize Title, Description, Skills, Location, & Links]
-    D --> E[Execute Deduper: Compute Cryptographic Hashes & Text Overlaps]
-    E --> F[Filter Out Existing or Highly Similar Positions]
-    F --> G[Perform Hard Filters: Check matching Job Type, Term, & Location]
-    G --> H[Retrieve Candidate Profile & Embedded Skill Sets]
-    H --> I[Vector Store Search: Compute Semantic Cosine Similarity via FAISS]
-    I --> J[Internship Scorer: Weight matches for Skill match, Experience match, and Project overlap]
-    J --> K[Rank Jobs by Final Score & Persist Unique Ranked Internships]
-    K --> L([Update Ranked Job Feed on Dashboard UI])
+    A(["Trigger Internship Sync"]) --> B["Execute Fetchers in Parallel: Internshala, Indeed, Gov't, Custom Hosts"]
+    B --> C["Pass Raw Objects to Normalizer"]
+    C --> D["Standardize Title, Description, Skills, Location, & Links"]
+    D --> E["Execute Deduper: Compute Cryptographic Hashes & Text Overlaps"]
+    E --> F["Filter Out Existing or Highly Similar Positions"]
+    F --> G["Perform Hard Filters: Check matching Job Type, Term, & Location"]
+    G --> H["Retrieve Candidate Profile & Embedded Skill Sets"]
+    H --> I["Vector Store Search: Compute Semantic Cosine Similarity via FAISS"]
+    I --> J["Internship Scorer: Weight matches for Skill match, Experience match, and Project overlap"]
+    J --> K["Rank Jobs by Final Score & Persist Unique Ranked Internships"]
+    K --> L(["Update Ranked Job Feed on Dashboard UI"])
 ```
 
 ### 3. Repository Analysis & Developer Portfolio Optimization Flow
@@ -131,21 +131,21 @@ This flow performs multi role portfolio analysis of synced GitHub repositories a
 
 ```mermaid
 flowchart TD
-    A([Connect GitHub Token]) --> B[Query Github API for User Info & Synced Repositories]
-    B --> C[Iterate through Repository Entries & Skip Archived/Forked Repos]
-    C --> D[Pull README.md Content & Scan Default Branch Directory Tree]
-    D --> E[Static Signals Analyzer: Scan files, tree structure, and README text patterns]
+    A(["Connect GitHub Token"]) --> B["Query Github API for User Info & Synced Repositories"]
+    B --> C["Iterate through Repository Entries & Skip Archived/Forked Repos"]
+    C --> D["Pull README.md Content & Scan Default Branch Directory Tree"]
+    D --> E["Static Signals Analyzer: Scan files, tree structure, and README text patterns"]
     
     %% Scan details
     E --> E1["Documentation Signals (Readme lengths, API docs, Screenshots, Licenses)"]
     E --> E2["Code Quality Signals (Tests directories, gitignores, env files, setup configs)"]
     E --> E3["DevOps & UI Signals (Dockerfiles, CI Workflows, Deployment configs, Live demo urls)"]
     
-    E1 & E2 & E3 --> F[Compute Repo Scoring Matrix across 8 Engineering Profiles]
-    F --> G[Highlight Top-5 scored repositories for the selected Primary Role]
-    G --> H[Generate Repo Diagnostics: Signal Reasons (Why + How-to-Fix) & Role Tips]
-    H --> I[Persist Repository Signals, Scores, and Diagnostics in DB]
-    I --> J([Render Top-5 Dashboard, Signal Badges, and Actionable Checklists in UI])
+    E1 & E2 & E3 --> F["Compute Repo Scoring Matrix across 8 Engineering Profiles"]
+    F --> G["Highlight Top-5 scored repositories for the selected Primary Role"]
+    G --> H["Generate Repo Diagnostics: Signal Reasons (Why + How-to-Fix) & Role Tips"]
+    H --> I["Persist Repository Signals, Scores, and Diagnostics in DB"]
+    I --> J(["Render Top-5 Dashboard, Signal Badges, and Actionable Checklists in UI"])
 ```
 
 ---
