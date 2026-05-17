@@ -152,14 +152,14 @@ flowchart TD
 
 ##  Key Features & Capability Highlights
 
-   **Dual Core Architecture**: Seamlessly handles job search discovery and technical portfolio development on a unified, async dashboard.
-   **Intelligent PDF Parser**: High accuracy resume parsing using PyMuPDF extractors combined with LLM prompting structures.
-   **Semantic Matching Matrix**: Employs sentence transformers and FAISS based vector spaces to compute the exact semantic match between unstructured job specifications and the candidate's skills.
-   **Dynamic Custom Scrapers**: Configure exact external career sites to parse announcements from. Supports JSON lists in `.env` configurations to trigger custom govt and company scrapers dynamically.
-   **8 Role Tailored Repository Evaluators**: Deeply scores portfolios based on specific role dimensions (e.g. DevOps weights CI/CD & Docker; Frontend weights deployment & demo links; Agentic AI weights tool usage & examples).
-   **Actionable Debugger for Portfolios**: Shows detailed explanations ("Why this matters") and exact correction steps ("How to fix it") for all missing repository signals.
-   **Throttled Outreach Mailer**: Uses SMTP (Gmail App Passwords supported) with custom rate limits to prevent spam filter triggers, including auto retries for failed deliveries.
-   **Real-time GitHub Webhook Syncing**: Supports Git push webhooks to trigger instantaneous synchronization, maintaining portfolio fresh logs automatically.
+*   **Dual Core Architecture**: Seamlessly handles job search discovery and technical portfolio development on a unified, async dashboard.
+*   **Intelligent PDF Parser**: High accuracy resume parsing using PyMuPDF extractors combined with LLM prompting structures.
+*   **Semantic Matching Matrix**: Employs sentence transformers and FAISS based vector spaces to compute the exact semantic match between unstructured job specifications and the candidate's skills.
+*   **Dynamic Custom Scrapers**: Configure exact external career sites to parse announcements from. Supports JSON lists in `.env` configurations to trigger custom govt and company scrapers dynamically.
+*   **8 Role Tailored Repository Evaluators**: Deeply scores portfolios based on specific role dimensions (e.g. DevOps weights CI/CD & Docker; Frontend weights deployment & demo links; Agentic AI weights tool usage & examples).
+*   **Actionable Debugger for Portfolios**: Shows detailed explanations ("Why this matters") and exact correction steps ("How to fix it") for all missing repository signals.
+*   **Throttled Outreach Mailer**: Uses SMTP (Gmail App Passwords supported) with custom rate limits to prevent spam filter triggers, including auto retries for failed deliveries.
+*   **Real-time GitHub Webhook Syncing**: Supports Git push webhooks to trigger instantaneous synchronization, maintaining portfolio fresh logs automatically.
 
 ---
 
@@ -206,92 +206,63 @@ The core logic of Job Hunter is compartmentalized into specific modules, routers
 
 ---
 
-##  API Endpoints Reference
+###  API Endpoints Reference
 
 ### User Profile Management (`/profile`)
-   `POST /profile/upload-resume`
-   **Description**: Upload a candidate's resume PDF
-   
-   **Request Form**: `file: UploadFile`
-
-   **Returns**: `{ "user_id": str, "filename": str, "extracted_text_snippet": str }`
-
-   `POST /profile/parse/{user_id}`
-   **Description**: Processes resume using LLM structure.
-   **Returns**: Parsed and saved User Profile.
-
-   `GET /profile/{user_id}`
-   **Description**: Fetch active user profile details and parsed skills list.
+*   `POST /profile/upload-resume`
+    *   **Description**: Upload a candidate's resume PDF.
+    *   **Request Form**: `file: UploadFile`
+    *   **Returns**: `{ "user_id": str, "filename": str, "extracted_text_snippet": str }`
+*   `POST /profile/parse/{user_id}`
+    *   **Description**: Processes resume using LLM structure.
+    *   **Returns**: Parsed and saved User Profile.
+*   `GET /profile/{user_id}`
+    *   **Description**: Fetch active user profile details and parsed skills list.
 
 ### Job Feeds & Match Scopes (`/jobs` & `/internships`)
-   `POST /jobs/fetch`
-   **Description**: Executes scrapers and matches listings.
-
-   **Request Query**: `user_id: str`
-   
-   **Returns**: `{ "status": "completed", "fetched": int, "added": int }`
-   
-   `GET /jobs/ranked/{user_id}`
-   **Description**: Retrieves highly ranked jobs matching candidate profile.
-
-   **Query Options**: `limit=20`, `offset=0`
-
-   `GET /jobs/{job_id}`
-
-   **Description**: Retrieves full description, skills match, and source for a single job listing.
+*   `POST /jobs/fetch`
+    *   **Description**: Executes scrapers and matches listings.
+    *   **Request Query**: `user_id: str`
+    *   **Returns**: `{ "status": "completed", "fetched": int, "added": int }`
+*   `GET /jobs/ranked/{user_id}`
+    *   **Description**: Retrieves highly ranked jobs matching candidate profile.
+    *   **Query Options**: `limit=20`, `offset=0`
+*   `GET /jobs/{job_id}`
+    *   **Description**: Retrieves full description, skills match, and source for a single job listing.
 
 ### GitHub Portfolio Intelligence (`/github`)
-   `GET /github/roles`
-   
-   **Description**: Lists all 8 supported developer role profiles.
-
-   `POST /github/connect`
-   **Description**: Connects GitHub using a Personal Access Token.
-
-   **Request JSON**: `{ "token": "ghp_...", "user_id": "demo-user-1" }`
-
-   `GET /github/status`
-   
-   **Description**: Check connection status and last sync time.
-   `POST /github/sync`
-
-   **Description**: Syncs developer's public repositories into metadata DB entries.
-   
-   `POST /github/analyze`
-   
-   **Description**: Runs multi signal static code analyzer across all synced repositories.
-
-   `GET /github/top5`
-
-   **Description**: Ranks, scores, and returns top 5 projects for a targeted role.
-   
-   **Query Options**: `role: str = "fullstack"`
-
-   `GET /github/repos/{repo_id}/details`
-
-   **Description**: Retrieves in depth signals, scores breakdown, and actionable improvement steps.
-
-   `POST /github/webhook`
-
-   **Description**: Webhook endpoint to sync repositories instantly upon code push.
+*   `GET /github/roles`
+    *   **Description**: Lists all 8 supported developer role profiles.
+*   `POST /github/connect`
+    *   **Description**: Connects GitHub using a Personal Access Token.
+    *   **Request JSON**: `{ "token": "ghp_...", "user_id": "demo-user-1" }`
+*   `GET /github/status`
+    *   **Description**: Check connection status and last sync time.
+*   `POST /github/sync`
+    *   **Description**: Syncs developer's public repositories into metadata DB entries.
+*   `POST /github/analyze`
+    *   **Description**: Runs multi signal static code analyzer across all synced repositories.
+*   `GET /github/top5`
+    *   **Description**: Ranks, scores, and returns top 5 projects for a targeted role.
+    *   **Query Options**: `role: str = "fullstack"`
+*   `GET /github/repos/{repo_id}/details`
+    *   **Description**: Retrieves in depth signals, scores breakdown, and actionable improvement steps.
+*   `POST /github/webhook`
+    *   **Description**: Webhook endpoint to sync repositories instantly upon code push.
 
 ### Outreach Email Drafts (`/drafts` & `/send`)
-   `POST /drafts/generate/{user_id}/{job_id}`
-   **Description**: Auto generates a cover email matching resume projects with job prerequisites.
-
-   `GET /drafts/{user_id}`
-   **Description**: List user outreach drafts.
-
-   `PATCH /drafts/{draft_id}`
-   **Description**: Edit outreach text before approval.
-
-   `POST /drafts/approve/{draft_id}`
-   **Description**: Marks draft status as approved and queues it for mailing.
-
-   `POST /send/`
-   **Description**: Executes SMTP send tasks for approved outreach queues.
-   `GET /send/log`
-   **Description**: Access historical outbound logs and status.
+*   `POST /drafts/generate/{user_id}/{job_id}`
+    *   **Description**: Auto generates a cover email matching resume projects with job prerequisites.
+*   `GET /drafts/{user_id}`
+    *   **Description**: List user outreach drafts.
+*   `PATCH /drafts/{draft_id}`
+    *   **Description**: Edit outreach text before approval.
+*   `POST /drafts/approve/{draft_id}`
+    *   **Description**: Marks draft status as approved and queues it for mailing.
+*   `POST /send/`
+    *   **Description**: Executes SMTP send tasks for approved outreach queues.
+*   `GET /send/log`
+    *   **Description**: Access historical outbound logs and status.
 
 ---
 
