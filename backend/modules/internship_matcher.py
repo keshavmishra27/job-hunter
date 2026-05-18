@@ -6,14 +6,28 @@ def detect_year_fit(text: str | None) -> str:
     if not text:
         return "unknown"
     t = text.lower()
-    triggers = ["3rd year", "3rd-year", "third year", "pre-final", "prefinal", "pre final", "pre-final year", "prefinal year"]
-    for trig in triggers:
+
+    # Explicit 3rd-year / pre-final confirmation
+    CONFIRM = ["3rd year", "3rd-year", "third year", "pre-final", "prefinal",
+               "pre final", "pre-final year", "prefinal year", "3rd"]
+    for trig in CONFIRM:
         if trig in t:
             return "eligible"
-    # fallback: look for year numbers like '3 year' or '3rd'
-    if "3rd" in t or " year 3" in t or "year 3" in t:
-        return "eligible"
-    return "maybe"
+
+    # Explicit exclusions that make a posting off-limits
+    EXCLUDE = [
+        "final year only", "only final year", "final year students only",
+        "post graduate", "postgraduate", "post-graduate",
+        "mba required", "mba preferred", "phd",
+        "minimum 2 years", "minimum 3 years", "minimum 5 years",
+        "2+ years", "3+ years", "5+ years", "experienced professional",
+    ]
+    for excl in EXCLUDE:
+        if excl in t:
+            return "not_eligible"
+
+    # No year constraint mentioned -> open internship, eligible
+    return "eligible"
 
 
 def simple_role_match(title: str | None, description: str | None, preferred_roles: list[str]) -> float:

@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete, func
 from backend.database import get_db
 from backend.models import Notice, NoticeLink, AppliedNotice, Source
-from backend.modules.fetchers import InternshalaFetcher, IndeedFetcher, CompanyCareerFetcher, GovtPortalFetcher
+from backend.modules.fetchers import InternshalaFetcher, IndeedFetcher, CompanyCareerFetcher, GovtPortalFetcher, TelegramChannelFetcher
 from backend.modules.normalizer import normalize_many
 from backend.modules.internship_matcher import detect_year_fit
 from backend.modules.internship_scorer import score_notice_detailed
@@ -23,6 +23,7 @@ FETCHERS = {
     "indeed": IndeedFetcher,
     "companycareers": CompanyCareerFetcher,
     "govtportal": GovtPortalFetcher,
+    "telegram": TelegramChannelFetcher,
 }
 
 
@@ -78,11 +79,13 @@ async def fetch_internships(user_id: str, sources: list[str] = Query(default=["c
         eligibility = detect_year_fit((item.get("title") or "") + " " + (item.get("description") or ""))
 
         # attempt to fetch the apply/source link and extract richer fields
+        # Skip for Telegram — t.me URLs don't yield job-parseable HTML and cause slow loops
         parsed = {}
         apply_link = item.get("apply_link")
-        if apply_link:
+        is_telegram = (item.get("source") or "").startswith("Telegram/")
+        if apply_link and not is_telegram and apply_link.startswith(("http://", "https://")):
             try:
-                async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+                async with httpx.AsyncClient(timeout=10, follow_redirects=True) as client:
                     resp = await client.get(apply_link)
                     if resp.status_code == 200:
                         if apply_link.lower().endswith(".pdf") or resp.headers.get("content-type", "").lower().startswith("application/pdf"):
@@ -208,7 +211,13 @@ async def get_ranked_internships(user_id: str, limit: int = 20, sources: list[st
 
     if sources:
         lowered = [s.lower() for s in sources]
-        q = await db.execute(select(Notice).where(func.lower(Notice.source).in_(lowered)))
+        # also match Telegram/* source strings
+        q = await db.execute(
+            select(Notice).where(
+                (func.lower(Notice.source).in_(lowered)) |
+                Notice.source.like("Telegram/%")
+            )
+        )
     else:
         q = await db.execute(select(Notice))
     notices = q.scalars().all()
@@ -220,6 +229,7 @@ async def get_ranked_internships(user_id: str, limit: int = 20, sources: list[st
             "title": n.title,
             "company": n.company,
             "description": n.raw_text,
+            "eligibility_text": n.eligibility_text,
             "apply_link": n.portal_link,
             "posted_date": n.fetched_at,
             "mode": None,

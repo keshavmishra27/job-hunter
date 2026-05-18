@@ -5,6 +5,9 @@ from loguru import logger
 
 OFFLINE_ALLOWED = {"delhi ncr", "gurgaon", "noida", "gurugram", "delhi"}
 
+# Substrings that indicate a job is remote / WFH even when mode field is missing
+REMOTE_HINTS = {"remote", "wfh", "work from home", "work-from-home", "anywhere in india", "pan india"}
+
 WEIGHTS = {
     "project_overlap": 0.35,
     "skill_match": 0.30,
@@ -24,9 +27,19 @@ REPO_TECH_MAPPING = {
 }
 
 
-def _location_fit(job: dict, profile: dict) -> float:
-    mode = (job.get("mode") or "offline").lower()
+def _is_remote(job: dict) -> bool:
+    """Check if a job is remote/WFH using mode field and location hints."""
+    mode = (job.get("mode") or "").lower()
     if mode == "remote":
+        return True
+    location = (job.get("location") or "").lower()
+    description = (job.get("description") or "").lower()
+    combined = f"{location} {description}"
+    return any(hint in combined for hint in REMOTE_HINTS)
+
+
+def _location_fit(job: dict, profile: dict) -> float:
+    if _is_remote(job):
         return 1.0
     location = (job.get("location") or "").lower()
     allowed = [loc.lower() for loc in profile.get("location_rule", {}).get("offline_allowed", [])]
@@ -36,14 +49,16 @@ def _location_fit(job: dict, profile: dict) -> float:
 
 
 def _hard_filter(job: dict, profile: dict) -> bool:
-    mode = (job.get("mode") or "offline").lower()
-    if mode == "remote":
+    """Optional strict location filter — only used when profile has strict_location=True."""
+    if not profile.get("location_rule", {}).get("strict", False):
+        return True  # Non-strict: let everything through, score handles ranking
+    if _is_remote(job):
         return True
     location = (job.get("location") or "").lower()
     allowed = [loc.lower() for loc in profile.get("location_rule", {}).get("offline_allowed", [])]
     if any(a in location or location in a for a in allowed):
         return True
-    logger.debug(f"[Ranker] Hard-filtered out: {job['title']} @ {job['company']} ({location})")
+    logger.debug(f"[Ranker] Hard-filtered out (strict mode): {job['title']} @ {job['company']} ({location})")
     return False
 
 
@@ -254,5 +269,9 @@ def rank_jobs(jobs: list[dict], profile: dict, github_repos: list[dict] | None =
         passed.append(job)
 
     passed.sort(key=lambda j: j["score"], reverse=True)
-    logger.info(f"[Ranker] {len(jobs)} jobs → {len(passed)} after hard filters, ranked.")
+    dropped = len(jobs) - len(passed)
+    if dropped:
+        logger.info(f"[Ranker] {len(jobs)} jobs → {len(passed)} ranked ({dropped} dropped by strict location filter).")
+    else:
+        logger.info(f"[Ranker] {len(jobs)} jobs ranked (no hard filter active).")
     return passed

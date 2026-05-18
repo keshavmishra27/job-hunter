@@ -5,10 +5,17 @@ from backend.database import get_db
 from backend.models import JobPost, JobMatch, UserProfile, Application
 from backend.models.github import RepoEntry, RepoAnalysis
 from backend.modules.fetchers import (
-    InternshalaFetcher, IndeedFetcher
+    InternshalaFetcher,
+    IndeedFetcher,
+    LinkedInFetcher,
+    FounditFetcher,
+    FreshersworldFetcher,
+    CutshortFetcher,
+    WellfoundFetcher,
+    WorkAtAStartupFetcher,
 )
 from backend.modules.normalizer import normalize_many
-from backend.modules.deduper import deduplicate, job_fingerprint
+from backend.modules.deduper import deduplicate, job_fingerprint, job_signature
 from backend.modules.ranker import rank_jobs
 
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
@@ -16,6 +23,12 @@ router = APIRouter(prefix="/jobs", tags=["Jobs"])
 FETCHERS = {
     "internshala": InternshalaFetcher,
     "indeed": IndeedFetcher,
+    "naukri": LinkedInFetcher,   # LinkedIn replaces blocked Naukri
+    "foundit": FounditFetcher,
+    "freshersworld": FreshersworldFetcher,
+    "cutshort": CutshortFetcher,
+    "wellfound": WellfoundFetcher,
+    "workatastartup": WorkAtAStartupFetcher,
 }
 
 
@@ -53,10 +66,15 @@ async def fetch_jobs(
 
     normalised = normalize_many(all_raw)
 
-    existing_result = await db.execute(select(JobPost.content_hash))
-    existing_hashes = {row[0] for row in existing_result.fetchall() if row[0]}
+    existing_result = await db.execute(select(JobPost.content_hash, JobPost.title, JobPost.company, JobPost.location))
+    existing_items = [row for row in existing_result.fetchall()]
+    existing_hashes = {row[0] for row in existing_items if row[0]}
+    existing_signatures = {
+        job_signature({"title": row[1], "company": row[2], "location": row[3]})
+        for row in existing_items
+    }
 
-    unique = deduplicate(normalised, existing_hashes)
+    unique = deduplicate(normalised, existing_hashes, existing_signatures)
 
     applied_fps_result = await db.execute(
         select(Application.job_fingerprint).where(Application.user_id == user_id)
@@ -114,7 +132,9 @@ async def fetch_jobs(
         pass
 
     # Re score ALL existing jobs for this user so that profile changes always reflect correctly
-    all_jobs_result = await db.execute(select(JobPost))
+    all_jobs_result = await db.execute(
+        select(JobPost).where(JobPost.source.in_(["Internshala", "Indeed", "LinkedIn"]))
+    )
     all_jobs = all_jobs_result.scalars().all()
     all_jobs_dicts = [
         {
@@ -176,30 +196,43 @@ async def get_ranked_jobs(
         select(JobMatch, JobPost)
         .join(JobPost, JobMatch.job_id == JobPost.id)
         .where(JobMatch.user_id == user_id)
+        .where(JobPost.source.in_(["Internshala", "Indeed", "LinkedIn"]))
         .order_by(JobMatch.score.desc())
         .limit(limit)
     )
     result = await db.execute(query)
     rows = result.fetchall()
 
-    return [
-        {
-            "job_id": job.id,
-            "title": job.title,
-            "company": job.company,
-            "location": job.location,
-            "mode": job.mode,
-            "apply_link": job.apply_link,
-            "source": job.source,
-            "score": match.score,
-            "score_breakdown": match.score_breakdown,
-            "matched_skills": match.matched_skills or [],
-            "matched_projects": match.matched_projects or [],
-            "is_applied": job.id in applied_job_ids,
-        }
-        for match, job in rows
-        if include_applied or job.id not in applied_job_ids
-    ]
+    seen_signatures: set[str] = set()
+    ranked_jobs: list[dict] = []
+
+    for match, job in rows:
+        if not include_applied and job.id in applied_job_ids:
+            continue
+
+        signature = job_signature({"title": job.title, "company": job.company, "location": job.location})
+        if signature in seen_signatures:
+            continue
+        seen_signatures.add(signature)
+
+        ranked_jobs.append(
+            {
+                "job_id": job.id,
+                "title": job.title,
+                "company": job.company,
+                "location": job.location,
+                "mode": job.mode,
+                "apply_link": job.apply_link,
+                "source": job.source,
+                "score": match.score,
+                "score_breakdown": match.score_breakdown,
+                "matched_skills": match.matched_skills or [],
+                "matched_projects": match.matched_projects or [],
+                "is_applied": job.id in applied_job_ids,
+            }
+        )
+
+    return ranked_jobs
 
 
 @router.get("/{job_id}")

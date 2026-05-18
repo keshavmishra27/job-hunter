@@ -190,8 +190,12 @@ export async function renderProfile() {
 // Job list page
 export async function renderJobs() {
   const el = document.getElementById("page-jobs")!;
-  const sources = ["internshala", "indeed"];
-  let selected = new Set(["internshala"]);
+  const sources = [
+    { id: "internshala", label: "Internshala" },
+    { id: "indeed", label: "Indeed" },
+    { id: "naukri", label: "LinkedIn" },
+  ];
+  let selected = new Set(["internshala", "indeed", "naukri"]);
   let showApplied = false;
 
   el.innerHTML = `
@@ -199,7 +203,7 @@ export async function renderJobs() {
     <div class="card" style="margin-bottom:24px">
       <div class="card-title" style="margin-bottom:10px">Select Sources</div>
       <div class="source-chips">
-        ${sources.map((s) => `<button class="source-chip ${selected.has(s) ? "selected" : ""}" data-source="${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</button>`).join("")}
+        ${sources.map((source) => `<button class="source-chip ${selected.has(source.id) ? "selected" : ""}" data-source="${source.id}">${source.label}</button>`).join("")}
       </div>
       <button class="btn btn-primary" id="fetch-btn"> Fetch & Rank</button>
       <span id="fetch-status" style="font-size:13px;color:var(--text-secondary);margin-left:12px"></span>
@@ -366,113 +370,338 @@ export async function renderJobs() {
   loadJobs();
 }
 
-// Internships raw notices page
+// Internship News Scraper page
 export async function renderInternships() {
   const el = document.getElementById("page-internships")!;
-  const sources = ["companycareers", "govtportal"];
-  let selected = new Set(["companycareers"]);
 
+  // Source registry: website + Telegram
+  const WEB_SOURCES = [
+    { id: "companycareers", label: "Company Careers", icon: "🏢", type: "website" },
+    { id: "govtportal",     label: "Govt Portals",   icon: "🏛️", type: "website" },
+  ];
+  const TG_SOURCES = [
+    { id: "telegram", label: "Public Channels", icon: "✈️", type: "telegram" },
+  ];
+
+  // Each tab has its own independent selection — no bleed-across
+  let webSelected = new Set(["companycareers"]);
+  let tgSelected  = new Set(["telegram"]);
+  let activeTab: "all" | "eligible" | "saved" | "applied" = "all";
+  let allNotices: any[] = [];
+  let activeSrcTab: "website" | "telegram" = "website";
+
+  // Returns only the sources for the currently visible tab
+  function activeSources(): string[] {
+    return activeSrcTab === "website" ? [...webSelected] : [...tgSelected];
+  }
+
+  // ── Pipeline stage indicator ────────────────────────────────────────────────
+  const PIPELINE = ["Fetch", "Normalize", "Detect", "Extract Links", "Eligibility", "Dedup", "Score", "Alert"];
+
+  function pipelineHTML(active = -1) {
+    return `<div class="intern-pipeline">
+      ${PIPELINE.map((s, i) => `
+        <div class="pipe-step ${i < active ? "done" : i === active ? "running" : ""}">
+          <div class="pipe-dot">${i < active ? "✓" : i === active ? "" : i + 1}</div>
+          <div class="pipe-label">${s}</div>
+          ${i < PIPELINE.length - 1 ? '<div class="pipe-line"></div>' : ""}
+        </div>`).join("")}
+    </div>`;
+  }
+
+  // ── Eligibility badge ───────────────────────────────────────────────────────
+  function eligBadge(status: string) {
+    const map: Record<string, string> = {
+      eligible: "elig-yes", maybe: "elig-maybe", not_eligible: "elig-no", unknown: "elig-unknown",
+    };
+    const label: Record<string, string> = {
+      eligible: "✓ Eligible", maybe: "~ Maybe", not_eligible: "✗ Not Eligible", unknown: "? Unknown",
+    };
+    return `<span class="elig-badge ${map[status] || "elig-unknown"}">${label[status] || status}</span>`;
+  }
+
+  // ── Deadline urgency chip ───────────────────────────────────────────────────
+  function deadlineChip(deadline: string | null) {
+    if (!deadline) return "";
+    const d = new Date(deadline);
+    const days = Math.ceil((d.getTime() - Date.now()) / 86400000);
+    if (days < 0) return `<span class="deadline-chip expired">Expired</span>`;
+    if (days <= 3) return `<span class="deadline-chip urgent">🔥 ${days}d left</span>`;
+    if (days <= 7) return `<span class="deadline-chip soon">⚡ ${days}d left</span>`;
+    return `<span class="deadline-chip ok">📅 ${days}d left</span>`;
+  }
+
+  // ── Score ring (small) ──────────────────────────────────────────────────────
+  function scoreRing(score: number) {
+    const pct = Math.round(score * 10);
+    const col = pct >= 7 ? "#10b981" : pct >= 4 ? "#f59e0b" : "#6366f1";
+    const r = 18, c = 20, circ = 2 * Math.PI * r;
+    const dash = (score / 10) * circ;
+    return `<svg viewBox="0 0 40 40" class="score-ring-svg">
+      <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="3"/>
+      <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="${col}" stroke-width="3"
+        stroke-dasharray="${dash} ${circ}" stroke-dashoffset="${circ / 4}" stroke-linecap="round"/>
+      <text x="${c}" y="${c}" text-anchor="middle" dominant-baseline="central"
+        fill="${col}" font-size="9" font-weight="700">${pct}/10</text>
+    </svg>`;
+  }
+
+  // ── Render notices list ─────────────────────────────────────────────────────
+  function renderList(notices: any[]) {
+    const list = document.getElementById("intern-feed")!;
+    if (!notices.length) {
+      list.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div>
+        <div class="empty-title">No notices yet</div>
+        <div class="empty-sub">Select sources above and click Fetch to begin scraping.</div></div>`;
+      return;
+    }
+    const filtered = notices.filter(n => {
+      if (activeTab === "eligible") return n.eligibility_status === "eligible" || n.eligibility_status === "maybe";
+      if (activeTab === "saved")    return n.status === "saved";
+      if (activeTab === "applied")  return n.status === "applied";
+      return true;
+    });
+    if (!filtered.length) {
+      list.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div>
+        <div class="empty-title">Nothing in this tab</div></div>`;
+      return;
+    }
+    list.innerHTML = filtered.map((n: any) => `
+      <div class="intern-card" data-id="${n.notice_id}">
+        <div class="intern-card-left">
+          <div class="intern-logo">${(n.company || "?")[0].toUpperCase()}</div>
+        </div>
+        <div class="intern-card-body">
+          <div class="intern-card-top">
+            <span class="intern-title">${n.title || "Untitled"}</span>
+            ${eligBadge(n.eligibility_status || "unknown")}
+            ${deadlineChip(n.deadline || null)}
+          </div>
+          <div class="intern-meta">
+            <span>🏢 ${n.company || "—"}</span>
+            <span>📡 ${n.source || "—"}</span>
+            ${n.location ? `<span>📍 ${n.location}</span>` : ""}
+          </div>
+        </div>
+        <div class="intern-card-right">
+          ${scoreRing(n.score || 0)}
+          <div class="intern-actions">
+            <button class="btn btn-secondary btn-sm view-notice-btn" data-id="${n.notice_id}">Details</button>
+            ${n.apply_link ? `<a class="btn btn-success btn-sm" href="${n.apply_link}" target="_blank">Apply →</a>` : ""}
+            <button class="btn btn-sm save-notice-btn ${n.status === "saved" ? "btn-success" : "btn-secondary"}"
+              data-id="${n.notice_id}">${n.status === "saved" ? "✓ Saved" : "Save"}</button>
+          </div>
+        </div>
+      </div>`).join("");
+
+    // Wire buttons
+    list.querySelectorAll(".view-notice-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const id = (btn as HTMLElement).dataset.id!;
+        try {
+          const n = await api.getNotice(id);
+          const bd = n.score_breakdown || {};
+          openModal(`
+            <div class="modal-title">${n.title}</div>
+            <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px">
+              <span style="color:var(--text-secondary)">${n.company} · ${n.source}</span>
+              ${eligBadge(n.eligibility_status || "unknown")}
+              ${deadlineChip(n.deadline || null)}
+            </div>
+            ${n.raw_text ? `<div class="intern-raw-text">${n.raw_text}</div>` : ""}
+            ${n.eligibility_text ? `<div class="card-title" style="margin-top:16px">Eligibility Note</div>
+              <div style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">${n.eligibility_text}</div>` : ""}
+            ${Object.keys(bd).length ? `<div class="card-title" style="margin-top:16px">Score Breakdown</div>
+              <div class="score-breakdown">
+              ${Object.entries(bd).map(([k, v]) => `
+                <div class="score-row">
+                  <span class="score-label">${k.replace(/_/g, " ")}</span>
+                  <div class="progress-bar-outer" style="flex:1">
+                    <div class="progress-bar-inner" style="width:${Math.round((v as number)*100)}%"></div>
+                  </div>
+                  <span class="score-value">${Math.round((v as number)*100)}%</span>
+                </div>`).join("")}
+              </div>` : ""}
+            ${n.links?.length ? `<div class="card-title" style="margin-top:16px">Extracted Links</div>
+              ${n.links.map((l: any) => `<div style="margin:4px 0">
+                <a href="${l.url}" target="_blank" style="color:var(--accent-light);font-size:13px">${l.text || l.url}</a>
+                <span class="intern-link-kind">${l.kind || ""}</span>
+              </div>`).join("")}` : ""}
+            ${n.portal_link ? `<a href="${n.portal_link}" target="_blank" class="btn btn-primary" style="margin-top:20px;display:inline-flex">Apply Now →</a>` : ""}
+          `);
+        } catch (e: any) { toast(e.message, "error"); }
+      });
+    });
+
+    list.querySelectorAll(".save-notice-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const id = (btn as HTMLElement).dataset.id!;
+        try {
+          await api.markAppliedNotice({ user_id: USER_ID, notice_id: id, status: "saved" });
+          toast("Notice saved!", "success");
+          const n = allNotices.find(x => x.notice_id === id);
+          if (n) n.status = "saved";
+          renderList(allNotices);
+        } catch (e: any) { toast(e.message, "error"); }
+      });
+    });
+  }
+
+  // ── Load notices from backend ───────────────────────────────────────────────
+  async function loadNotices() {
+    const feed = document.getElementById("intern-feed")!;
+    feed.innerHTML = `<div style="display:flex;gap:8px;align-items:center"><div class="spinner"></div> Loading notices…</div>`;
+    try {
+      // Show all stored notices regardless of active tab — fetch is tab-scoped, view is global
+      const allSources = [...WEB_SOURCES.map(s => s.id), ...TG_SOURCES.map(s => s.id)];
+      const notices = await api.getRankedInternships(USER_ID, 60, allSources);
+      allNotices = notices;
+      updateTabCounts(notices);
+      renderList(notices);
+    } catch (e: any) {
+      feed.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">${e.message}</div></div>`;
+    }
+  }
+
+  function updateTabCounts(notices: any[]) {
+    const counts = { all: notices.length, eligible: 0, saved: 0, applied: 0 };
+    for (const n of notices) {
+      if (n.eligibility_status === "eligible" || n.eligibility_status === "maybe") counts.eligible++;
+      if (n.status === "saved") counts.saved++;
+      if (n.status === "applied") counts.applied++;
+    }
+    (["all", "eligible", "saved", "applied"] as const).forEach(t => {
+      const el = document.getElementById(`intern-tab-${t}`);
+      if (el) el.textContent = `${t.charAt(0).toUpperCase() + t.slice(1)} (${counts[t]})`;
+    });
+  }
+
+  // ── Initial render ──────────────────────────────────────────────────────────
   el.innerHTML = `
-    <div class="section-header"><span class="section-title">Internship Notices</span></div>
-    <div class="card" style="margin-bottom:24px">
-      <div class="card-title">Select Sources</div>
-      <div class="source-chips">
-        ${sources.map((s) => `<button class="source-chip ${selected.has(s) ? "selected" : ""}" data-source="${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</button>`).join("")}
-      </div>
-      <div style="margin-top:12px"><button class="btn btn-primary" id="intern-fetch-btn"> Fetch Notices</button><span id="intern-fetch-status" style="margin-left:12px;color:var(--text-secondary)"></span></div>
+    <div class="section-header">
+      <span class="section-title">📡 Internship News Scraper</span>
+      <span style="font-size:12px;color:var(--text-muted)">Detect · Score · Track</span>
     </div>
-    <div id="intern-list" class="job-list"></div>
+
+    <!-- Source Registry -->
+    <div class="card" style="margin-bottom:20px">
+      <div class="intern-src-header">
+        <div class="card-title" style="margin:0">Source Registry</div>
+        <div class="intern-src-tabs">
+          <button class="intern-src-tab active" id="srctab-website" data-srctab="website">🌐 Website</button>
+          <button class="intern-src-tab" id="srctab-telegram" data-srctab="telegram">✈️ Telegram</button>
+        </div>
+      </div>
+      <div id="src-website-chips" class="source-chips" style="margin-top:12px">
+        ${WEB_SOURCES.map(s => `
+          <button class="source-chip ${webSelected.has(s.id) ? "selected" : ""}" data-source="${s.id}" data-group="web">
+            ${s.icon} ${s.label}
+          </button>`).join("")}
+      </div>
+      <div id="src-telegram-chips" class="source-chips" style="margin-top:12px;display:none">
+        ${TG_SOURCES.map(s => `
+          <button class="source-chip ${tgSelected.has(s.id) ? "selected" : ""}" data-source="${s.id}" data-group="tg">
+            ${s.icon} ${s.label}
+            <span style="font-size:10px;color:var(--text-muted);margin-left:4px">5 channels</span>
+          </button>`).join("")}
+        <div style="margin-top:8px;font-size:12px;color:var(--text-muted)">
+          Scrapes: @JobsAndInternshipsIndia · @internshipsalert · @internship_update · @HiringIndia · @TechJobsIndia
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;margin-top:16px">
+        <button class="btn btn-primary" id="intern-fetch-btn">⚡ Fetch &amp; Process</button>
+        <span id="intern-fetch-status" style="font-size:13px;color:var(--text-secondary)"></span>
+      </div>
+    </div>
+
+    <!-- Pipeline status (hidden until fetch) -->
+    <div id="intern-pipeline-wrap" style="display:none;margin-bottom:20px">
+      ${pipelineHTML(-1)}
+    </div>
+
+    <!-- Filter tabs -->
+    <div class="intern-tabs">
+      <button class="intern-tab active" id="intern-tab-all" data-tab="all">All (0)</button>
+      <button class="intern-tab" id="intern-tab-eligible" data-tab="eligible">Eligible (0)</button>
+      <button class="intern-tab" id="intern-tab-saved" data-tab="saved">Saved (0)</button>
+      <button class="intern-tab" id="intern-tab-applied" data-tab="applied">Applied (0)</button>
+    </div>
+
+    <!-- Feed -->
+    <div id="intern-feed" class="intern-feed"></div>
   `;
 
-  el.querySelectorAll(".source-chip").forEach((chip) => {
-    chip.addEventListener("click", () => {
-      const src = (chip as HTMLElement).dataset.source!;
-      if (selected.has(src)) selected.delete(src);
-      else selected.add(src);
-      chip.classList.toggle("selected", selected.has(src));
+  // Source type tab switching (website ↔ telegram)
+  el.querySelectorAll(".intern-src-tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      const which = (tab as HTMLElement).dataset.srctab as "website" | "telegram";
+      activeSrcTab = which;
+      el.querySelectorAll(".intern-src-tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      (document.getElementById("src-website-chips") as HTMLElement).style.display =
+        which === "website" ? "flex" : "none";
+      (document.getElementById("src-telegram-chips") as HTMLElement).style.display =
+        which === "telegram" ? "flex" : "none";
     });
   });
 
+  // Source chip toggle — updates the correct tab's set based on data-group
+  el.querySelectorAll(".source-chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      const src   = (chip as HTMLElement).dataset.source!;
+      const group = (chip as HTMLElement).dataset.group!;
+      const set   = group === "web" ? webSelected : tgSelected;
+      if (set.has(src)) set.delete(src);
+      else set.add(src);
+      chip.classList.toggle("selected", set.has(src));
+    });
+  });
+
+  // Tab switching
+  el.querySelectorAll(".intern-tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      el.querySelectorAll(".intern-tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      activeTab = (tab as HTMLElement).dataset.tab as any;
+      renderList(allNotices);
+    });
+  });
+
+  // Fetch button
   document.getElementById("intern-fetch-btn")?.addEventListener("click", async () => {
     const btn = document.getElementById("intern-fetch-btn") as HTMLButtonElement;
     const status = document.getElementById("intern-fetch-status")!;
-    btn.disabled = true; btn.textContent = "…"; status.textContent = "";
+    const pipeWrap = document.getElementById("intern-pipeline-wrap")!;
+    btn.disabled = true;
+    btn.innerHTML = `<div class="spinner"></div> Processing…`;
+    pipeWrap.style.display = "block";
+    status.textContent = "";
+
+    // Animate pipeline stages
+    for (let i = 0; i < PIPELINE.length; i++) {
+      pipeWrap.innerHTML = pipelineHTML(i);
+      await new Promise(r => setTimeout(r, 320));
+    }
+
     try {
-      const res = await api.fetchInternships(USER_ID, [...selected]);
-      if (Array.isArray(res.warnings) && res.warnings.length > 0) {
-        res.warnings.forEach((w: string) => toast(w, "error"));
-      }
+      const res = await api.fetchInternships(USER_ID, activeSources());
+      if (Array.isArray(res.warnings)) res.warnings.forEach((w: string) => toast(w, "error"));
       toast(`Fetched ${res.fetched} notices, saved ${res.saved}`, "success");
-      status.textContent = ` ${res.saved} saved`;
-      loadNotices();
+      status.textContent = `${res.saved} new notices`;
+      pipeWrap.innerHTML = pipelineHTML(PIPELINE.length); // all done
+      await loadNotices();
     } catch (e: any) {
       toast(e.message, "error");
+      pipeWrap.style.display = "none";
     } finally {
       btn.disabled = false;
-      btn.textContent = " Fetch Notices";
+      btn.innerHTML = "⚡ Fetch &amp; Process";
     }
   });
 
-  async function loadNotices() {
-    const list = document.getElementById("intern-list")!;
-    list.innerHTML = `<div style="display:flex;gap:8px;align-items:center"><div class="spinner"></div> Loading notices…</div>`;
-    try {
-      const notices = await api.getRankedInternships(USER_ID, 50, [...selected]);
-      if (!notices.length) {
-        list.innerHTML = `<div class="empty-state"><div class="empty-icon"></div><div class="empty-title">No notices yet</div><div class="empty-sub">Click Fetch Notices to collect internship announcements.</div></div>`;
-        return;
-      }
-      list.innerHTML = notices.map((n: any) => `
-        <div class="job-card" data-notice-id="${n.notice_id}">
-          <div class="job-company-logo">${(n.company || '?')[0].toUpperCase()}</div>
-          <div class="job-info">
-            <div class="job-title">${n.title}</div>
-            <div class="job-meta"><span>${n.company}</span><span>${n.source}</span></div>
-          </div>
-          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
-            <div class="job-score">${Math.round((n.score || 0) * 10)} / 10</div>
-            <div style="display:flex;gap:6px">
-              <button class="btn btn-secondary btn-sm view-notice-btn" data-notice-id="${n.notice_id}">Details</button>
-              <button class="btn btn-primary btn-sm save-notice-btn" data-notice-id="${n.notice_id}">Save</button>
-              ${n.apply_link ? `<a class="btn btn-success btn-sm" href="${n.apply_link}" target="_blank">Apply</a>` : ""}
-            </div>
-          </div>
-        </div>
-      `).join("");
-
-      list.querySelectorAll('.view-notice-btn').forEach((b) => {
-        b.addEventListener('click', async () => {
-          const id = (b as HTMLElement).dataset.noticeId!;
-          try {
-            const n = await api.getNotice(id);
-            openModal(`
-              <div class="modal-title">${n.title}</div>
-              <div style="margin-bottom:8px;color:var(--text-secondary)">${n.company} · ${n.source}</div>
-              <div style="margin-bottom:8px">${n.raw_text ? `<pre style="white-space:pre-wrap;max-height:300px;overflow:auto">${n.raw_text}</pre>` : "(no description)"}</div>
-              ${n.links && n.links.length ? `<div class="card-title">Links</div><div>${n.links.map((l:any)=>`<div><a href="${l.url}" target="_blank">${l.text||l.url}</a> <small style="color:var(--text-muted)">(${l.kind||''})</small></div>`).join('')}</div>` : ''}
-              ${n.deadline ? `<div style="margin-top:8px">Deadline: ${new Date(n.deadline).toLocaleDateString()}</div>` : ''}
-              <div style="margin-top:12px"><button class="btn btn-primary" id="save-notice-modal-btn" data-id="${n.id}">Save</button></div>
-            `);
-            document.getElementById('save-notice-modal-btn')?.addEventListener('click', async ()=>{
-              const nid = (document.getElementById('save-notice-modal-btn') as HTMLElement).dataset.id!;
-              try { await api.markAppliedNotice({ user_id: USER_ID, notice_id: nid, status: 'saved' }); toast('Saved notice', 'success'); closeModal(); } catch(e:any){ toast(e.message,'error'); }
-            });
-          } catch (e:any) { toast(e.message,'error'); }
-        });
-      });
-
-      list.querySelectorAll('.save-notice-btn').forEach((b) => {
-        b.addEventListener('click', async () => {
-          const id = (b as HTMLElement).dataset.noticeId!;
-          try { await api.markAppliedNotice({ user_id: USER_ID, notice_id: id, status: 'saved' }); toast('Saved notice', 'success'); } catch(e:any){ toast(e.message,'error'); }
-        });
-      });
-
-    } catch (e:any) { list.innerHTML = `<div class="empty-state"><div class="empty-icon"></div><div class="empty-title">${e.message}</div></div>`; }
-  }
-
   loadNotices();
 }
+
 
 // Drafts for the comapany/startup page
 export async function renderDrafts() {

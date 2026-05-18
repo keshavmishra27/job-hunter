@@ -10,6 +10,13 @@ def _normalise(text: str) -> str:
     return t
 
 
+def job_signature(job: dict) -> str:
+    title = _normalise(job.get("title") or "")
+    company = _normalise(job.get("company") or "")
+    location = _normalise(job.get("location") or "")
+    return "|".join([title, company, location])
+
+
 def job_fingerprint(job: dict) -> str:
     title = _normalise(job.get("title") or "")
     company = _normalise(job.get("company") or "")
@@ -20,17 +27,26 @@ def job_fingerprint(job: dict) -> str:
     return hashlib.sha256(key.encode()).hexdigest()
 
 
-def deduplicate(jobs: list[dict], existing_hashes: set[str] | None = None) -> list[dict]:
-    seen: set[str] = set(existing_hashes or [])
+def deduplicate(
+    jobs: list[dict],
+    existing_hashes: set[str] | None = None,
+    existing_signatures: set[str] | None = None,
+) -> list[dict]:
+    seen_hashes: set[str] = set(existing_hashes or [])
+    seen_signatures: set[str] = set(existing_signatures or [])
     unique: list[dict] = []
 
     for job in jobs:
+        signature = job_signature(job)
         h = job_fingerprint(job)
         job["content_hash"] = h
-        if h in seen:
+
+        if h in seen_hashes or signature in seen_signatures:
             logger.debug(f"[Deduper] Skipping duplicate: {job['title']} @ {job['company']}")
             continue
-        seen.add(h)
+
+        seen_hashes.add(h)
+        seen_signatures.add(signature)
         unique.append(job)
 
     logger.info(f"[Deduper] {len(jobs)} → {len(unique)} after dedup ({len(jobs) - len(unique)} removed)")

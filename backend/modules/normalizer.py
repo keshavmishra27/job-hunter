@@ -33,7 +33,7 @@ def normalize(raw: RawJob) -> dict:
         "title": _clean(raw.title) or "Untitled",
         "company": _clean(raw.company) or "Unknown",
         "location": _clean(raw.location),
-        "mode": _infer_mode(raw),
+        "mode": raw.extra.get("mode") or _infer_mode(raw),
         "description": _clean(raw.description),
         "apply_link": raw.apply_link,
         "posted_date": raw.posted_date,

@@ -9,11 +9,27 @@ def _text_of(notice: dict) -> str:
 
 def _year_fit_score(notice: dict) -> float:
     t = _text_of(notice)
-    triggers = ["3rd year", "3rd-year", "third year", "pre-final", "prefinal", "3rd"]
-    for trig in triggers:
-        if trig in t:
+
+    # Explicit 3rd-year/pre-final confirmation -> full score
+    CONFIRM = ["3rd year", "3rd-year", "third year", "pre-final", "prefinal", "pre final", "3rd"]
+    for kw in CONFIRM:
+        if kw in t:
             return 1.0
-    return 0.0
+
+    # Explicit exclusion of pre-final/undergrad students -> 0
+    EXCLUDE = [
+        "final year only", "only final year", "final year students only",
+        "post graduate", "postgraduate", "post-graduate",
+        "mba required", "mba preferred", "phd", "experienced professional",
+        "minimum 2 years", "minimum 3 years", "minimum 5 years",
+        "2+ years", "3+ years", "5+ years",
+    ]
+    for kw in EXCLUDE:
+        if kw in t:
+            return 0.0
+
+    # No year restriction mentioned -> treat as open to all years
+    return 1.0
 
 
 def _role_score(notice: dict, profile: dict) -> tuple[float, list[str]]:
