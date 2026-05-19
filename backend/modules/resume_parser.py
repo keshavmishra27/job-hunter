@@ -97,6 +97,7 @@ class ResumeParser:
             "location_rule": {
                 "offline_allowed": ["Delhi NCR", "Gurgaon", "Noida"],
                 "remote_allowed": True,
+                "strict": True,
             },
             "resume_summary": self._build_summary(text),
             "raw_text": text,

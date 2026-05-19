@@ -38,8 +38,8 @@ export const api = {
   fetchJobs: (userId: string, sources: string[]) =>
     req<{ fetched: number; new_unique: number; ranked: number }>(`/jobs/fetch?user_id=${userId}&${sources.map((s) => `sources=${s}`).join("&")}`, { method: "POST" }),
 
-  getRankedJobs: (userId: string, limit = 30, includeApplied = false) =>
-    req<any[]>(`/jobs/ranked/${userId}?limit=${limit}&include_applied=${includeApplied}`),
+  getRankedJobs: (userId: string, limit = 30, includeApplied = false, sources: string[] = ["internshala", "indeed", "naukri"]) =>
+    req<any[]>(`/jobs/ranked/${userId}?limit=${limit}&include_applied=${includeApplied}&${sources.map((s) => `sources=${s}`).join("&")}`),
 
   getDrafts: (userId: string) => req<any[]>(`/drafts/${userId}`),
 

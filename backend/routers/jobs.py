@@ -16,7 +16,7 @@ from backend.modules.fetchers import (
 )
 from backend.modules.normalizer import normalize_many
 from backend.modules.deduper import deduplicate, job_fingerprint, job_signature
-from backend.modules.ranker import rank_jobs
+from backend.modules.ranker import rank_jobs, _is_expired, _experience_filter, _duration_filter
 
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
 
@@ -124,6 +124,7 @@ async def fetch_jobs(
                     "name": repo.name,
                     "description": repo.description,
                     "language": repo.language,
+                    "languages_all": repo.languages_all or {},
                     "topics": repo.topics or [],
                     "analysis_signals": analysis.analysis_signals if analysis else {},
                 })
@@ -183,8 +184,24 @@ async def get_ranked_jobs(
     user_id: str,
     limit: int = 20,
     include_applied: bool = False,
+    sources: list[str] = Query(default=["internshala", "indeed", "naukri"]),
     db: AsyncSession = Depends(get_db),
 ):
+    # Map frontend source IDs to backend source names stored in DB
+    SOURCE_NAME_MAP = {
+        "internshala": "Internshala",
+        "indeed": "Indeed",
+        "naukri": "LinkedIn",   # LinkedIn replaces blocked Naukri
+        "linkedin": "LinkedIn",
+    }
+    db_sources = [SOURCE_NAME_MAP.get(s.lower(), s) for s in sources]
+
+    # Load user profile to get location_rule for filtering
+    profile_result = await db.execute(select(UserProfile).where(UserProfile.user_id == user_id))
+    profile_row = profile_result.scalar_one_or_none()
+    location_rule = (profile_row.location_rule or {}) if profile_row else {}
+    allowed_cities = [loc.lower() for loc in (location_rule.get("offline_allowed") or [])]
+
     applied_job_ids: set[str] = set()
     if not include_applied:
         applied_result = await db.execute(
@@ -196,15 +213,16 @@ async def get_ranked_jobs(
         select(JobMatch, JobPost)
         .join(JobPost, JobMatch.job_id == JobPost.id)
         .where(JobMatch.user_id == user_id)
-        .where(JobPost.source.in_(["Internshala", "Indeed", "LinkedIn"]))
+        .where(JobPost.source.in_(db_sources))
         .order_by(JobMatch.score.desc())
-        .limit(limit)
+        .limit(limit * 3)  # fetch extra to account for location filtering
     )
     result = await db.execute(query)
     rows = result.fetchall()
 
     seen_signatures: set[str] = set()
     ranked_jobs: list[dict] = []
+    expired_ids: list[str] = []
 
     for match, job in rows:
         if not include_applied and job.id in applied_job_ids:
@@ -214,6 +232,35 @@ async def get_ranked_jobs(
         if signature in seen_signatures:
             continue
         seen_signatures.add(signature)
+
+        job_dict = {
+            "title": job.title,
+            "company": job.company,
+            "location": job.location,
+            "mode": job.mode,
+            "description": job.description,
+            "posted_date": job.posted_date,
+        }
+
+        # --- Read-time filters: expired, experience, duration ---
+        if _is_expired(job_dict):
+            expired_ids.append(job.id)
+            continue
+        if not _experience_filter(job_dict):
+            expired_ids.append(job.id)
+            continue
+        if not _duration_filter(job_dict):
+            expired_ids.append(job.id)
+            continue
+
+        # --- Location filter: remote always passes; offline must match allowed cities ---
+        if allowed_cities:
+            from backend.modules.ranker import _is_remote
+            if not _is_remote(job_dict):
+                loc = (job.location or "").lower()
+                if not any(a in loc or loc in a for a in allowed_cities):
+                    expired_ids.append(job.id)
+                    continue
 
         ranked_jobs.append(
             {
@@ -231,6 +278,19 @@ async def get_ranked_jobs(
                 "is_applied": job.id in applied_job_ids,
             }
         )
+
+        if len(ranked_jobs) >= limit:
+            break
+
+    # Clean up location-filtered and expired matches from DB
+    if expired_ids:
+        await db.execute(
+            delete(JobMatch).where(
+                JobMatch.user_id == user_id,
+                JobMatch.job_id.in_(expired_ids),
+            )
+        )
+        await db.commit()
 
     return ranked_jobs
 

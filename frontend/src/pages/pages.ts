@@ -217,6 +217,7 @@ export async function renderJobs() {
       if (selected.has(src)) selected.delete(src);
       else selected.add(src);
       chip.classList.toggle("selected", selected.has(src));
+      loadJobs();  // Reload list with new source filter
     });
   });
 
@@ -249,7 +250,7 @@ export async function renderJobs() {
     const list = document.getElementById("jobs-list")!;
     list.innerHTML = `<div style="display:flex;gap:8px;align-items:center"><div class="spinner"></div> Loading ranked jobs…</div>`;
     try {
-      const jobs = await api.getRankedJobs(USER_ID, 30, showApplied);
+      const jobs = await api.getRankedJobs(USER_ID, 30, showApplied, [...selected]);
       if (!jobs.length) {
         list.innerHTML = `<div class="empty-state"><div class="empty-icon"></div><div class="empty-title">No jobs yet</div><div class="empty-sub">Click "Fetch & Rank" to pull internships.</div></div>`;
         return;

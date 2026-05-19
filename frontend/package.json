@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:all": "concurrently \"uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000\" \"npm:dev\" -k",
+    "dev:all": "concurrently \"..\\.venv\\Scripts\\python -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000 --app-dir ..\" \"npm:dev\" -k",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },
