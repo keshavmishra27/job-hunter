@@ -79,6 +79,12 @@ TECH_KEYWORDS_SET = {
     "rpa", "robotic process automation",
 }
 
+# Generic techs that appear in almost every job — downweight in matching
+GENERIC_TECHS = {
+    "python", "javascript", "typescript", "java", "html", "css",
+    "git", "github", "sql", "node", "c",
+}
+
 
 def _extract_tech_from_text(text: str) -> set[str]:
     """Extract recognized tech keywords from any text string."""
@@ -199,7 +205,7 @@ def _detect_duration_months(text: str) -> int | None:
 
 
 # Maximum internship duration the user is willing to do (in months)
-MAX_DURATION_MONTHS = 2
+MAX_DURATION_MONTHS = 6
 
 
 def _duration_filter(job: dict) -> bool:
@@ -220,6 +226,14 @@ def _duration_filter(job: dict) -> bool:
 
 def _hard_filter(job: dict, profile: dict) -> bool:
     """Hard filters — always applied regardless of profile settings."""
+    # 0. Drop jobs with missing/unknown titles
+    title = (job.get("title") or "").strip().lower()
+    if not title or title == "unknown":
+        logger.debug(
+            f"[Ranker] Dropped (unknown title): {job.get('company')}"
+        )
+        return False
+
     # 1. Drop expired postings
     if _is_expired(job):
         logger.debug(
@@ -342,18 +356,38 @@ def _project_overlap(job: dict, profile: dict, github_repos: list[dict] | None =
                     resume_score = proj_score
 
     # --- GitHub repo scoring ---
-    best_github_repo = None
+    # Score ALL repos, then pick the most relevant one per job using
+    # name-relevance tiebreaking (avoids showing the same repo every time).
     if github_repos:
+        scored_repos = []
         for repo in github_repos:
-            repo_score = _score_github_repo_overlap(repo, job_title, job_desc, text, job_techs)
-            if repo_score > github_score:
-                github_score = repo_score
-                best_github_repo = repo
+            tech_score = _score_github_repo_overlap(repo, job_title, job_desc, text, job_techs)
+            if tech_score <= 0:
+                continue
+            # Name + topic relevance: prefer repos whose name/topics match the job
+            repo_name = (repo.get("name") or "").lower()
+            repo_topics_list = [t.lower() for t in (repo.get("topics") or [])]
+            repo_desc_text = (repo.get("description") or "").lower()
+            name_words = [w for w in re.split(r'[-_\s]+', repo_name) if len(w) > 2]
+            topic_words = [w for w in repo_topics_list if len(w) > 2]
+            desc_words = [w for w in re.split(r'[-_\s]+', repo_desc_text) if len(w) > 3]
+            all_repo_words = set(name_words + topic_words + desc_words)
 
-        if best_github_repo and github_score >= 0.15:
-            repo_name = best_github_repo.get("name", "GitHub project")
-            if repo_name not in matched_projects:
-                matched_projects.append(f"[GitHub] {repo_name}")
+            # Match against job title (high value) and full text (lower value)
+            title_hits = sum(1 for w in all_repo_words if w in job_title)
+            text_hits = sum(1 for w in all_repo_words if w in text)
+            # Title match is worth more than body match
+            name_bonus = min(title_hits * 0.15 + text_hits * 0.03, 0.40)
+            combined = tech_score + name_bonus
+            scored_repos.append((combined, tech_score, repo))
+
+        if scored_repos:
+            # Sort by combined score descending to pick the MOST relevant repo per job
+            scored_repos.sort(key=lambda x: x[0], reverse=True)
+            best_combined, best_tech, best_repo = scored_repos[0]
+            github_score = best_tech
+            repo_name = best_repo.get("name", "GitHub project")
+            matched_projects.append(f"[GitHub] {repo_name}")
 
     # Combine: GitHub weighted 70%, resume 30% (when GitHub data exists)
     if github_repos and github_score > 0:
@@ -382,9 +416,8 @@ def _score_github_repo_overlap(
     """
     Score how well a GitHub repo matches a job.
 
-    Primary path: intersect job tech requirements with repo tech stack.
-    Fallback path: when the job description is tech-sparse (e.g. 'AI Intern'
-    with no specific libraries listed), use job-title category matching.
+    Uses specificity-weighted tech matching + semantic name/topic matching
+    to ensure different repos are selected for different jobs.
     """
     if job_techs is None:
         job_techs = _extract_tech_from_text(full_text)
@@ -397,24 +430,54 @@ def _score_github_repo_overlap(
     all_lang_names = " ".join(k.lower() for k in languages_all.keys())
     repo_text = f"{repo_desc} {' '.join(repo_topics)} {repo_language} {all_lang_names}"
 
-    base_score = 0.0
+    repo_techs = _extract_tech_from_text(repo_text)
 
-    if job_techs:
-        # Primary: count how many job-required techs are present in the repo
-        repo_tech_matches = sum(1 for tech in job_techs if tech in repo_text)
-        if repo_tech_matches >= 1:
-            base_score = min(repo_tech_matches / len(job_techs), 1.0)
-    else:
-        # Fallback: map job title to a category and check repo against that category
-        category = _get_job_category(job_title)
-        if category and category in REPO_TECH_MAPPING:
-            cat_techs = REPO_TECH_MAPPING[category]
-            cat_matches = sum(1 for t in cat_techs if t in repo_text)
-            if cat_matches >= 1:
-                base_score = min(cat_matches / len(cat_techs), 0.5)  # cap lower for fallback
+    # --- Strategy 1: specificity-weighted tech intersection ---
+    direct_score = 0.0
+    if job_techs and repo_techs:
+        common = repo_techs & job_techs
+        if common:
+            # Specific techs (pytorch, langchain, etc.) worth 1.0 each
+            # Generic techs (python, javascript, etc.) worth 0.2 each
+            specific = common - GENERIC_TECHS
+            generic = common & GENERIC_TECHS
+            weighted_hits = len(specific) * 1.0 + len(generic) * 0.2
 
+            job_specific = job_techs - GENERIC_TECHS
+            job_generic = job_techs & GENERIC_TECHS
+            weighted_total = max(len(job_specific) * 1.0 + len(job_generic) * 0.2, 1.0)
+
+            direct_score = min(weighted_hits / weighted_total, 1.0)
+            logger.debug(
+                f"[RepoOverlap] repo='{repo.get('name')}' job='{job_title[:30]}' "
+                f"specific={specific} generic={generic} score={direct_score:.3f}"
+            )
+
+    # --- Strategy 2: category-based matching (capped lower, fallback only) ---
+    category_score = 0.0
+    category = _get_job_category(job_title)
+    if category and category in REPO_TECH_MAPPING:
+        cat_techs = REPO_TECH_MAPPING[category]
+        cat_matches = sum(1 for t in cat_techs if t in repo_text)
+        if cat_matches >= 1:
+            category_score = min(cat_matches / len(cat_techs), 0.35)  # cap at 0.35
+
+    base_score = max(direct_score, category_score)
     if base_score == 0.0:
         return 0.0
+
+    # --- Strategy 3: semantic name/topic match against job title ---
+    # This ensures repos with relevant names score higher for matching jobs
+    repo_name_lower = (repo.get("name") or "").lower()
+    name_words = set(w for w in re.split(r'[-_\s]+', repo_name_lower) if len(w) > 2)
+    topic_words = set(w for w in repo_topics if len(w) > 2)
+    semantic_words = name_words | topic_words
+
+    title_words = set(w for w in re.split(r'[-_\s]+', job_title) if len(w) > 2)
+    semantic_hits = sum(1 for w in semantic_words if w in job_title or w in job_desc)
+    title_overlap = len(semantic_words & title_words)
+    semantic_bonus = min(title_overlap * 0.12 + semantic_hits * 0.04, 0.30)
+    base_score = min(base_score + semantic_bonus, 1.0)
 
     # Quality multiplier: reward well-documented, tested repos
     analysis_signals = repo.get("analysis_signals") or {}

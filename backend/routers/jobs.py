@@ -133,9 +133,7 @@ async def fetch_jobs(
         pass
 
     # Re score ALL existing jobs for this user so that profile changes always reflect correctly
-    all_jobs_result = await db.execute(
-        select(JobPost).where(JobPost.source.in_(["Internshala", "Indeed", "LinkedIn"]))
-    )
+    all_jobs_result = await db.execute(select(JobPost))
     all_jobs = all_jobs_result.scalars().all()
     all_jobs_dicts = [
         {
@@ -242,7 +240,14 @@ async def get_ranked_jobs(
             "posted_date": job.posted_date,
         }
 
-        # --- Read-time filters: expired, experience, duration ---
+        # --- Read-time filters ---
+        # Drop jobs with missing/unknown titles
+        title_check = (job.title or "").strip().lower()
+        if not title_check or title_check == "unknown":
+            expired_ids.append(job.id)
+            continue
+
+        # Expired, experience, duration
         if _is_expired(job_dict):
             expired_ids.append(job.id)
             continue

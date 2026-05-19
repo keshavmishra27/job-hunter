@@ -19,14 +19,12 @@ def detect_year_fit(text: str | None) -> str:
         "final year only", "only final year", "final year students only",
         "post graduate", "postgraduate", "post-graduate",
         "mba required", "mba preferred", "phd",
-        # Any numeric experience requirement (even 1 year) is a blocker for a 0-exp student
+        # Numeric experience requirements (1+ year) block a 0-exp student
         "1+ year", "1+ years", "1 year experience", "1 years experience",
         "minimum 1 year", "minimum 1 years",
         "minimum 2 years", "minimum 3 years", "minimum 5 years",
         "2+ years", "3+ years", "5+ years",
         "1-2 years", "1-3 years", "2-3 years", "2-5 years",
-        "experienced professional", "prior experience required",
-        "experience required", "relevant experience",
         "experience: 1", "experience: 2", "experience: 3",  # Indeed format
     ]
     for excl in EXCLUDE:
