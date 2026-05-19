@@ -356,15 +356,14 @@ def _project_overlap(job: dict, profile: dict, github_repos: list[dict] | None =
                     resume_score = proj_score
 
     # --- GitHub repo scoring ---
-    # Score ALL repos, then pick the most relevant one per job using
-    # name-relevance tiebreaking (avoids showing the same repo every time).
+    # Score ALL repos and pick the TOP 3 most relevant per job.
     if github_repos:
         scored_repos = []
         for repo in github_repos:
             tech_score = _score_github_repo_overlap(repo, job_title, job_desc, text, job_techs)
             if tech_score <= 0:
                 continue
-            # Name + topic relevance: prefer repos whose name/topics match the job
+            # Name + topic relevance bonus
             repo_name = (repo.get("name") or "").lower()
             repo_topics_list = [t.lower() for t in (repo.get("topics") or [])]
             repo_desc_text = (repo.get("description") or "").lower()
@@ -373,21 +372,21 @@ def _project_overlap(job: dict, profile: dict, github_repos: list[dict] | None =
             desc_words = [w for w in re.split(r'[-_\s]+', repo_desc_text) if len(w) > 3]
             all_repo_words = set(name_words + topic_words + desc_words)
 
-            # Match against job title (high value) and full text (lower value)
             title_hits = sum(1 for w in all_repo_words if w in job_title)
             text_hits = sum(1 for w in all_repo_words if w in text)
-            # Title match is worth more than body match
             name_bonus = min(title_hits * 0.15 + text_hits * 0.03, 0.40)
             combined = tech_score + name_bonus
             scored_repos.append((combined, tech_score, repo))
 
         if scored_repos:
-            # Sort by combined score descending to pick the MOST relevant repo per job
             scored_repos.sort(key=lambda x: x[0], reverse=True)
-            best_combined, best_tech, best_repo = scored_repos[0]
+            # Pick top 3 relevant repos (not just 1)
+            top_repos = scored_repos[:3]
+            best_tech = top_repos[0][1]
             github_score = best_tech
-            repo_name = best_repo.get("name", "GitHub project")
-            matched_projects.append(f"[GitHub] {repo_name}")
+            for _, _, rp in top_repos:
+                rp_name = rp.get("name", "GitHub project")
+                matched_projects.append(f"[GitHub] {rp_name}")
 
     # Combine: GitHub weighted 70%, resume 30% (when GitHub data exists)
     if github_repos and github_score > 0:
@@ -406,6 +405,66 @@ def _extract_job_tech_requirements(job_title: str, job_desc: str, full_text: str
 
 
 
+# Domain-specific keyword groups for deep README matching
+# These distinguish sub-domains within AI/ML (e.g. CNN vs GenAI vs NLP)
+_DOMAIN_KEYWORDS = {
+    "genai": {
+        "generative", "llm", "large language model", "gpt", "chatbot", "chat bot",
+        "prompt", "prompt engineering", "rag", "retrieval augmented",
+        "langchain", "llamaindex", "openai", "anthropic", "gemini",
+        "stable diffusion", "diffusion model", "text generation",
+        "fine-tuning", "fine tuning", "lora", "qlora",
+        "embedding", "vector database", "vector store", "chromadb", "pinecone",
+        "agent", "agentic", "crewai", "autogen", "multi-agent",
+        "transformer", "huggingface", "tokenizer",
+    },
+    "computer_vision": {
+        "cnn", "convolutional", "image classification", "image classifier",
+        "object detection", "yolo", "resnet", "vgg", "inception",
+        "image segmentation", "opencv", "computer vision",
+        "face detection", "face recognition", "ocr",
+        "image processing", "pixel", "convolution",
+        "cat", "dog", "mnist", "cifar", "imagenet",
+    },
+    "nlp": {
+        "nlp", "natural language", "text classification", "sentiment",
+        "named entity", "ner", "pos tagging", "tokenization",
+        "text mining", "word2vec", "glove", "spacy", "nltk",
+        "text summarization", "machine translation",
+    },
+    "data_science": {
+        "pandas", "numpy", "matplotlib", "seaborn", "plotly",
+        "data analysis", "data visualization", "eda",
+        "exploratory", "jupyter", "notebook", "kaggle",
+        "regression", "classification", "clustering",
+        "random forest", "xgboost", "lightgbm",
+    },
+    "web_dev": {
+        "react", "vue", "angular", "nextjs", "express",
+        "fastapi", "django", "flask", "rest api", "graphql",
+        "frontend", "backend", "fullstack", "full stack",
+        "crud", "authentication", "jwt", "oauth",
+        "responsive", "spa", "single page",
+    },
+    "devops": {
+        "docker", "kubernetes", "ci/cd", "pipeline",
+        "terraform", "ansible", "aws", "gcp", "azure",
+        "deployment", "infrastructure", "monitoring",
+    },
+}
+
+
+def _detect_domain(text: str) -> dict[str, int]:
+    """Count how many keywords from each domain appear in text."""
+    text_lower = text.lower()
+    scores = {}
+    for domain, keywords in _DOMAIN_KEYWORDS.items():
+        count = sum(1 for kw in keywords if kw in text_lower)
+        if count > 0:
+            scores[domain] = count
+    return scores
+
+
 def _score_github_repo_overlap(
     repo: dict,
     job_title: str,
@@ -416,8 +475,11 @@ def _score_github_repo_overlap(
     """
     Score how well a GitHub repo matches a job.
 
-    Uses specificity-weighted tech matching + semantic name/topic matching
-    to ensure different repos are selected for different jobs.
+    Uses 4 strategies:
+      1. Specificity-weighted tech intersection
+      2. Category-based fallback
+      3. Semantic name/topic matching
+      4. Deep README content domain matching (distinguishes CNN vs GenAI etc.)
     """
     if job_techs is None:
         job_techs = _extract_tech_from_text(full_text)
@@ -430,15 +492,17 @@ def _score_github_repo_overlap(
     all_lang_names = " ".join(k.lower() for k in languages_all.keys())
     repo_text = f"{repo_desc} {' '.join(repo_topics)} {repo_language} {all_lang_names}"
 
-    repo_techs = _extract_tech_from_text(repo_text)
+    # Include README content for deep matching
+    readme = (repo.get("readme_content") or "").lower()
+    deep_text = f"{repo_text} {readme[:3000]}"  # Cap README to avoid noise
+
+    repo_techs = _extract_tech_from_text(deep_text)
 
     # --- Strategy 1: specificity-weighted tech intersection ---
     direct_score = 0.0
     if job_techs and repo_techs:
         common = repo_techs & job_techs
         if common:
-            # Specific techs (pytorch, langchain, etc.) worth 1.0 each
-            # Generic techs (python, javascript, etc.) worth 0.2 each
             specific = common - GENERIC_TECHS
             generic = common & GENERIC_TECHS
             weighted_hits = len(specific) * 1.0 + len(generic) * 0.2
@@ -448,26 +512,21 @@ def _score_github_repo_overlap(
             weighted_total = max(len(job_specific) * 1.0 + len(job_generic) * 0.2, 1.0)
 
             direct_score = min(weighted_hits / weighted_total, 1.0)
-            logger.debug(
-                f"[RepoOverlap] repo='{repo.get('name')}' job='{job_title[:30]}' "
-                f"specific={specific} generic={generic} score={direct_score:.3f}"
-            )
 
     # --- Strategy 2: category-based matching (capped lower, fallback only) ---
     category_score = 0.0
     category = _get_job_category(job_title)
     if category and category in REPO_TECH_MAPPING:
         cat_techs = REPO_TECH_MAPPING[category]
-        cat_matches = sum(1 for t in cat_techs if t in repo_text)
+        cat_matches = sum(1 for t in cat_techs if t in deep_text)
         if cat_matches >= 1:
-            category_score = min(cat_matches / len(cat_techs), 0.35)  # cap at 0.35
+            category_score = min(cat_matches / len(cat_techs), 0.35)
 
     base_score = max(direct_score, category_score)
     if base_score == 0.0:
         return 0.0
 
     # --- Strategy 3: semantic name/topic match against job title ---
-    # This ensures repos with relevant names score higher for matching jobs
     repo_name_lower = (repo.get("name") or "").lower()
     name_words = set(w for w in re.split(r'[-_\s]+', repo_name_lower) if len(w) > 2)
     topic_words = set(w for w in repo_topics if len(w) > 2)
@@ -478,6 +537,37 @@ def _score_github_repo_overlap(
     title_overlap = len(semantic_words & title_words)
     semantic_bonus = min(title_overlap * 0.12 + semantic_hits * 0.04, 0.30)
     base_score = min(base_score + semantic_bonus, 1.0)
+
+    # --- Strategy 4: deep README domain matching ---
+    # Detects whether repo is about GenAI vs CNN vs NLP etc., and checks
+    # if the job is in the same domain. Penalizes domain mismatches.
+    if readme:
+        job_domains = _detect_domain(f"{job_title} {job_desc}")
+        repo_domains = _detect_domain(deep_text)
+
+        if job_domains and repo_domains:
+            # Find the job's primary domain
+            job_primary = max(job_domains, key=job_domains.get)
+            repo_primary = max(repo_domains, key=repo_domains.get)
+
+            if job_primary == repo_primary:
+                # Same domain — boost score
+                base_score = min(base_score + 0.15, 1.0)
+                logger.debug(
+                    f"[RepoOverlap] Domain MATCH: repo='{repo.get('name')}' "
+                    f"job_domain={job_primary} repo_domain={repo_primary}"
+                )
+            elif repo_domains.get(job_primary, 0) > 0:
+                # Repo has some relevance to job domain but it's not primary
+                pass  # no penalty, no bonus
+            else:
+                # Domain mismatch — penalize (e.g. CNN repo for GenAI job)
+                base_score *= 0.4
+                logger.debug(
+                    f"[RepoOverlap] Domain MISMATCH: repo='{repo.get('name')}' "
+                    f"job_domain={job_primary} repo_domain={repo_primary} "
+                    f"— score reduced to {base_score:.3f}"
+                )
 
     # Quality multiplier: reward well-documented, tested repos
     analysis_signals = repo.get("analysis_signals") or {}

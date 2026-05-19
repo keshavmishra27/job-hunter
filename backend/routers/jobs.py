@@ -127,6 +127,8 @@ async def fetch_jobs(
                     "languages_all": repo.languages_all or {},
                     "topics": repo.topics or [],
                     "analysis_signals": analysis.analysis_signals if analysis else {},
+                    # Include README content for deep semantic matching
+                    "readme_content": analysis.readme_content if analysis else None,
                 })
     except Exception as e:
         
