@@ -8,11 +8,13 @@ from backend.modules.normalizer import normalize_many
 from backend.modules.internship_matcher import detect_year_fit
 from backend.modules.internship_scorer import score_notice_detailed
 from backend.modules.alert_engine import alert_on_notice
+from backend.modules.telegram_sender import send_notice_to_telegram, send_eligible_notices
 from backend.modules.notice_extractor import (
     extract_from_html, extract_from_pdf_bytes, parse_text_fields,
 )
 from backend.modules.portal_link_extractor import clean_and_resolve_links
 from backend.config import get_settings
+from loguru import logger
 import httpx
 from datetime import datetime
 
@@ -54,6 +56,7 @@ async def fetch_internships(user_id: str, sources: list[str] = Query(default=["c
             warnings.append("No COMPANY_CAREER_HOSTS configured; company career fetch will be skipped.")
 
     # load user profile for scoring and alerts
+    telegram_chat_id = None
     try:
         from backend.models.user import UserProfile
         res = await db.execute(select(UserProfile).where(UserProfile.user_id == user_id))
@@ -63,9 +66,11 @@ async def fetch_internships(user_id: str, sources: list[str] = Query(default=["c
             "skills": profile.skills or [],
             "location_rule": profile.location_rule or {},
             "preferred_companies": getattr(profile, 'preferred_companies', []) or [],
-        } if profile else {"preferred_roles": [], "skills": [], "location_rule": {}, "preferred_companies": []}
+            "graduation_year": getattr(profile, 'graduation_year', None),
+        } if profile else {"preferred_roles": [], "skills": [], "location_rule": {}, "preferred_companies": [], "graduation_year": None}
+        telegram_chat_id = getattr(profile, 'telegram_chat_id', None) if profile else None
     except Exception:
-        profile_dict = {"preferred_roles": [], "skills": [], "location_rule": {}, "preferred_companies": []}
+        profile_dict = {"preferred_roles": [], "skills": [], "location_rule": {}, "preferred_companies": [], "graduation_year": None}
 
     # simple dedupe by title+company
     seen = set()
@@ -75,8 +80,9 @@ async def fetch_internships(user_id: str, sources: list[str] = Query(default=["c
         if key in seen:
             continue
         seen.add(key)
-        # initial eligibility from raw text
-        eligibility = detect_year_fit((item.get("title") or "") + " " + (item.get("description") or ""))
+        # initial eligibility from raw text (now with graduation year awareness)
+        grad_year = profile_dict.get("graduation_year")
+        eligibility = detect_year_fit((item.get("title") or "") + " " + (item.get("description") or ""), grad_year)
 
         # attempt to fetch the apply/source link and extract richer fields
         # Skip for Telegram — t.me URLs don't yield job-parseable HTML and cause slow loops
@@ -190,7 +196,35 @@ async def fetch_internships(user_id: str, sources: list[str] = Query(default=["c
         added += 1
 
     await db.commit()
-    response = {"fetched": len(all_raw), "saved": added}
+
+    # --- Auto-send eligible notices to Telegram ---
+    tg_sent = 0
+    if telegram_chat_id and added > 0:
+        try:
+            # Re-fetch all new notices to send to Telegram
+            q = await db.execute(select(Notice).order_by(Notice.fetched_at.desc()).limit(added))
+            new_notices = q.scalars().all()
+            for n in new_notices:
+                n_dict = {
+                    "title": n.title, "company": n.company,
+                    "description": n.raw_text, "source": n.source,
+                    "location": n.location, "apply_link": n.portal_link,
+                    "eligibility_status": n.eligibility_status,
+                }
+                score_info = {
+                    "score": n.score or 0,
+                    "breakdown": n.score_breakdown or {},
+                }
+                # Only send eligible notices with score >= 4.0
+                if n.eligibility_status in ("eligible", "maybe", None) and (n.score or 0) >= 4.0:
+                    result = await send_notice_to_telegram(telegram_chat_id, n_dict, score_info)
+                    if result.get("ok"):
+                        tg_sent += 1
+            logger.info(f"[Internships] Sent {tg_sent}/{added} notices to Telegram chat {telegram_chat_id}")
+        except Exception as e:
+            logger.error(f"[Internships] Telegram send failed: {e}")
+
+    response = {"fetched": len(all_raw), "saved": added, "telegram_sent": tg_sent}
     if warnings:
         response["warnings"] = warnings
     return response
@@ -205,9 +239,13 @@ async def get_ranked_internships(user_id: str, limit: int = 20, sources: list[st
         profile = res.scalar_one_or_none()
         profile_dict = {
             "preferred_roles": profile.preferred_roles or [],
-        } if profile else {"preferred_roles": []}
+            "skills": profile.skills or [],
+            "location_rule": profile.location_rule or {},
+            "preferred_companies": getattr(profile, 'preferred_companies', []) or [],
+            "graduation_year": getattr(profile, 'graduation_year', None),
+        } if profile else {"preferred_roles": [], "skills": [], "location_rule": {}, "preferred_companies": [], "graduation_year": None}
     except Exception:
-        profile_dict = {"preferred_roles": []}
+        profile_dict = {"preferred_roles": [], "skills": [], "location_rule": {}, "preferred_companies": [], "graduation_year": None}
 
     if sources:
         lowered = [s.lower() for s in sources]
@@ -272,3 +310,65 @@ async def get_notice(notice_id: str, db: AsyncSession = Depends(get_db)):
     if not n:
         raise HTTPException(404, "Notice not found")
     return n
+
+
+@router.post("/send-telegram/{user_id}")
+async def send_to_telegram(
+    user_id: str,
+    min_score: float = 4.0,
+    limit: int = 20,
+    db: AsyncSession = Depends(get_db),
+):
+    """Send eligible internship notices to the user's Telegram chat."""
+    from backend.models.user import UserProfile
+
+    res = await db.execute(select(UserProfile).where(UserProfile.user_id == user_id))
+    profile = res.scalar_one_or_none()
+    if not profile:
+        raise HTTPException(404, "Profile not found. Upload a resume first.")
+
+    chat_id = getattr(profile, "telegram_chat_id", None)
+    if not chat_id:
+        raise HTTPException(
+            400,
+            "No Telegram chat ID configured. Set it in your profile settings.",
+        )
+
+    profile_dict = {
+        "preferred_roles": profile.preferred_roles or [],
+        "skills": profile.skills or [],
+        "location_rule": profile.location_rule or {},
+        "preferred_companies": getattr(profile, 'preferred_companies', []) or [],
+        "graduation_year": getattr(profile, 'graduation_year', None),
+    }
+
+    # Fetch and score notices
+    q = await db.execute(select(Notice).order_by(Notice.fetched_at.desc()).limit(100))
+    notices = q.scalars().all()
+
+    sent = 0
+    skipped = 0
+    for n in notices:
+        n_dict = {
+            "id": n.id, "title": n.title, "company": n.company,
+            "description": n.raw_text, "eligibility_text": n.eligibility_text,
+            "apply_link": n.portal_link, "posted_date": n.fetched_at,
+            "mode": None, "source": n.source, "location": n.location,
+        }
+        scored = score_notice_detailed(n_dict, profile_dict, github_repos=None)
+
+        # Filter: only eligible + above min_score
+        elig = n.eligibility_status or "unknown"
+        score = scored.get("score", 0)
+        if elig == "not_eligible" or score < min_score:
+            skipped += 1
+            continue
+        if sent >= limit:
+            break
+
+        n_dict["eligibility_status"] = elig
+        result = await send_notice_to_telegram(chat_id, n_dict, scored)
+        if result.get("ok"):
+            sent += 1
+
+    return {"sent": sent, "skipped": skipped, "chat_id": chat_id}

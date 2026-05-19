@@ -138,4 +138,18 @@ export const api = {
     req<any>(`/applied/${appliedId}`, { method: "PATCH", body: JSON.stringify(update) }),
 
   deleteAppliedNotice: (appliedId: string) => req<any>(`/applied/${appliedId}`, { method: "DELETE" }),
+
+  // --- Profile Settings ---
+  updateProfile: (userId: string, update: { graduation_year?: number; telegram_chat_id?: string; preferred_roles?: string[]; skills?: string[] }) =>
+    req<any>(`/profile/${userId}`, {
+      method: "PATCH",
+      body: JSON.stringify(update),
+    }),
+
+  // --- Telegram ---
+  sendToTelegram: (userId: string, minScore = 4.0, limit = 20) =>
+    req<{ sent: number; skipped: number; chat_id: string }>(
+      `/internships/send-telegram/${userId}?min_score=${minScore}&limit=${limit}`,
+      { method: "POST" },
+    ),
 };

@@ -87,7 +87,7 @@ export async function renderDashboard() {
   }
 }
 
-// Profile page 
+// Profile page
 export async function renderProfile() {
   const el = document.getElementById("page-profile")!;
   el.innerHTML = `
@@ -103,7 +103,35 @@ export async function renderProfile() {
           </div>
           <div style="margin-top:16px" id="upload-status"></div>
         </div>
+
+        <!-- ⚙️ Settings Card -->
+        <div class="section-header" style="margin-top:24px"><span class="section-title">⚙️ Profile Settings</span></div>
+        <div class="card" id="settings-card">
+          <div class="form-group">
+            <label class="card-title" for="grad-year-input">Graduation Year</label>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">
+              e.g. 2028 — used to detect if you're eligible for internships targeted at specific batches
+            </div>
+            <input class="form-input" id="grad-year-input" type="number" min="2024" max="2032"
+              placeholder="e.g. 2028" style="width:160px" />
+          </div>
+          <div class="form-group" style="margin-top:16px">
+            <label class="card-title" for="tg-chat-id-input">✈️ Telegram Chat ID</label>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">
+              1. Create a bot via <a href="https://t.me/BotFather" target="_blank" style="color:var(--accent-light)">@BotFather</a> and add <code>TELEGRAM_BOT_TOKEN</code> to <code>.env</code><br/>
+              2. Message your bot, then visit <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code> to find your chat ID
+            </div>
+            <input class="form-input" id="tg-chat-id-input" type="text"
+              placeholder="e.g. 123456789 or @yourchannel" style="width:100%;max-width:320px" />
+          </div>
+          <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+            <button class="btn btn-primary btn-sm" id="save-settings-btn">💾 Save Settings</button>
+            <button class="btn btn-secondary btn-sm" id="send-telegram-btn">✈️ Send Eligible to Telegram</button>
+          </div>
+          <div id="settings-status" style="margin-top:10px;font-size:13px"></div>
+        </div>
       </div>
+
       <div>
         <div class="section-header"><span class="section-title">Current Profile</span></div>
         <div class="card" id="profile-card">
@@ -139,7 +167,7 @@ export async function renderProfile() {
     try {
       const uploadRes = await api.uploadResume(USER_ID, file);
       statusEl.innerHTML = `<div style="display:flex;align-items:center;gap:8px"><div class="spinner"></div> Parsing…</div>`;
-      const parseRes = await api.parseResume(uploadRes.resume_id);
+      await api.parseResume(uploadRes.resume_id);
       toast("Resume parsed successfully!", "success");
       statusEl.innerHTML = `<button class="btn btn-primary btn-sm" id="refresh-profile-btn"> Refresh Profile</button>`;
       document.getElementById("refresh-profile-btn")?.addEventListener("click", loadProfile);
@@ -152,10 +180,33 @@ export async function renderProfile() {
 
   async function loadProfile() {
     const card = document.getElementById("profile-card")!;
+    const gradInput = document.getElementById("grad-year-input") as HTMLInputElement;
+    const tgInput = document.getElementById("tg-chat-id-input") as HTMLInputElement;
     try {
       const profile = await api.getProfile(USER_ID) as any;
+
+      // Populate settings inputs
+      if (profile.graduation_year) gradInput.value = String(profile.graduation_year);
+      if (profile.telegram_chat_id) tgInput.value = profile.telegram_chat_id;
+
+      const gradYearDisplay = profile.graduation_year
+        ? `<span style="color:var(--accent-light);font-weight:600">${profile.graduation_year}</span>`
+        : `<span style="color:var(--text-muted);font-style:italic">Not set — set in ⚙️ Settings</span>`;
+
+      const tgDisplay = profile.telegram_chat_id
+        ? `<span style="color:#10b981;font-weight:600">✅ ${profile.telegram_chat_id}</span>`
+        : `<span style="color:var(--text-muted);font-style:italic">Not configured</span>`;
+
       card.innerHTML = `
         <div class="form-group">
+          <div class="card-title"> Graduation Year</div>
+          <div style="font-size:14px;margin-top:4px">${gradYearDisplay}</div>
+        </div>
+        <div class="form-group" style="margin-top:12px">
+          <div class="card-title">✈️ Telegram Alerts</div>
+          <div style="font-size:14px;margin-top:4px">${tgDisplay}</div>
+        </div>
+        <div class="form-group" style="margin-top:12px">
           <div class="card-title">Skills</div>
           <div class="tag-list">${(profile.skills || []).map((s: string) => `<span class="tag">${s}</span>`).join("")}</div>
         </div>
@@ -180,12 +231,66 @@ export async function renderProfile() {
         </div>
       `;
     } catch {
-      
+      // Profile not found yet — that's OK
     }
   }
 
+  // Save settings button
+  document.getElementById("save-settings-btn")?.addEventListener("click", async () => {
+    const btn = document.getElementById("save-settings-btn") as HTMLButtonElement;
+    const statusDiv = document.getElementById("settings-status")!;
+    const gradYearRaw = (document.getElementById("grad-year-input") as HTMLInputElement).value.trim();
+    const tgChatId = (document.getElementById("tg-chat-id-input") as HTMLInputElement).value.trim();
+
+    const update: Record<string, any> = {};
+    if (gradYearRaw) update.graduation_year = parseInt(gradYearRaw, 10);
+    if (tgChatId) update.telegram_chat_id = tgChatId;
+
+    if (Object.keys(update).length === 0) {
+      toast("Nothing to save — fill in at least one field.", "info");
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Saving…";
+    statusDiv.textContent = "";
+    try {
+      await api.updateProfile(USER_ID, update);
+      toast("Settings saved!", "success");
+      statusDiv.innerHTML = `<span style="color:#10b981">✅ Saved successfully</span>`;
+      loadProfile();
+    } catch (e: any) {
+      toast(e.message, "error");
+      statusDiv.innerHTML = `<span style="color:var(--danger)">${e.message}</span>`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "💾 Save Settings";
+    }
+  });
+
+  // Send to Telegram button
+  document.getElementById("send-telegram-btn")?.addEventListener("click", async () => {
+    const btn = document.getElementById("send-telegram-btn") as HTMLButtonElement;
+    const statusDiv = document.getElementById("settings-status")!;
+    btn.disabled = true;
+    btn.textContent = "Sending…";
+    statusDiv.textContent = "";
+    try {
+      const res = await api.sendToTelegram(USER_ID, 4.0, 20);
+      toast(`✅ Sent ${res.sent} notices to Telegram (${res.skipped} skipped)`, "success");
+      statusDiv.innerHTML = `<span style="color:#10b981">✅ Sent ${res.sent} eligible notices to Telegram • ${res.skipped} below threshold or not eligible</span>`;
+    } catch (e: any) {
+      toast(e.message, "error");
+      statusDiv.innerHTML = `<span style="color:var(--danger)">${e.message}</span>`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "✈️ Send Eligible to Telegram";
+    }
+  });
+
   loadProfile();
 }
+
 
 // Job list page
 export async function renderJobs() {

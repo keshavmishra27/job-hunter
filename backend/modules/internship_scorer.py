@@ -1,3 +1,4 @@
+import re
 from datetime import datetime, timezone
 from loguru import logger
 
@@ -7,7 +8,44 @@ def _text_of(notice: dict) -> str:
     return " ".join(parts).lower()
 
 
-def _year_fit_score(notice: dict) -> float:
+# Words that indicate a year is a graduation year (including common typos like "gards")
+_GRAD_TRIGGERS = [
+    "grad", "grads", "gard", "gards", "graduate", "graduates",
+    "batch", "passout", "pass out", "pass-out",
+    "graduating", "graduating in", "class of",
+    "fresher", "freshers",
+]
+
+
+def _extract_grad_years(text: str) -> set[int]:
+    """
+    Extract graduation years explicitly mentioned in a job/internship posting.
+    Handles patterns like:
+      - "For 2024, 2025 grads"
+      - "2024 batch"
+      - "graduating in 2025"
+      - "class of 2025"
+      - "2024-2025 passouts"
+      - "2025 gards" (typo for grads)
+    """
+    t = text.lower()
+    years: set[int] = set()
+
+    for trigger in _GRAD_TRIGGERS:
+        if trigger not in t:
+            continue
+        for m in re.finditer(re.escape(trigger), t):
+            # Scan ±100 chars around the trigger for 4-digit years
+            window_start = max(0, m.start() - 100)
+            window_end   = min(len(t), m.end() + 100)
+            context = t[window_start:window_end]
+            for yr in re.findall(r'\b(202[0-9]|203[0-2])\b', context):
+                years.add(int(yr))
+
+    return years
+
+
+def _year_fit_score(notice: dict, profile: dict | None = None) -> float:
     t = _text_of(notice)
 
     # Explicit 3rd-year/pre-final confirmation -> full score
@@ -27,6 +65,25 @@ def _year_fit_score(notice: dict) -> float:
     for kw in EXCLUDE:
         if kw in t:
             return 0.0
+
+    # --- Graduation year check (KEY FIX) ---
+    # If the posting explicitly targets specific graduation years,
+    # check whether the user's graduation year is in that list.
+    if profile:
+        user_grad_year = profile.get("graduation_year")
+        if user_grad_year:
+            mentioned_years = _extract_grad_years(t)
+            if mentioned_years:
+                if user_grad_year in mentioned_years:
+                    logger.debug(
+                        f"[YearFit] Grad year {user_grad_year} found in posting years {mentioned_years} → eligible"
+                    )
+                    return 1.0
+                else:
+                    logger.debug(
+                        f"[YearFit] Grad year {user_grad_year} NOT in posting years {mentioned_years} → not eligible"
+                    )
+                    return 0.0
 
     # No year restriction mentioned -> treat as open to all years
     return 1.0
@@ -97,7 +154,7 @@ def _deadline_urgency_score(notice: dict) -> float:
 
 def score_notice_detailed(notice: dict, profile: dict, github_repos: list[dict] | None = None) -> dict:
     """Score a notice on a 0-10 scale and return breakdown and matched skills/projects."""
-    year = _year_fit_score(notice)
+    year = _year_fit_score(notice, profile)
     role, matched_roles = _role_score(notice, profile)
     skill, matched_skills = _skill_score(notice, profile)
     loc = _location_score(notice, profile)

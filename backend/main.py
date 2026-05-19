@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from loguru import logger
 from pathlib import Path
 
-from backend.database import init_db
+from backend.database import init_db, engine
 from backend.config import get_settings
 from backend.routers import (
     profile_router,
@@ -33,6 +33,21 @@ async def lifespan(app: FastAPI):
     Path(settings.storage_dir + "/resumes").mkdir(parents=True, exist_ok=True)
     logger.info("Initialising database tables...")
     await init_db()
+
+    # Lightweight schema migrations — safely add new columns if missing
+    from sqlalchemy import text
+    async with engine.begin() as conn:
+        migrations = [
+            "ALTER TABLE user_profiles ADD COLUMN graduation_year INTEGER",
+            "ALTER TABLE user_profiles ADD COLUMN telegram_chat_id VARCHAR",
+        ]
+        for stmt in migrations:
+            try:
+                await conn.execute(text(stmt))
+                logger.info(f"[Migration] Applied: {stmt}")
+            except Exception:
+                pass  # Column already exists — fine
+
     logger.success("Job Hunter API ready.")
     yield
     logger.info("Shutting down.")

@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     linkedin_email: str = ""
     linkedin_password: str = ""
 
+    telegram_bot_token: str = ""
+    github_token: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:

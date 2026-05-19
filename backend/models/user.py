@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import String, Boolean, DateTime, ForeignKey
+from sqlalchemy import String, Boolean, DateTime, Integer, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.sqlite import JSON
 from backend.database import Base
@@ -30,6 +30,8 @@ class UserProfile(Base):
     preferred_roles: Mapped[list | None] = mapped_column(JSON)
     location_rule: Mapped[dict | None] = mapped_column(JSON)
     resume_summary: Mapped[str | None] = mapped_column(String)
+    graduation_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    telegram_chat_id: Mapped[str | None] = mapped_column(String, nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     user: Mapped["User"] = relationship("User", back_populates="profile")

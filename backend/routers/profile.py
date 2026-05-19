@@ -2,6 +2,7 @@ import os
 import shutil
 from pathlib import Path
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from backend.database import get_db
@@ -88,4 +89,46 @@ async def get_profile(user_id: str, db: AsyncSession = Depends(get_db)):
         "preferred_roles": profile.preferred_roles,
         "location_rule": profile.location_rule,
         "resume_summary": profile.resume_summary,
+        "graduation_year": profile.graduation_year,
+        "telegram_chat_id": profile.telegram_chat_id,
     }
+
+
+class ProfileUpdate(BaseModel):
+    graduation_year: int | None = None
+    telegram_chat_id: str | None = None
+    preferred_roles: list[str] | None = None
+    skills: list[str] | None = None
+
+
+@router.patch("/{user_id}")
+async def update_profile(user_id: str, update: ProfileUpdate, db: AsyncSession = Depends(get_db)):
+    """Update profile fields (graduation year, Telegram chat ID, roles, skills)."""
+    result = await db.execute(select(UserProfile).where(UserProfile.user_id == user_id))
+    profile = result.scalar_one_or_none()
+
+    if not profile:
+        # Create minimal profile so user can save settings without a resume
+        profile = UserProfile(user_id=user_id)
+        db.add(profile)
+
+    if update.graduation_year is not None:
+        profile.graduation_year = update.graduation_year
+    if update.telegram_chat_id is not None:
+        profile.telegram_chat_id = update.telegram_chat_id
+    if update.preferred_roles is not None:
+        profile.preferred_roles = update.preferred_roles
+    if update.skills is not None:
+        profile.skills = update.skills
+
+    await db.commit()
+    await db.refresh(profile)
+
+    return {
+        "message": "Profile updated.",
+        "graduation_year": profile.graduation_year,
+        "telegram_chat_id": profile.telegram_chat_id,
+        "preferred_roles": profile.preferred_roles,
+        "skills": profile.skills,
+    }
+
