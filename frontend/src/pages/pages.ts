@@ -653,6 +653,14 @@ export async function renderInternships() {
                   <span class="score-value">${Math.round((v as number)*100)}%</span>
                 </div>`).join("")}
               </div>` : ""}
+
+            <div class="card-title" style="margin-top:20px">🔗 GitHub Project Match</div>
+            <div id="project-match-container" style="margin-top:8px">
+              <div style="display:flex;gap:8px;align-items:center;color:var(--text-muted);font-size:13px">
+                <div class="spinner" style="width:16px;height:16px;border-width:2px"></div> Matching your repos…
+              </div>
+            </div>
+
             ${n.links?.length ? `<div class="card-title" style="margin-top:16px">Extracted Links</div>
               ${n.links.map((l: any) => `<div style="margin:4px 0">
                 <a href="${l.url}" target="_blank" style="color:var(--accent-light);font-size:13px">${l.text || l.url}</a>
@@ -660,6 +668,73 @@ export async function renderInternships() {
               </div>`).join("")}` : ""}
             ${n.portal_link ? `<a href="${n.portal_link}" target="_blank" class="btn btn-primary" style="margin-top:20px;display:inline-flex">Apply Now →</a>` : ""}
           `);
+
+          // Async: load project matches
+          try {
+            const pm = await api.projectMatch(id);
+            const container = document.getElementById("project-match-container");
+            if (!container) return;
+
+            if (!pm.matches.length) {
+              container.innerHTML = `<div style="font-size:13px;color:var(--text-muted);padding:8px 0">
+                No matching repos found.
+                ${pm.notice_keywords.length ? `<br><span style="font-size:12px">Detected keywords: ${pm.notice_keywords.join(", ")}</span>` : ""}
+              </div>`;
+              return;
+            }
+
+            container.innerHTML = `
+              ${pm.notice_keywords.length ? `<div style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:6px">
+                ${pm.notice_keywords.map((kw: string) => `<span style="
+                  padding:2px 8px;border-radius:4px;font-size:11px;
+                  background:rgba(99,102,241,0.15);color:#818cf8;
+                  border:1px solid rgba(99,102,241,0.3)
+                ">${kw}</span>`).join("")}
+              </div>` : ""}
+              ${pm.matches.map((m: any) => {
+                const pctColor = m.match_pct >= 60 ? "#10b981" : m.match_pct >= 30 ? "#f59e0b" : "#6b7280";
+                return `<div style="
+                  display:flex;align-items:center;gap:12px;
+                  padding:10px 12px;margin-bottom:8px;border-radius:8px;
+                  background:rgba(255,255,255,0.03);
+                  border:1px solid rgba(255,255,255,0.06);
+                  transition:background 0.2s
+                " onmouseover="this.style.background='rgba(255,255,255,0.06)'"
+                   onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                  <div style="
+                    width:44px;height:44px;border-radius:50%;
+                    display:flex;align-items:center;justify-content:center;
+                    background:conic-gradient(${pctColor} ${m.match_pct * 3.6}deg, rgba(255,255,255,0.08) 0);
+                    font-size:12px;font-weight:700;color:${pctColor};flex-shrink:0;
+                    position:relative
+                  ">
+                    <div style="
+                      width:34px;height:34px;border-radius:50%;
+                      background:var(--bg-card);display:flex;
+                      align-items:center;justify-content:center
+                    ">${m.match_pct}%</div>
+                  </div>
+                  <div style="flex:1;min-width:0">
+                    <a href="${m.repo_url}" target="_blank" style="
+                      color:var(--accent-light);font-weight:600;font-size:14px;
+                      text-decoration:none;display:flex;align-items:center;gap:6px
+                    ">
+                      📁 ${m.repo_name}
+                      <span style="
+                        font-size:11px;padding:1px 6px;border-radius:4px;
+                        background:rgba(255,255,255,0.08);color:var(--text-muted);
+                        font-weight:400
+                      ">${m.language}</span>
+                      ${m.stars ? `<span style="font-size:11px;color:var(--text-muted)">⭐ ${m.stars}</span>` : ""}
+                    </a>
+                    ${m.description ? `<div style="font-size:12px;color:var(--text-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.description}</div>` : ""}
+                    <div style="font-size:11px;color:var(--text-secondary);margin-top:3px">${m.reasons.join(" · ")}</div>
+                  </div>
+                </div>`;
+              }).join("")}
+            `;
+          } catch { /* project match failed silently */ }
+
         } catch (e: any) { toast(e.message, "error"); }
       });
     });

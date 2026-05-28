@@ -346,6 +346,137 @@ async def get_ranked_internships(user_id: str, limit: int = 20, sources: list[st
     return out
 
 
+@router.get("/{notice_id}/project-match")
+async def get_project_match(notice_id: str, user_id: str = "demo-user-1", db: AsyncSession = Depends(get_db)):
+    """Match a notice against the user's GitHub repos by skills/languages/keywords."""
+    from backend.models.github import RepoEntry
+
+    # Get the notice
+    res = await db.execute(select(Notice).where(Notice.id == notice_id))
+    notice = res.scalar_one_or_none()
+    if not notice:
+        raise HTTPException(404, "Notice not found")
+
+    # Get user's repos
+    repo_res = await db.execute(
+        select(RepoEntry).where(RepoEntry.user_id == user_id)
+    )
+    repos = repo_res.scalars().all()
+    if not repos:
+        return {"matches": [], "notice_keywords": []}
+
+    # Extract keywords from the notice (title + raw_text + description)
+    notice_text = " ".join(filter(None, [
+        notice.title or "",
+        notice.raw_text or "",
+        notice.eligibility_text or "",
+    ])).lower()
+
+    # Common tech/skill keywords to look for
+    TECH_KEYWORDS = {
+        "python", "java", "javascript", "typescript", "react", "angular", "vue",
+        "node", "nodejs", "express", "django", "flask", "fastapi", "spring",
+        "sql", "mysql", "postgresql", "postgres", "mongodb", "redis", "sqlite",
+        "docker", "kubernetes", "aws", "azure", "gcp", "cloud",
+        "machine learning", "ml", "deep learning", "ai", "artificial intelligence",
+        "data science", "data analysis", "data engineering", "pandas", "numpy",
+        "tensorflow", "pytorch", "keras", "scikit-learn",
+        "html", "css", "tailwind", "bootstrap", "sass",
+        "git", "github", "ci/cd", "devops", "jenkins",
+        "api", "rest", "graphql", "microservices",
+        "android", "ios", "flutter", "react native", "kotlin", "swift",
+        "c++", "c#", "rust", "go", "golang", "ruby", "php", "scala",
+        "nlp", "computer vision", "opencv", "llm",
+        "blockchain", "web3", "solidity",
+        "figma", "ui/ux", "design",
+        "excel", "power bi", "tableau",
+        "linux", "bash", "shell",
+        "selenium", "testing", "automation",
+        "agile", "scrum", "jira",
+    }
+
+    # Find which tech keywords appear in the notice
+    notice_keywords = set()
+    for kw in TECH_KEYWORDS:
+        if kw in notice_text:
+            notice_keywords.add(kw)
+
+    # Also check title words as potential keywords
+    title_words = set(w.lower().strip(".,;:!?()[]") for w in (notice.title or "").split() if len(w) > 2)
+
+    # Score each repo
+    matches = []
+    for repo in repos:
+        if repo.is_fork or repo.is_archived:
+            continue
+
+        score = 0.0
+        reasons = []
+
+        # 1) Language match (40% weight)
+        repo_languages = set()
+        if repo.languages_all and isinstance(repo.languages_all, dict):
+            repo_languages = {lang.lower() for lang in repo.languages_all.keys()}
+        elif repo.language:
+            repo_languages = {repo.language.lower()}
+
+        lang_overlap = notice_keywords & repo_languages
+        if lang_overlap:
+            score += 0.4 * min(len(lang_overlap) / max(len(notice_keywords & TECH_KEYWORDS), 1), 1.0)
+            reasons.append(f"Languages: {', '.join(sorted(lang_overlap))}")
+
+        # 2) Topic match (30% weight)
+        repo_topics = set(t.lower() for t in (repo.topics or []))
+        topic_text = " ".join(repo_topics)
+        repo_desc = (repo.description or "").lower()
+        repo_name = (repo.name or "").lower()
+        repo_all_text = f"{topic_text} {repo_desc} {repo_name}"
+
+        kw_matches = set()
+        for kw in notice_keywords:
+            if kw in repo_all_text:
+                kw_matches.add(kw)
+
+        if kw_matches:
+            score += 0.3 * min(len(kw_matches) / max(len(notice_keywords), 1), 1.0)
+            reasons.append(f"Keywords: {', '.join(sorted(kw_matches))}")
+
+        # 3) Title word overlap (20% weight)
+        repo_words = set(repo_name.replace("-", " ").replace("_", " ").split())
+        repo_words |= set(repo_desc.split()) if repo_desc else set()
+        repo_words |= repo_topics
+        title_overlap = title_words & repo_words
+        if title_overlap:
+            score += 0.2 * min(len(title_overlap) / max(len(title_words), 1), 1.0)
+
+        # 4) Bonus for recent activity (10% weight)
+        if repo.last_push:
+            from datetime import timedelta
+            if (datetime.utcnow() - repo.last_push) < timedelta(days=90):
+                score += 0.1
+                reasons.append("Recently active")
+
+        if score > 0.05:
+            matches.append({
+                "repo_name": repo.name,
+                "repo_url": repo.html_url,
+                "language": repo.language or "—",
+                "description": (repo.description or "")[:120],
+                "stars": repo.stars,
+                "match_pct": round(score * 100),
+                "reasons": reasons,
+            })
+
+    # Sort by match percentage, top 5
+    matches.sort(key=lambda m: m["match_pct"], reverse=True)
+    matches = matches[:5]
+
+    return {
+        "matches": matches,
+        "notice_keywords": sorted(notice_keywords),
+    }
+
+
 @router.get("/{notice_id}")
 async def get_notice(notice_id: str, db: AsyncSession = Depends(get_db)):
     res = await db.execute(select(Notice).where(Notice.id == notice_id))

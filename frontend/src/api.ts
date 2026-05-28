@@ -131,6 +131,11 @@ export const api = {
 
   getNotice: (noticeId: string) => req<any>(`/internships/${noticeId}`),
 
+  projectMatch: (noticeId: string, userId = USER_ID) =>
+    req<{ matches: Array<{ repo_name: string; repo_url: string; language: string; description: string; stars: number; match_pct: number; reasons: string[] }>; notice_keywords: string[] }>(
+      `/internships/${noticeId}/project-match?user_id=${userId}`
+    ),
+
   // applied notices (save/view/dismiss)
   markAppliedNotice: (payload: { user_id: string; notice_id: string; status?: string; notes?: string }) =>
     req<any>(`/applied/mark`, { method: "POST", body: JSON.stringify(payload) }),

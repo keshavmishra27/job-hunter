@@ -26,21 +26,52 @@ from backend.config import get_settings
 # ── Keyword sets ──────────────────────────────────────────────────────────────
 
 SUBJECT_KEYWORDS = {
-    "internship", "intern", "career", "opportunity", "apply",
-    "hiring", "trainee", "fresher", "stipend", "off campus",
-    "opening", "recruitment", "placement",
+    # Internship-specific
+    "internship", "intern", "trainee", "stipend", "off campus",
+    # Job/career-general (your inbox has these from Naukri, Indeed, etc.)
+    "job", "jobs", "career", "opportunity", "apply", "hiring",
+    "vacancy", "vacancies", "opening", "openings", "recruitment",
+    "placement", "fresher", "freshers", "walk-in", "walkin",
+    "position", "role", "joining", "offer letter", "shortlist",
+    "selected", "job fair", "campus drive", "off-campus",
+    "data entry", "developer", "engineer", "analyst", "designer",
+    "work from home", "wfh", "remote",
 }
 
 BODY_KEYWORDS = {
-    "apply now", "portal", "deadline", "selected", "shortlist",
-    "last date", "register", "walk-in", "apply here", "application link",
-    "google form", "apply before", "eligibility", "stipend",
+    "apply now", "apply here", "apply before", "apply by",
+    "application link", "portal", "deadline", "last date",
+    "selected", "shortlist", "shortlisted", "register",
+    "walk-in", "walkin", "google form", "eligibility",
+    "stipend", "salary", "ctc", "lpa", "per month",
+    "job description", "key responsibilities", "requirements",
+    "experience required", "qualification", "resume", "cv",
+    "interview", "job role", "join us", "we are hiring",
+    "immediate joining", "urgent requirement", "openings",
 }
 
 SENDER_HINTS = {
     "careers", "hr", "recruit", "hiring", "talent", "noreply",
-    "jobs", "placement", "internship", "campus",
+    "jobs", "placement", "internship", "campus", "no-reply",
+    "info", "alert", "notification", "updates", "team",
 }
+
+# Known job portal brand names — if any appears in sender domain, auto-pass the filter.
+# Uses substring matching so naukri.com, naukricampus.com, em.naukri.com all match "naukri".
+TRUSTED_PORTAL_BRANDS = {
+    "naukri", "indeed", "foundit", "linkedin", "glassdoor",
+    "monster", "shine", "iimjobs", "instahyre", "cutshort",
+    "wellfound", "angel", "hirist", "freshersworld", "apna",
+    "internshala", "letsintern", "hirect", "workindia", "rozgaar",
+    "timesjobs", "careerbuilder", "simplyhired", "ziprecruiter",
+    "dice", "snaphunt", "lever", "greenhouse", "workday", "icims",
+    "smartrecruiters", "ashbyhq", "breezy",
+}
+
+def _is_trusted_sender(email_addr: str) -> bool:
+    """Check if sender is from a known job portal (substring match on domain)."""
+    domain = _sender_domain(email_addr)
+    return any(brand in domain for brand in TRUSTED_PORTAL_BRANDS)
 
 # Links to always ignore
 JUNK_LINK_PATTERNS = {
@@ -59,6 +90,7 @@ APPLY_LINK_HINTS = {
     "recruit", "application", "register", "join", "form",
     "greenhouse.io", "lever.co", "workday.com", "icims.com",
     "smartrecruiters.com", "ashbyhq.com",
+    "naukri.com", "indeed.com", "foundit.in", "internshala.com",
 }
 
 
@@ -221,21 +253,30 @@ def _extract_apply_link(links: list[dict]) -> str | None:
     return preferred[0] if preferred else (external[0] if external else None)
 
 
+def _sender_domain(email_addr: str) -> str:
+    """Extract domain from email address."""
+    if "@" in email_addr:
+        return email_addr.split("@")[-1].lower()
+    return ""
+
+
 # ── Mail filter ───────────────────────────────────────────────────────────────
 
 def _is_internship_mail(subject: str, sender: str, body_text: str, has_links: bool) -> bool:
     """
-    Decide if an email is internship-related.
-    Requires at least 2 signal matches from:
-    - subject keywords
-    - sender hints
-    - body keywords
-    - presence of external links
+    Decide if an email is job/internship-related.
+    - Emails from TRUSTED_JOB_PORTALS auto-pass (signal = 99).
+    - Otherwise requires at least 2 signal matches from:
+      subject keywords, sender hints, body keywords, external links.
     """
     signals = 0
     subj_low = subject.lower()
     sender_low = sender.lower()
     body_low = body_text.lower()
+
+    # Auto-pass: known job portal domains (Naukri, Indeed, Internshala, etc.)
+    if _is_trusted_sender(sender):
+        return True
 
     # Subject keyword match
     if any(kw in subj_low for kw in SUBJECT_KEYWORDS):
@@ -400,8 +441,36 @@ class GmailFetcher(BaseFetcher):
             ids = msg_ids[0].split()
             logger.info(f"[Gmail] Found {len(ids)} emails in last {days_back} days")
 
-            # Process each email (most recent first, cap at 100)
-            for msg_id in reversed(ids[:100]):
+            # Two-pass approach for speed:
+            # Pass 1: fetch headers only (subject + from) — fast, ~1KB per email
+            # Pass 2: download full body only for emails that look job-related
+            candidates = []
+            for msg_id in reversed(ids[:200]):
+                try:
+                    # Fetch only Subject and From headers (very fast)
+                    status, data = mail.fetch(msg_id, "(BODY.PEEK[HEADER.FIELDS (FROM SUBJECT)])")
+                    if status != "OK" or not data[0]:
+                        continue
+                    header_bytes = data[0][1]
+                    header_msg = email_lib.message_from_bytes(header_bytes)
+                    subj = _decode_header_value(header_msg.get("Subject", ""))
+                    from_hdr = _decode_header_value(header_msg.get("From", ""))
+                    _, sender_addr = parseaddr(from_hdr)
+
+                    # Quick pre-filter: trusted portal brand OR subject keyword match
+                    is_trusted = _is_trusted_sender(sender_addr)
+                    has_kw = any(kw in subj.lower() for kw in SUBJECT_KEYWORDS)
+                    has_sender_hint = any(h in sender_addr.lower() for h in SENDER_HINTS)
+
+                    if is_trusted or has_kw or has_sender_hint:
+                        candidates.append(msg_id)
+                except Exception:
+                    continue
+
+            logger.info(f"[Gmail] {len(candidates)} candidates after header pre-filter")
+
+            # Pass 2: download full body for candidates only (cap at 50)
+            for msg_id in candidates[:50]:
                 try:
                     raw_job = self._process_email(mail, msg_id, user)
                     if raw_job:
