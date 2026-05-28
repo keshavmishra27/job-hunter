@@ -4,17 +4,6 @@ from backend.config import get_settings
 
 settings = get_settings()
 
-try:
-    from openai import AsyncOpenAI
-    OPENAI_AVAILABLE = bool(settings.openai_api_key)
-except ImportError:
-    OPENAI_AVAILABLE = False
-
-try:
-    from groq import AsyncGroq
-    GROQ_AVAILABLE = bool(settings.groq_api_key)
-except ImportError:
-    GROQ_AVAILABLE = False
 
 try:
     from openai import AsyncOpenAI as AsyncOpenRouter
@@ -60,23 +49,6 @@ Rules:
 
 class DraftGenerator:
     async def _call_llm(self, prompt: str) -> str:
-        if OPENAI_AVAILABLE:
-            client = AsyncOpenAI(api_key=settings.openai_api_key)
-            resp = await client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.7,
-            )
-            return resp.choices[0].message.content or ""
-
-        if GROQ_AVAILABLE:
-            client = AsyncGroq(api_key=settings.groq_api_key)
-            resp = await client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.7,
-            )
-            return resp.choices[0].message.content or ""
 
         if OPENROUTER_AVAILABLE:
             client = AsyncOpenRouter(
@@ -96,7 +68,7 @@ class DraftGenerator:
     def _fallback_draft(self) -> str:
         return json.dumps({
             "subject": "Application for Internship",
-            "body": "Please configure OPENAI_API_KEY, GROQ_API_KEY, or OPENROUTER_KEY to enable personalised drafts.",
+            "body": "Please configure OPENROUTER_KEY to enable personalised drafts.",
             "linkedin_message": "Hi, I'm interested in this internship opportunity.",
             "attachment_checklist": ["Resume"],
         })

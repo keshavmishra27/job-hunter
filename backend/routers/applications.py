@@ -47,12 +47,12 @@ async def mark_applied(req: MarkAppliedRequest, db: AsyncSession = Depends(get_d
     if existing.scalar_one_or_none():
         raise HTTPException(409, "Already marked as applied for this job.")
 
-    fp = job_fingerprint({
+    from backend.modules.deduper import canonical_fingerprint
+    fp = canonical_fingerprint({
         "title": job.title,
         "company": job.company,
         "location": job.location,
         "apply_link": job.apply_link,
-        "description": job.description,
     })
 
     follow_up_dt = None
@@ -70,6 +70,7 @@ async def mark_applied(req: MarkAppliedRequest, db: AsyncSession = Depends(get_d
         company_name=job.company,
         role_title=job.title,
         application_link=job.apply_link,
+        canonical_url=job.apply_link,
         source=req.source or job.source,
         job_fingerprint=fp,
         follow_up_date=follow_up_dt,

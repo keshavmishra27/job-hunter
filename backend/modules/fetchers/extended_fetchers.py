@@ -45,7 +45,7 @@ class LinkedInFetcher(BaseFetcher):
         "Accept-Language": "en-US,en;q=0.9",
     }
 
-    async def fetch(self, keywords: list[str], location: str = "India") -> list[RawJob]:
+    async def fetch(self, keywords: list[str], location: str = "India", **kwargs) -> list[RawJob]:
         results: list[RawJob] = []
         # Fetch once combining top 2 keywords — LinkedIn search handles OR well
         query = " OR ".join(keywords[:2])
@@ -118,7 +118,7 @@ class FounditFetcher(BaseFetcher):
     source_name = "Foundit"
     BASE_URL = "https://www.foundit.in"
 
-    async def fetch(self, keywords: list[str], location: str = "") -> list[RawJob]:
+    async def fetch(self, keywords: list[str], location: str = "", **kwargs) -> list[RawJob]:
         results: list[RawJob] = []
         for keyword in keywords[:3]:
             query = keyword.replace(" ", "+")
@@ -170,7 +170,7 @@ class FreshersworldFetcher(BaseFetcher):
     source_name = "Freshersworld"
     BASE_URL = "https://www.freshersworld.com"
 
-    async def fetch(self, keywords: list[str], location: str = "") -> list[RawJob]:
+    async def fetch(self, keywords: list[str], location: str = "", **kwargs) -> list[RawJob]:
         results: list[RawJob] = []
         for keyword in keywords[:3]:
             # Freshersworld slug-based URL: more reliable than ?searchkey= query param
@@ -243,7 +243,7 @@ class CutshortFetcher(BaseFetcher):
     source_name = "Cutshort"
     BASE_URL = "https://cutshort.io"
 
-    async def fetch(self, keywords: list[str], location: str = "") -> list[RawJob]:
+    async def fetch(self, keywords: list[str], location: str = "", **kwargs) -> list[RawJob]:
         results: list[RawJob] = []
         for keyword in keywords[:3]:
             query = keyword.replace(" ", "+")
@@ -304,7 +304,7 @@ class WellfoundFetcher(BaseFetcher):
     source_name = "Wellfound"
     BASE_URL = "https://wellfound.com"
 
-    async def fetch(self, keywords: list[str], location: str = "") -> list[RawJob]:
+    async def fetch(self, keywords: list[str], location: str = "", **kwargs) -> list[RawJob]:
         # Wellfound blocks unauthenticated scrapers with 403 Forbidden.
         # This source is disabled until a valid auth token or API key is available.
         logger.warning(
@@ -321,7 +321,7 @@ class WorkAtAStartupFetcher(BaseFetcher):
     source_name = "WorkAtAStartup"
     BASE_URL = "https://www.workatastartup.com"
 
-    async def fetch(self, keywords: list[str], location: str = "") -> list[RawJob]:
+    async def fetch(self, keywords: list[str], location: str = "", **kwargs) -> list[RawJob]:
         results: list[RawJob] = []
         # The /search endpoint returns 404; use /internships browse page instead
         url = f"{self.BASE_URL}/internships"
@@ -425,7 +425,7 @@ class TelegramChannelFetcher(BaseFetcher):
     def __init__(self, channels: list[tuple[str, str]] | None = None):
         self.channels = channels or DEFAULT_TELEGRAM_CHANNELS
 
-    async def fetch(self, keywords: list[str], location: str = "") -> list[RawJob]:
+    async def fetch(self, keywords: list[str], location: str = "", **kwargs) -> list[RawJob]:
         results: list[RawJob] = []
         async with httpx.AsyncClient(headers=self.HEADERS, timeout=20, follow_redirects=True) as client:
             for username, display_name in self.channels:

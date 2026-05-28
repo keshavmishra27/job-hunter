@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete, func
+from sqlalchemy import select, delete, func, or_
 from backend.database import get_db
 from backend.models import Notice, NoticeLink, AppliedNotice, Source
-from backend.modules.fetchers import InternshalaFetcher, IndeedFetcher, CompanyCareerFetcher, GovtPortalFetcher, TelegramChannelFetcher
+from backend.modules.fetchers import InternshalaFetcher, IndeedFetcher, CompanyCareerFetcher, GovtPortalFetcher, TelegramChannelFetcher, GmailFetcher
 from backend.modules.normalizer import normalize_many
 from backend.modules.internship_matcher import detect_year_fit
 from backend.modules.internship_scorer import score_notice_detailed
@@ -26,6 +26,7 @@ FETCHERS = {
     "companycareers": CompanyCareerFetcher,
     "govtportal": GovtPortalFetcher,
     "telegram": TelegramChannelFetcher,
+    "gmail": GmailFetcher,
 }
 
 
@@ -35,12 +36,25 @@ async def fetch_internships(user_id: str, sources: list[str] = Query(default=["c
     keywords = ["internship"]
     all_raw = []
 
+    # Get applied history
+    from backend.models import Application
+    applied_history = await db.execute(
+        select(Application.job_fingerprint, Application.canonical_url).where(Application.user_id == user_id)
+    )
+    rows = applied_history.fetchall()
+    applied_fingerprints = {r[0] for r in rows if r[0]}
+    applied_urls = {r[1] for r in rows if r[1]}
+
     for source in sources:
         cls = FETCHERS.get(source.lower())
         if not cls:
             continue
         fetcher = cls()
-        raw = await fetcher.fetch(keywords)
+        raw = await fetcher.fetch(
+            keywords, 
+            applied_fingerprints=applied_fingerprints, 
+            applied_urls=applied_urls
+        )
         all_raw.extend(raw)
 
     normalized = normalize_many(all_raw)
@@ -85,11 +99,12 @@ async def fetch_internships(user_id: str, sources: list[str] = Query(default=["c
         eligibility = detect_year_fit((item.get("title") or "") + " " + (item.get("description") or ""), grad_year)
 
         # attempt to fetch the apply/source link and extract richer fields
-        # Skip for Telegram — t.me URLs don't yield job-parseable HTML and cause slow loops
+        # Skip for Telegram and Gmail — already extracted or not applicable
         parsed = {}
         apply_link = item.get("apply_link")
         is_telegram = (item.get("source") or "").startswith("Telegram/")
-        if apply_link and not is_telegram and apply_link.startswith(("http://", "https://")):
+        is_gmail = (item.get("source") or "") == "Gmail"
+        if apply_link and not is_telegram and not is_gmail and apply_link.startswith(("http://", "https://")):
             try:
                 async with httpx.AsyncClient(timeout=10, follow_redirects=True) as client:
                     resp = await client.get(apply_link)
@@ -148,9 +163,27 @@ async def fetch_internships(user_id: str, sources: list[str] = Query(default=["c
         except Exception:
             pass
 
+        # Determine source_type
+        extra = item.get("extra") or {}
+        if is_gmail:
+            src_type = "email"
+        elif is_telegram:
+            src_type = "telegram"
+        else:
+            src_type = "website"
+
+        # Gmail may carry deadline in extra
+        notice_deadline = parsed.get("deadline")
+        if not notice_deadline and extra.get("deadline"):
+            try:
+                notice_deadline = datetime.fromisoformat(extra["deadline"])
+            except Exception:
+                pass
+
         notice = Notice(
             id=item["id"],
             source=item.get("source"),
+            source_type=src_type,
             title=item.get("title"),
             company=item.get("company"),
             location=parsed.get("location") or item.get("location"),
@@ -159,8 +192,10 @@ async def fetch_internships(user_id: str, sources: list[str] = Query(default=["c
             raw_text=parsed.get("raw_text") or item.get("description"),
             eligibility_text=parsed.get("eligibility_text"),
             eligibility_status=eligibility,
-            deadline=parsed.get("deadline"),
+            deadline=notice_deadline,
             stipend=parsed.get("stipend"),
+            sender_email=extra.get("sender_email"),
+            subject=extra.get("subject"),
             fetched_at=datetime.utcnow(),
             content_hash=None,
         )
@@ -249,12 +284,15 @@ async def get_ranked_internships(user_id: str, limit: int = 20, sources: list[st
 
     if sources:
         lowered = [s.lower() for s in sources]
-        # also match Telegram/* source strings
+        # Build conditions: exact match + pattern match only for selected source types
+        conditions = [func.lower(Notice.source).in_(lowered)]
+        if "telegram" in lowered:
+            conditions.append(Notice.source.like("Telegram/%"))
+        if "gmail" in lowered:
+            conditions.append(Notice.source.like("Gmail%"))
+
         q = await db.execute(
-            select(Notice).where(
-                (func.lower(Notice.source).in_(lowered)) |
-                Notice.source.like("Telegram/%")
-            )
+            select(Notice).where(or_(*conditions))
         )
     else:
         q = await db.execute(select(Notice))
@@ -296,9 +334,14 @@ async def get_ranked_internships(user_id: str, limit: int = 20, sources: list[st
             "company": n.company,
             "apply_link": n.portal_link,
             "source": n.source,
+            "source_type": getattr(n, "source_type", None),
             "score": n.score,
             "score_breakdown": n.score_breakdown,
             "eligibility_status": n.eligibility_status,
+            "location": n.location,
+            "deadline": n.deadline.isoformat() if n.deadline else None,
+            "sender_email": getattr(n, "sender_email", None),
+            "subject": getattr(n, "subject", None),
         })
     return out
 

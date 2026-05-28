@@ -21,6 +21,7 @@ from backend.routers import (
     github_router,
     applied_notices_router,
     internships_router,
+    gmail_router,
 )
 
 settings = get_settings()
@@ -40,6 +41,9 @@ async def lifespan(app: FastAPI):
         migrations = [
             "ALTER TABLE user_profiles ADD COLUMN graduation_year INTEGER",
             "ALTER TABLE user_profiles ADD COLUMN telegram_chat_id VARCHAR",
+            "ALTER TABLE notices ADD COLUMN source_type VARCHAR",
+            "ALTER TABLE notices ADD COLUMN sender_email VARCHAR",
+            "ALTER TABLE notices ADD COLUMN subject VARCHAR",
         ]
         for stmt in migrations:
             try:
@@ -77,6 +81,7 @@ app.include_router(applications_router)
 app.include_router(github_router)
 app.include_router(internships_router)
 app.include_router(applied_notices_router)
+app.include_router(gmail_router)
 
 
 @app.get("/health")

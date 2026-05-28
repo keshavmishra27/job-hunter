@@ -20,6 +20,8 @@ class Application(Base):
     source: Mapped[str | None] = mapped_column(String)
 
     job_fingerprint: Mapped[str | None] = mapped_column(String, index=True)
+    source_job_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    canonical_url: Mapped[str | None] = mapped_column(String, nullable=True)
 
     applied_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     follow_up_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

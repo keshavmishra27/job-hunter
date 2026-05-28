@@ -13,6 +13,8 @@ class RawJob:
     apply_link: str | None
     source: str
     posted_date: datetime | None = None
+    canonical_url: str | None = None
+    fingerprint: str | None = None
     extra: dict = field(default_factory=dict)
 
 
@@ -20,7 +22,7 @@ class BaseFetcher(ABC):
     source_name: str = "unknown"
 
     @abstractmethod
-    async def fetch(self, keywords: list[str], location: str = "") -> list[RawJob]:
+    async def fetch(self, keywords: list[str], location: str = "", **kwargs) -> list[RawJob]:
         ...
 
     def _safe_date(self, date_str: str | None) -> datetime | None:

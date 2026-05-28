@@ -27,6 +27,16 @@ def job_fingerprint(job: dict) -> str:
     return hashlib.sha256(key.encode()).hexdigest()
 
 
+def canonical_fingerprint(job: dict) -> str:
+    """Computes a strict fingerprint without description, used for application tracking."""
+    title = _normalise(job.get("title") or "")
+    company = _normalise(job.get("company") or "")
+    location = _normalise(job.get("location") or "")
+    link = (job.get("apply_link") or "").lower().strip()
+    key = "|".join([title, company, location, link])
+    return hashlib.sha256(key.encode()).hexdigest()
+
+
 def deduplicate(
     jobs: list[dict],
     existing_hashes: set[str] | None = None,

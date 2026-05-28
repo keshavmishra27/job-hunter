@@ -7,6 +7,7 @@ from backend.routers.applications import router as applications_router
 from backend.routers.github import router as github_router
 from backend.routers.internships import router as internships_router
 from backend.routers.applied_notices import router as applied_notices_router
+from backend.routers.gmail import router as gmail_router
 
 __all__ = [
     "profile_router",
@@ -18,4 +19,5 @@ __all__ = [
     "github_router",
     "internships_router",
     "applied_notices_router",
+    "gmail_router",
 ]

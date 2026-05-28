@@ -95,7 +95,7 @@ class ResumeParser:
             "research_areas": self._extract_research_areas(text),
             "preferred_roles": self.ROLE_KEYWORDS[:3],
             "location_rule": {
-                "offline_allowed": ["Delhi NCR", "Gurgaon", "Noida"],
+                "offline_allowed": ["Delhi NCR", "Gurgaon", "Noida","Delhi","ghaziabad(hybrid)","ghaziabad","delhi(hybrid)","faridabad","agra, uttar pradesh","uttar pradesh","delhi, delhi","okhla, delhi","paschim vihar, delhi","saket, delhi","naraina, delhi, delhi","hauz khas, delhi, delhi","dilshad garden, delhi, delhi","tilak nagar, delhi, delhi","kirti nagar, delhi, delhi","connaught place, delhi, delhi","badarpur, delhi, delhi","india","India"],
                 "remote_allowed": True,
                 "strict": True,
             },

@@ -12,9 +12,11 @@ from backend.modules.fetchers.extended_fetchers import (
     WorkAtAStartupFetcher,
     TelegramChannelFetcher,
 )
+from backend.modules.fetchers.gmail_fetcher import GmailFetcher
 __all__ = [
     "BaseFetcher", "RawJob",
     "InternshalaFetcher", "IndeedFetcher", "CompanyCareerFetcher", "GovtPortalFetcher",
     "LinkedInFetcher", "FounditFetcher", "FreshersworldFetcher", "CutshortFetcher",
     "WellfoundFetcher", "WorkAtAStartupFetcher", "TelegramChannelFetcher",
+    "GmailFetcher",
 ]

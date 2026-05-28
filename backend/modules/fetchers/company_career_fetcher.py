@@ -8,7 +8,7 @@ from backend.modules.fetchers.base_fetcher import BaseFetcher, RawJob
 class CompanyCareerFetcher(BaseFetcher):
     source_name = "CompanyCareers"
 
-    async def fetch(self, keywords: list[str], location: str = "") -> list[RawJob]:
+    async def fetch(self, keywords: list[str], location: str = "", **kwargs) -> list[RawJob]:
         """Fetch configured company career pages for internship-like listings."""
         results: list[RawJob] = []
         settings = get_settings()

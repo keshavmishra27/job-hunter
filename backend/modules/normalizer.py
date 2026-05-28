@@ -26,16 +26,25 @@ def _clean(text: str | None) -> str | None:
     return re.sub(r"\s+", " ", text.strip())
 
 
+from loguru import logger
+
 def normalize(raw: RawJob) -> dict:
+    if raw.extra is None:
+        logger.warning(f"RawJob.extra was None for source: {raw.source}")
+    extra = raw.extra or {}
+    mode = extra.get("mode") or _infer_mode(raw)
+    
     return {
         "id": str(uuid.uuid4()),
         "source": raw.source,
         "title": _clean(raw.title) or "Untitled",
         "company": _clean(raw.company) or "Unknown",
         "location": _clean(raw.location),
-        "mode": raw.extra.get("mode") or _infer_mode(raw),
+        "mode": mode,
         "description": _clean(raw.description),
         "apply_link": raw.apply_link,
+        "canonical_url": getattr(raw, 'canonical_url', None),
+        "fingerprint": getattr(raw, 'fingerprint', None),
         "posted_date": raw.posted_date,
         "status": "new",
         "fetched_at": datetime.utcnow(),

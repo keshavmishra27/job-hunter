@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "predev:all": "powershell -Command \"Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }; exit 0\"",
-    "dev:all": "concurrently \"..\\.venv\\Scripts\\python -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000 --app-dir ..\" \"npm:dev\" -k",
+    "dev:all": "concurrently \"..\\.venv\\Scripts\\python -m uvicorn backend.main:app --reload --reload-dir ../backend --host 127.0.0.1 --port 8000 --app-dir ..\" \"npm:dev\" -k",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },

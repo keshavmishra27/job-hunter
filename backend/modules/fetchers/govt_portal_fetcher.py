@@ -8,7 +8,7 @@ from backend.modules.fetchers.base_fetcher import BaseFetcher, RawJob
 class GovtPortalFetcher(BaseFetcher):
     source_name = "GovtPortal"
 
-    async def fetch(self, keywords: list[str], location: str = "") -> list[RawJob]:
+    async def fetch(self, keywords: list[str], location: str = "", **kwargs) -> list[RawJob]:
         """Scaffold for semi-structured government portals: find PDF links and announcement pages.
         Returns RawJob entries with the PDF or announcement link in `apply_link`.
         """

@@ -35,8 +35,11 @@ export const api = {
   getProfile: (userId: string) =>
     req<Record<string, unknown>>(`/profile/${userId}`),
 
-  fetchJobs: (userId: string, sources: string[]) =>
-    req<{ fetched: number; new_unique: number; ranked: number }>(`/jobs/fetch?user_id=${userId}&${sources.map((s) => `sources=${s}`).join("&")}`, { method: "POST" }),
+  fetchJobs: (userId: string, sources: string[], forceRefresh = false) =>
+    req<{ fetched: number; new_unique: number; ranked: number }>(
+      `/jobs/fetch?user_id=${userId}&${sources.map((s) => `sources=${s}`).join("&")}&force_refresh=${forceRefresh}`,
+      { method: "POST" }
+    ),
 
   getRankedJobs: (userId: string, limit = 30, includeApplied = false, sources: string[] = ["internshala", "indeed", "naukri"]) =>
     req<any[]>(`/jobs/ranked/${userId}?limit=${limit}&include_applied=${includeApplied}&${sources.map((s) => `sources=${s}`).join("&")}`),
@@ -151,5 +154,17 @@ export const api = {
     req<{ sent: number; skipped: number; chat_id: string }>(
       `/internships/send-telegram/${userId}?min_score=${minScore}&limit=${limit}`,
       { method: "POST" },
+    ),
+
+  // --- Gmail ---
+  gmailStatus: () =>
+    req<{ connected: boolean; email?: string; imap_host?: string; days_back?: number }>("/gmail/status"),
+
+  gmailConnect: () =>
+    req<{ success: boolean; email?: string; inbox_count?: number; error?: string }>("/gmail/connect", { method: "POST" }),
+
+  gmailSync: (userId = USER_ID) =>
+    req<{ success: boolean; internship_matches?: number; notices?: any[]; error?: string }>(
+      `/gmail/sync?user_id=${userId}`, { method: "POST" },
     ),
 };

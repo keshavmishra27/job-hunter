@@ -302,6 +302,7 @@ export async function renderJobs() {
   ];
   let selected = new Set(["internshala", "indeed", "naukri"]);
   let showApplied = false;
+  let fetchAttempted = false;
 
   el.innerHTML = `
     <div class="section-header"><span class="section-title">Fetch & Rank Internships</span></div>
@@ -339,7 +340,8 @@ export async function renderJobs() {
     status.textContent = "";
 
     try {
-      const res = await api.fetchJobs(USER_ID, [...selected]);
+      const res = await api.fetchJobs(USER_ID, [...selected], true);
+      fetchAttempted = true;
       toast(`Fetched ${res.fetched} jobs, ${res.new_unique} new, ${res.ranked} ranked`, "success");
       status.textContent = ` ${res.ranked} ranked`;
       loadJobs();
@@ -351,15 +353,31 @@ export async function renderJobs() {
     }
   });
 
-  async function loadJobs() {
+  async function loadJobs(retryOnStale = true) {
     const list = document.getElementById("jobs-list")!;
     list.innerHTML = `<div style="display:flex;gap:8px;align-items:center"><div class="spinner"></div> Loading ranked jobs…</div>`;
     try {
       const jobs = await api.getRankedJobs(USER_ID, 30, showApplied, [...selected]);
+      const onlyLinkedIn = jobs.length > 0 && jobs.every((j: any) => j.source?.toLowerCase() === "linkedin");
+
+      if (retryOnStale && fetchAttempted && (jobs.length === 0 || onlyLinkedIn)) {
+        list.innerHTML = `<div style="display:flex;gap:8px;align-items:center"><div class="spinner"></div> Fetching new jobs from Internshala & Indeed…</div>`;
+        try {
+          const res = await api.fetchJobs(USER_ID, ["internshala", "indeed"]);
+          toast(`Fetched ${res.new_unique} new jobs from Internshala and Indeed.`, "success");
+          fetchAttempted = true;
+          return loadJobs(false);
+        } catch (e: any) {
+          list.innerHTML = `<div class="empty-state"><div class="empty-icon"></div><div class="empty-title">${e.message}</div></div>`;
+          return;
+        }
+      }
+
       if (!jobs.length) {
         list.innerHTML = `<div class="empty-state"><div class="empty-icon"></div><div class="empty-title">No jobs yet</div><div class="empty-sub">Click "Fetch & Rank" to pull internships.</div></div>`;
         return;
       }
+
       list.innerHTML = jobs.map((j: any) => `
         <div class="job-card" data-job-id="${j.job_id}">
           <div class="job-company-logo">${j.company[0].toUpperCase()}</div>
@@ -480,7 +498,7 @@ export async function renderJobs() {
 export async function renderInternships() {
   const el = document.getElementById("page-internships")!;
 
-  // Source registry: website + Telegram
+  // Source registry: website + Telegram + Gmail
   const WEB_SOURCES = [
     { id: "companycareers", label: "Company Careers", icon: "🏢", type: "website" },
     { id: "govtportal",     label: "Govt Portals",   icon: "🏛️", type: "website" },
@@ -488,17 +506,23 @@ export async function renderInternships() {
   const TG_SOURCES = [
     { id: "telegram", label: "Public Channels", icon: "✈️", type: "telegram" },
   ];
+  const GMAIL_SOURCES = [
+    { id: "gmail", label: "Gmail Inbox", icon: "📧", type: "gmail" },
+  ];
 
   // Each tab has its own independent selection — no bleed-across
-  let webSelected = new Set(["companycareers"]);
-  let tgSelected  = new Set(["telegram"]);
+  let webSelected   = new Set(["companycareers"]);
+  let tgSelected    = new Set(["telegram"]);
+  let gmailSelected = new Set(["gmail"]);
   let activeTab: "all" | "eligible" | "saved" | "applied" = "all";
   let allNotices: any[] = [];
-  let activeSrcTab: "website" | "telegram" = "website";
+  let activeSrcTab: "website" | "telegram" | "gmail" = "website";
 
   // Returns only the sources for the currently visible tab
   function activeSources(): string[] {
-    return activeSrcTab === "website" ? [...webSelected] : [...tgSelected];
+    if (activeSrcTab === "telegram") return [...tgSelected];
+    if (activeSrcTab === "gmail") return [...gmailSelected];
+    return [...webSelected];
   }
 
   // ── Pipeline stage indicator ────────────────────────────────────────────────
@@ -585,8 +609,9 @@ export async function renderInternships() {
           </div>
           <div class="intern-meta">
             <span>🏢 ${n.company || "—"}</span>
-            <span>📡 ${n.source || "—"}</span>
+            <span>${n.source === "Gmail" ? "📧" : "📡"} ${n.source || "—"}</span>
             ${n.location ? `<span>📍 ${n.location}</span>` : ""}
+            ${n.sender_email ? `<span style="font-size:11px;color:var(--text-muted)">✉️ ${n.sender_email}</span>` : ""}
           </div>
         </div>
         <div class="intern-card-right">
@@ -658,9 +683,8 @@ export async function renderInternships() {
     const feed = document.getElementById("intern-feed")!;
     feed.innerHTML = `<div style="display:flex;gap:8px;align-items:center"><div class="spinner"></div> Loading notices…</div>`;
     try {
-      // Show all stored notices regardless of active tab — fetch is tab-scoped, view is global
-      const allSources = [...WEB_SOURCES.map(s => s.id), ...TG_SOURCES.map(s => s.id)];
-      const notices = await api.getRankedInternships(USER_ID, 60, allSources);
+      // Load notices matching the active source tab only
+      const notices = await api.getRankedInternships(USER_ID, 60, activeSources());
       allNotices = notices;
       updateTabCounts(notices);
       renderList(notices);
@@ -696,6 +720,7 @@ export async function renderInternships() {
         <div class="intern-src-tabs">
           <button class="intern-src-tab active" id="srctab-website" data-srctab="website">🌐 Website</button>
           <button class="intern-src-tab" id="srctab-telegram" data-srctab="telegram">✈️ Telegram</button>
+          <button class="intern-src-tab" id="srctab-gmail" data-srctab="gmail">📧 Gmail</button>
         </div>
       </div>
       <div id="src-website-chips" class="source-chips" style="margin-top:12px">
@@ -712,6 +737,15 @@ export async function renderInternships() {
           </button>`).join("")}
         <div style="margin-top:8px;font-size:12px;color:var(--text-muted)">
           Scrapes: @JobsAndInternshipsIndia · @internshipsalert · @internship_update · @HiringIndia · @TechJobsIndia
+        </div>
+      </div>
+      <div id="src-gmail-chips" class="source-chips" style="margin-top:12px;display:none">
+        ${GMAIL_SOURCES.map(s => `
+          <button class="source-chip ${gmailSelected.has(s.id) ? "selected" : ""}" data-source="${s.id}" data-group="gmail">
+            ${s.icon} ${s.label}
+          </button>`).join("")}
+        <div id="gmail-status-line" style="margin-top:8px;font-size:12px;color:var(--text-muted)">
+          Checking connection…
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:12px;margin-top:16px">
@@ -740,7 +774,7 @@ export async function renderInternships() {
   // Source type tab switching (website ↔ telegram)
   el.querySelectorAll(".intern-src-tab").forEach(tab => {
     tab.addEventListener("click", () => {
-      const which = (tab as HTMLElement).dataset.srctab as "website" | "telegram";
+      const which = (tab as HTMLElement).dataset.srctab as "website" | "telegram" | "gmail";
       activeSrcTab = which;
       el.querySelectorAll(".intern-src-tab").forEach(t => t.classList.remove("active"));
       tab.classList.add("active");
@@ -748,6 +782,10 @@ export async function renderInternships() {
         which === "website" ? "flex" : "none";
       (document.getElementById("src-telegram-chips") as HTMLElement).style.display =
         which === "telegram" ? "flex" : "none";
+      (document.getElementById("src-gmail-chips") as HTMLElement).style.display =
+        which === "gmail" ? "flex" : "none";
+      // Reload feed to show only notices for the selected source tab
+      loadNotices();
     });
   });
 
@@ -756,7 +794,7 @@ export async function renderInternships() {
     chip.addEventListener("click", () => {
       const src   = (chip as HTMLElement).dataset.source!;
       const group = (chip as HTMLElement).dataset.group!;
-      const set   = group === "web" ? webSelected : tgSelected;
+      const set   = group === "web" ? webSelected : group === "tg" ? tgSelected : gmailSelected;
       if (set.has(src)) set.delete(src);
       else set.add(src);
       chip.classList.toggle("selected", set.has(src));
@@ -804,6 +842,21 @@ export async function renderInternships() {
       btn.innerHTML = "⚡ Fetch &amp; Process";
     }
   });
+
+  // Fetch Gmail connection status on load
+  (async () => {
+    try {
+      const status = await api.gmailStatus();
+      const el = document.getElementById("gmail-status-line");
+      if (el) {
+        if (status.connected) {
+          el.innerHTML = `<span style="color:#10b981">✅ Connected: ${status.email}</span> · Scans last ${status.days_back} days`;
+        } else {
+          el.innerHTML = `<span style="color:var(--text-muted)">⚠️ Not configured — add GMAIL_USER and GMAIL_APP_PASSWORD to .env</span>`;
+        }
+      }
+    } catch { /* backend offline */ }
+  })();
 
   loadNotices();
 }

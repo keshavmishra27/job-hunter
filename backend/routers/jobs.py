@@ -17,6 +17,8 @@ from backend.modules.fetchers import (
 from backend.modules.normalizer import normalize_many
 from backend.modules.deduper import deduplicate, job_fingerprint, job_signature
 from backend.modules.ranker import rank_jobs, _is_expired, _experience_filter, _duration_filter
+from backend.modules.keyword_expander import expand_keywords, flatten_to_query_list
+from loguru import logger
 
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
 
@@ -36,6 +38,7 @@ FETCHERS = {
 async def fetch_jobs(
     user_id: str,
     sources: list[str] = Query(default=["internshala"]),
+    force_refresh: bool = False,
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(UserProfile).where(UserProfile.user_id == user_id))
@@ -53,21 +56,93 @@ async def fetch_jobs(
         "resume_summary": profile.resume_summary or "",
     }
 
-    keywords = (profile.preferred_roles or [])[:3] + (profile.skills or [])[:3]
+    # Build expanded keyword list using the domain-tree expander.
+    # This widens the search net: a GenAI candidate will also fetch NLP/CV/ML roles.
+    keyword_groups = expand_keywords(
+        skills=profile.skills or [],
+        preferred_roles=profile.preferred_roles or [],
+        max_groups=6,
+    )
+    keywords = flatten_to_query_list(keyword_groups)
+    if not keywords:
+        # Fallback to the old narrow approach if expander returns nothing
+        keywords = (profile.preferred_roles or [])[:3] + (profile.skills or [])[:3]
+    logger.info(f"[Jobs] Using {len(keywords)} expanded keywords for user {user_id}: {keywords[:6]}")
     all_raw = []
 
+    # Determine locations to search
+    location_rule = profile.location_rule or {}
+    search_locations = []
+    
+    if location_rule.get("remote_allowed", False):
+        search_locations.append("Remote")
+        
+    offline_allowed = location_rule.get("offline_allowed", [])
+    if offline_allowed:
+        search_locations.append(offline_allowed[0])
+        
+    if not search_locations:
+        search_locations.append("India")
+
+    # Get applied history
+    applied_history = await db.execute(
+        select(Application.job_fingerprint, Application.canonical_url).where(Application.user_id == user_id)
+    )
+    rows = applied_history.fetchall()
+    applied_fingerprints = {r[0] for r in rows if r[0]}
+    applied_urls = {r[1] for r in rows if r[1]}
+
+    # Fetch concurrently
+    import asyncio
+    fetch_tasks = []
     for source in sources:
         cls = FETCHERS.get(source.lower())
         if not cls:
             continue
         fetcher = cls()
-        raw = await fetcher.fetch(keywords)
-        all_raw.extend(raw)
+        for loc in search_locations:
+            fetch_tasks.append(
+                fetcher.fetch(
+                    keywords,
+                    location=loc,
+                    applied_fingerprints=applied_fingerprints,
+                    applied_urls=applied_urls,
+                    force_refresh=force_refresh,
+                )
+            )
+            
+    results = await asyncio.gather(*fetch_tasks, return_exceptions=True)
+    for res in results:
+        if isinstance(res, Exception):
+            logger.warning(f"[Jobs] Fetch failed: {res}")
+            continue
+        all_raw.extend(res)
 
     normalised = normalize_many(all_raw)
 
     existing_result = await db.execute(select(JobPost.content_hash, JobPost.title, JobPost.company, JobPost.location))
     existing_items = [row for row in existing_result.fetchall()]
+
+    # --- Clean up stale entries with broken/unknown titles ---
+    # These were created by previously broken scrapers (e.g. Internshala selector changes)
+    # and block deduplication of new valid entries with the same company.
+    stale_ids_result = await db.execute(
+        select(JobPost.id).where(
+            (JobPost.title == "Unknown") | (JobPost.title == None) | (JobPost.title == "")
+        )
+    )
+    stale_ids = [row[0] for row in stale_ids_result.fetchall()]
+    if stale_ids:
+        # Remove matches referencing stale jobs
+        await db.execute(delete(JobMatch).where(JobMatch.job_id.in_(stale_ids)))
+        # Remove the stale job posts themselves
+        await db.execute(delete(JobPost).where(JobPost.id.in_(stale_ids)))
+        await db.commit()
+        logger.info(f"[Jobs] Cleaned up {len(stale_ids)} stale entries with missing/unknown titles")
+        # Re-fetch existing items after cleanup
+        existing_result = await db.execute(select(JobPost.content_hash, JobPost.title, JobPost.company, JobPost.location))
+        existing_items = [row for row in existing_result.fetchall()]
+
     existing_hashes = {row[0] for row in existing_items if row[0]}
     existing_signatures = {
         job_signature({"title": row[1], "company": row[2], "location": row[3]})
@@ -79,7 +154,8 @@ async def fetch_jobs(
     applied_fps_result = await db.execute(
         select(Application.job_fingerprint).where(Application.user_id == user_id)
     )
-    applied_fingerprints = {row[0] for row in applied_fps_result.fetchall() if row[0]}
+    # We already have applied_fingerprints from earlier, but let's re-fetch if needed
+    applied_fingerprints_check = {row[0] for row in applied_fps_result.fetchall() if row[0]}
 
     for job_data in unique:
         job = JobPost(
@@ -137,6 +213,8 @@ async def fetch_jobs(
     # Re score ALL existing jobs for this user so that profile changes always reflect correctly
     all_jobs_result = await db.execute(select(JobPost))
     all_jobs = all_jobs_result.scalars().all()
+    from backend.modules.deduper import canonical_fingerprint
+    
     all_jobs_dicts = [
         {
             "id": j.id,
@@ -150,7 +228,12 @@ async def fetch_jobs(
             "source": j.source,
         }
         for j in all_jobs
-        if job_fingerprint({"title": j.title, "company": j.company}) not in applied_fingerprints
+        if canonical_fingerprint({
+            "title": j.title, 
+            "company": j.company,
+            "location": j.location,
+            "apply_link": j.apply_link
+        }) not in applied_fingerprints_check
     ]
 
     ranked = rank_jobs(all_jobs_dicts, profile_dict, github_repos)

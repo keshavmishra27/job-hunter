@@ -25,6 +25,9 @@ class Notice(Base):
     score_breakdown: Mapped[dict | None] = mapped_column(JSON)
     status: Mapped[str] = mapped_column(String, default="new")
     content_hash: Mapped[str | None] = mapped_column(String, unique=True)
+    source_type: Mapped[str | None] = mapped_column(String)  # website / telegram / email
+    sender_email: Mapped[str | None] = mapped_column(String)
+    subject: Mapped[str | None] = mapped_column(String)
     fetched_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     links: Mapped[list["NoticeLink"]] = relationship("NoticeLink", back_populates="notice")
