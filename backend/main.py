@@ -22,6 +22,11 @@ from backend.routers import (
     applied_notices_router,
     internships_router,
     gmail_router,
+    freelancing_router,
+    sources_router,
+    opportunities_router,
+    autopilot_router,
+    tracker_router,
 )
 
 settings = get_settings()
@@ -44,6 +49,38 @@ async def lifespan(app: FastAPI):
             "ALTER TABLE notices ADD COLUMN source_type VARCHAR",
             "ALTER TABLE notices ADD COLUMN sender_email VARCHAR",
             "ALTER TABLE notices ADD COLUMN subject VARCHAR",
+            "ALTER TABLE sources ADD COLUMN category VARCHAR DEFAULT 'internship'",
+            # Phase 1: Enhanced source model columns
+            "ALTER TABLE sources ADD COLUMN source_group VARCHAR DEFAULT 'internship'",
+            "ALTER TABLE sources ADD COLUMN fetch_mode VARCHAR DEFAULT 'html'",
+            "ALTER TABLE sources ADD COLUMN auth_requirement VARCHAR DEFAULT 'none'",
+            "ALTER TABLE sources ADD COLUMN reliability VARCHAR DEFAULT 'medium'",
+            "ALTER TABLE sources ADD COLUMN fallback_modes TEXT",
+            "ALTER TABLE sources ADD COLUMN last_fetch_at DATETIME",
+            "ALTER TABLE sources ADD COLUMN last_fetch_status VARCHAR",
+            "ALTER TABLE sources ADD COLUMN last_fetch_count INTEGER",
+            # Phase 3: Unified opportunity model columns
+            "ALTER TABLE opportunities ADD COLUMN source_group VARCHAR",
+            "ALTER TABLE opportunities ADD COLUMN location VARCHAR",
+            "ALTER TABLE opportunities ADD COLUMN mode VARCHAR",
+            "ALTER TABLE opportunities ADD COLUMN canonical_url VARCHAR",
+            "ALTER TABLE opportunities ADD COLUMN fingerprint VARCHAR",
+            "ALTER TABLE opportunities ADD COLUMN matched_skills TEXT",
+            "ALTER TABLE opportunities ADD COLUMN matched_projects TEXT",
+            "ALTER TABLE opportunities ADD COLUMN enriched_at DATETIME",
+            "ALTER TABLE opportunities ADD COLUMN eligibility_text TEXT",
+            "ALTER TABLE opportunities ADD COLUMN eligibility_status VARCHAR",
+            "ALTER TABLE opportunities ADD COLUMN deadline DATETIME",
+            "ALTER TABLE opportunities ADD COLUMN stipend VARCHAR",
+            # Phase 4: Resume Autopilot fields
+            "ALTER TABLE resumes ADD COLUMN role_tag VARCHAR",
+            "ALTER TABLE resumes ADD COLUMN parsed_skills JSON",
+            "ALTER TABLE resumes ADD COLUMN parsed_summary VARCHAR",
+            # Phase 2 (Autopilot Tracker Overhaul)
+            "ALTER TABLE application_tracker ADD COLUMN resume_used_id VARCHAR",
+            "ALTER TABLE application_tracker ADD COLUMN answers_used JSON",
+            "ALTER TABLE application_tracker ADD COLUMN portal_type VARCHAR",
+            "ALTER TABLE application_tracker ADD COLUMN screenshot_path VARCHAR",
         ]
         for stmt in migrations:
             try:
@@ -51,6 +88,12 @@ async def lifespan(app: FastAPI):
                 logger.info(f"[Migration] Applied: {stmt}")
             except Exception:
                 pass  # Column already exists — fine
+
+    # Seed source registry into DB
+    from backend.database import AsyncSessionLocal
+    from backend.modules.source_registry import seed_sources_to_db
+    async with AsyncSessionLocal() as seed_db:
+        await seed_sources_to_db(seed_db)
 
     logger.success("Job Hunter API ready.")
     yield
@@ -82,7 +125,11 @@ app.include_router(github_router)
 app.include_router(internships_router)
 app.include_router(applied_notices_router)
 app.include_router(gmail_router)
-
+app.include_router(freelancing_router)
+app.include_router(sources_router)
+app.include_router(opportunities_router)
+app.include_router(autopilot_router)
+app.include_router(tracker_router)
 
 @app.get("/health")
 async def health():

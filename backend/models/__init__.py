@@ -9,6 +9,7 @@ from backend.models.source import Source
 from backend.models.notice import Notice, NoticeLink
 from backend.models.alert import Alert
 from backend.models.applied_notice import AppliedNotice
+from backend.models.opportunity import Opportunity, FreelanceDetails, ApplicationTracker
 
 __all__ = [
     "User", "UserProfile", "Resume",
@@ -19,4 +20,5 @@ __all__ = [
     "Application",
     "GithubAccount", "RepoEntry", "RepoAnalysis", "RepoScore",
     "Source", "Notice", "NoticeLink", "Alert", "AppliedNotice",
+    "Opportunity", "FreelanceDetails", "ApplicationTracker",
 ]

@@ -5,6 +5,9 @@ from backend.database import get_db
 from backend.models import JobPost, JobMatch, UserProfile, Application
 from backend.models.github import RepoEntry, RepoAnalysis
 from backend.modules.fetchers import (
+    ApifyInternshalaFetcher,
+    ApifyIndeedFetcher,
+    ApifyLinkedInFetcher,
     InternshalaFetcher,
     IndeedFetcher,
     LinkedInFetcher,
@@ -13,6 +16,17 @@ from backend.modules.fetchers import (
     CutshortFetcher,
     WellfoundFetcher,
     WorkAtAStartupFetcher,
+    # Additional job board fetchers
+    ArcJobsFetcher,
+    HimalayasFetcher,
+    OttaFetcher,
+    TuringJobsFetcher,
+    LandingJobsFetcher,
+    PangianFetcher,
+    PowerToFlyFetcher,
+    AndelaFetcher,
+    DeelCareersFetcher,
+    TrueUpFetcher,
 )
 from backend.modules.normalizer import normalize_many
 from backend.modules.deduper import deduplicate, job_fingerprint, job_signature
@@ -23,14 +37,25 @@ from loguru import logger
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
 
 FETCHERS = {
-    "internshala": InternshalaFetcher,
-    "indeed": IndeedFetcher,
-    "naukri": LinkedInFetcher,   # LinkedIn replaces blocked Naukri
+    "internshala": ApifyInternshalaFetcher,
+    "indeed": ApifyIndeedFetcher,
+    "naukri": ApifyLinkedInFetcher,   # LinkedIn replaces blocked Naukri
     "foundit": FounditFetcher,
     "freshersworld": FreshersworldFetcher,
     "cutshort": CutshortFetcher,
     "wellfound": WellfoundFetcher,
     "workatastartup": WorkAtAStartupFetcher,
+    # Additional job boards
+    "arcdev": ArcJobsFetcher,
+    "himalayas": HimalayasFetcher,
+    "otta": OttaFetcher,
+    "turing": TuringJobsFetcher,
+    "landingjobs": LandingJobsFetcher,
+    "pangian": PangianFetcher,
+    "powertofly": PowerToFlyFetcher,
+    "andela": AndelaFetcher,
+    "deel": DeelCareersFetcher,
+    "trueup": TrueUpFetcher,
 }
 
 
@@ -276,6 +301,22 @@ async def get_ranked_jobs(
         "indeed": "Indeed",
         "naukri": "LinkedIn",   # LinkedIn replaces blocked Naukri
         "linkedin": "LinkedIn",
+        "foundit": "Foundit",
+        "freshersworld": "Freshersworld",
+        "cutshort": "Cutshort",
+        "wellfound": "Wellfound",
+        "workatastartup": "WorkAtAStartup",
+        # Additional job boards
+        "arcdev": "Arc.dev",
+        "himalayas": "Himalayas",
+        "otta": "Otta",
+        "turing": "Turing",
+        "landingjobs": "LandingJobs",
+        "pangian": "Pangian",
+        "powertofly": "PowerToFly",
+        "andela": "Andela",
+        "deel": "Deel",
+        "trueup": "TrueUp",
     }
     db_sources = [SOURCE_NAME_MAP.get(s.lower(), s) for s in sources]
 

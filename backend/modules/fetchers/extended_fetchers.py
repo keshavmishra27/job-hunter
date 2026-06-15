@@ -301,20 +301,150 @@ class CutshortFetcher(BaseFetcher):
 
 
 class WellfoundFetcher(BaseFetcher):
+    """Wellfound (formerly AngelList Talent) — startup jobs.
+
+    Strategy: Wellfound is a Next.js app.  The initial SSR HTML embeds
+    job listing data in a <script id="__NEXT_DATA__"> JSON blob.  We
+    extract that JSON directly — no JavaScript execution required.
+
+    If the site returns 403 (blocked), we gracefully skip.
+    """
     source_name = "Wellfound"
     BASE_URL = "https://wellfound.com"
 
-    async def fetch(self, keywords: list[str], location: str = "", **kwargs) -> list[RawJob]:
-        # Wellfound blocks unauthenticated scrapers with 403 Forbidden.
-        # This source is disabled until a valid auth token or API key is available.
-        logger.warning(
-            "[Wellfound] Skipping fetch — site returns 403 for unauthenticated requests. "
-            "Configure a session cookie or use the Wellfound API instead."
-        )
-        return []
+    HEADERS = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/124.0.0.0 Safari/537.36"
+        ),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "DNT": "1",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Cache-Control": "max-age=0",
+        "Referer": "https://wellfound.com/",
+    }
 
-    def _parse_listings(self, soup: BeautifulSoup) -> list[RawJob]:
-        return []
+    async def fetch(self, keywords: list[str], location: str = "", **kwargs) -> list[RawJob]:
+        import json as _json
+        results: list[RawJob] = []
+        query = " ".join(keywords[:2])
+        url = f"{self.BASE_URL}/jobs"
+        params = {"q": query, "job_types": "Internship"}
+        try:
+            async with httpx.AsyncClient(
+                headers=self.HEADERS, timeout=25, follow_redirects=True
+            ) as client:
+                resp = await client.get(url, params=params)
+                if resp.status_code == 403:
+                    logger.warning("[Wellfound] 403 Forbidden — site is blocking scrapers")
+                    return []
+                resp.raise_for_status()
+
+            # Try extracting __NEXT_DATA__
+            soup = BeautifulSoup(resp.text, "lxml")
+            next_data_tag = soup.select_one('script#__NEXT_DATA__')
+            if next_data_tag and next_data_tag.string:
+                try:
+                    data = _json.loads(next_data_tag.string)
+                    results = self._parse_next_data(data)
+                    logger.info(f"[Wellfound] __NEXT_DATA__ → {len(results)} listings")
+                except _json.JSONDecodeError:
+                    logger.warning("[Wellfound] __NEXT_DATA__ JSON decode failed")
+
+            # Fallback: try standard HTML parsing if __NEXT_DATA__ is empty
+            if not results:
+                results = self._parse_html(soup)
+                logger.info(f"[Wellfound] HTML fallback → {len(results)} listings")
+
+        except httpx.HTTPStatusError as e:
+            logger.warning(f"[Wellfound] HTTP {e.response.status_code}: {e}")
+        except Exception as e:
+            logger.warning(f"[Wellfound] fetch error: {e}")
+        return results
+
+    def _parse_next_data(self, data: dict) -> list[RawJob]:
+        """Extract jobs from __NEXT_DATA__ props."""
+        jobs: list[RawJob] = []
+        try:
+            # Navigate through Next.js pageProps — structure may vary
+            props = data.get("props", {}).get("pageProps", {})
+            listings = (
+                props.get("listings")
+                or props.get("jobs")
+                or props.get("results")
+                or props.get("initialData", {}).get("results", [])
+            )
+            if not isinstance(listings, list):
+                return []
+
+            for item in listings[:25]:
+                title = (
+                    item.get("title")
+                    or item.get("name")
+                    or item.get("job_title")
+                )
+                if not title:
+                    continue
+                company = (
+                    item.get("company", {}).get("name")
+                    if isinstance(item.get("company"), dict)
+                    else item.get("company_name", "Unknown")
+                )
+                location = item.get("location") or item.get("remote", "")
+                slug = item.get("slug") or item.get("id", "")
+                apply_link = f"{self.BASE_URL}/jobs/{slug}" if slug else None
+                description = item.get("description") or item.get("snippet")
+                jobs.append(RawJob(
+                    title=title,
+                    company=company or "Unknown",
+                    location=location if isinstance(location, str) else None,
+                    internship_type="Internship",
+                    description=description[:500] if description else None,
+                    apply_link=apply_link,
+                    source=self.source_name,
+                ))
+        except Exception as e:
+            logger.debug(f"[Wellfound] __NEXT_DATA__ parse error: {e}")
+        return jobs
+
+    def _parse_html(self, soup: BeautifulSoup) -> list[RawJob]:
+        """Fallback: parse job cards from rendered HTML."""
+        jobs: list[RawJob] = []
+        cards = (
+            soup.select('[data-test="JobListing"]')
+            or soup.select('.styles_component__card')
+            or soup.select('[class*="job-listing"]')
+            or soup.select('div[class*="JobCard"]')
+        )
+        for card in cards[:25]:
+            try:
+                title_el = card.select_one('a') or card.select_one('h2')
+                title = _text(title_el)
+                if not title:
+                    continue
+                company_el = card.select_one('[class*="company"]') or card.select_one('h3')
+                company = _text(company_el) or "Unknown"
+                link_el = card.select_one('a[href]')
+                apply_link = _absolute_link(self.BASE_URL, link_el.get('href')) if link_el else None
+                jobs.append(RawJob(
+                    title=title,
+                    company=company,
+                    location=None,
+                    internship_type="Internship",
+                    description=None,
+                    apply_link=apply_link,
+                    source=self.source_name,
+                ))
+            except Exception as e:
+                logger.debug(f"[Wellfound] HTML card parse error: {e}")
+        return jobs
 
 
 class WorkAtAStartupFetcher(BaseFetcher):
@@ -541,3 +671,284 @@ class TelegramChannelFetcher(BaseFetcher):
             if city in low:
                 return city.title()
         return None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Additional Job Board Fetchers
+# ─────────────────────────────────────────────────────────────────────────────
+
+class _GenericJobBoardFetcher(BaseFetcher):
+    """
+    Base for remote-first / startup job boards that serve SSR HTML.
+    Subclasses only need to set source_name, BASE_URL, and SEARCH_PATTERN.
+    """
+
+    CARD_SELECTORS: list[str] = [
+        ".job-card", ".job-listing", ".job-post", "article",
+        "[data-job-id]", ".posting", ".position-card", ".card",
+    ]
+    TITLE_SELECTORS: list[str] = [
+        ".job-title", ".posting-title", ".position-title",
+        "h2", "h3", "a[href*='/job']", "a[href*='/position']", "a",
+    ]
+    COMPANY_SELECTORS: list[str] = [
+        ".company-name", ".company", ".org-name", ".employer",
+    ]
+    LOCATION_SELECTORS: list[str] = [
+        ".location", ".job-location", ".loc",
+    ]
+    DESC_SELECTORS: list[str] = [
+        ".description", ".job-summary", ".excerpt", ".snippet",
+    ]
+
+    async def fetch(self, keywords: list[str], location: str = "", **kwargs) -> list[RawJob]:
+        results: list[RawJob] = []
+        for keyword in keywords[:3]:
+            url = self._build_search_url(keyword, location)
+            try:
+                async with httpx.AsyncClient(headers=HEADERS, timeout=25, follow_redirects=True) as client:
+                    resp = await client.get(url)
+                    resp.raise_for_status()
+                soup = BeautifulSoup(resp.text, "lxml")
+                parsed = self._parse_listings(soup)
+                results.extend(parsed)
+                logger.info(f"[{self.source_name}] '{keyword}' → {len(parsed)} listings")
+            except Exception as e:
+                logger.warning(f"[{self.source_name}] fetch error for '{keyword}': {e}")
+        return results
+
+    def _build_search_url(self, keyword: str, location: str) -> str:
+        query = keyword.replace(" ", "+")
+        return f"{self.BASE_URL}/jobs?q={query}"
+
+    def _parse_listings(self, soup: BeautifulSoup) -> list[RawJob]:
+        cards = None
+        for sel in self.CARD_SELECTORS:
+            cards = soup.select(sel)
+            if cards:
+                break
+        if not cards:
+            return []
+
+        jobs: list[RawJob] = []
+        for card in cards[:25]:
+            try:
+                title = self._find_text(card, self.TITLE_SELECTORS)
+                if not title or len(title) < 3:
+                    continue
+                company = self._find_text(card, self.COMPANY_SELECTORS) or "Unknown"
+                location = self._find_text(card, self.LOCATION_SELECTORS)
+                description = self._find_text(card, self.DESC_SELECTORS)
+                apply_link = self._find_link(card)
+
+                extra: dict = {}
+                loc_lower = (location or "").lower()
+                if "remote" in loc_lower or "wfh" in loc_lower:
+                    extra["mode"] = "remote"
+                elif "hybrid" in loc_lower:
+                    extra["mode"] = "hybrid"
+
+                jobs.append(RawJob(
+                    title=title,
+                    company=company,
+                    location=location,
+                    internship_type=None,
+                    description=description,
+                    apply_link=apply_link,
+                    source=self.source_name,
+                    extra=extra,
+                ))
+            except Exception as e:
+                logger.debug(f"[{self.source_name}] card parse error: {e}")
+        return jobs
+
+    def _find_text(self, card, selectors: list[str]) -> str | None:
+        for sel in selectors:
+            el = card.select_one(sel)
+            if el:
+                t = _text(el)
+                if t:
+                    return t
+        return None
+
+    def _find_link(self, card) -> str | None:
+        for a in card.select("a[href]"):
+            href = a.get("href", "")
+            if href and not href.startswith("#") and not href.startswith("javascript:"):
+                return _absolute_link(self.BASE_URL, href)
+        return None
+
+
+class ArcJobsFetcher(_GenericJobBoardFetcher):
+    """Arc.dev — remote developer jobs."""
+    source_name = "Arc.dev"
+    BASE_URL = "https://arc.dev"
+
+    def _build_search_url(self, keyword: str, location: str) -> str:
+        slug = keyword.replace(" ", "-").lower()
+        return f"{self.BASE_URL}/remote-jobs/{slug}"
+
+
+class HimalayasFetcher(BaseFetcher):
+    """Himalayas — remote-first job board with a FREE public JSON API.
+
+    API docs: https://himalayas.app/jobs/api
+    No authentication or API key required.
+    Supports filtering by employment_type=Intern for internships.
+    """
+    source_name = "Himalayas"
+    API_URL = "https://himalayas.app/jobs/api"
+
+    async def fetch(self, keywords: list[str], location: str = "", **kwargs) -> list[RawJob]:
+        results: list[RawJob] = []
+        seen_ids: set[str] = set()
+
+        for keyword in keywords[:3]:
+            params = {
+                "q": keyword,
+                "limit": 20,
+                "offset": 0,
+            }
+            try:
+                async with httpx.AsyncClient(
+                    headers=HEADERS, timeout=20, follow_redirects=True
+                ) as client:
+                    resp = await client.get(self.API_URL, params=params)
+                    resp.raise_for_status()
+                data = resp.json()
+                jobs_list = data.get("jobs") or data.get("results") or []
+                for item in jobs_list:
+                    job_id = str(item.get("id", ""))
+                    if job_id in seen_ids:
+                        continue
+                    seen_ids.add(job_id)
+
+                    title = item.get("title") or item.get("name")
+                    if not title:
+                        continue
+
+                    company_name = (
+                        item.get("companyName")
+                        or (item.get("company", {}).get("name") if isinstance(item.get("company"), dict) else None)
+                        or item.get("company_name")
+                        or "Unknown"
+                    )
+                    loc = item.get("location") or ""
+                    if isinstance(loc, list):
+                        loc = ", ".join(loc)
+
+                    slug = item.get("slug") or item.get("id", "")
+                    apply_link = item.get("applicationLink") or item.get("url")
+                    if not apply_link and slug:
+                        apply_link = f"https://himalayas.app/jobs/{slug}"
+
+                    description = item.get("excerpt") or item.get("description") or ""
+                    if len(description) > 500:
+                        description = description[:500]
+
+                    # Determine mode
+                    extra: dict = {}
+                    emp_type = (item.get("employmentType") or item.get("employment_type") or "").lower()
+                    if "remote" in loc.lower() or item.get("remote"):
+                        extra["mode"] = "remote"
+
+                    results.append(RawJob(
+                        title=title,
+                        company=company_name,
+                        location=loc or "Remote",
+                        internship_type=emp_type if emp_type else None,
+                        description=description,
+                        apply_link=apply_link,
+                        source=self.source_name,
+                        extra=extra,
+                    ))
+                logger.info(f"[Himalayas] '{keyword}' → {len(jobs_list)} jobs from API")
+            except Exception as e:
+                logger.warning(f"[Himalayas] API error for '{keyword}': {e}")
+
+        return results
+
+
+class OttaFetcher(_GenericJobBoardFetcher):
+    """Otta — curated tech & startup jobs."""
+    source_name = "Otta"
+    BASE_URL = "https://app.otta.com"
+
+    async def fetch(self, keywords: list[str], location: str = "", **kwargs) -> list[RawJob]:
+        # Otta is fully JS-rendered (React SPA) — no SSR HTML available.
+        # Returns empty until API integration is configured.
+        logger.warning(
+            "[Otta] Skipping fetch — site is a fully client-rendered SPA. "
+            "Configure Otta API credentials for job access."
+        )
+        return []
+
+
+class TuringJobsFetcher(_GenericJobBoardFetcher):
+    """Turing — remote software developer jobs."""
+    source_name = "Turing"
+    BASE_URL = "https://www.turing.com"
+
+    def _build_search_url(self, keyword: str, location: str) -> str:
+        slug = keyword.replace(" ", "-").lower()
+        return f"{self.BASE_URL}/remote-developer-jobs/s/{slug}"
+
+
+class LandingJobsFetcher(_GenericJobBoardFetcher):
+    """Landing.jobs — European tech jobs."""
+    source_name = "LandingJobs"
+    BASE_URL = "https://landing.jobs"
+
+    def _build_search_url(self, keyword: str, location: str) -> str:
+        query = keyword.replace(" ", "+")
+        return f"{self.BASE_URL}/jobs?q={query}"
+
+
+class PangianFetcher(_GenericJobBoardFetcher):
+    """Pangian — remote work community & job board."""
+    source_name = "Pangian"
+    BASE_URL = "https://pangian.com"
+
+    def _build_search_url(self, keyword: str, location: str) -> str:
+        query = keyword.replace(" ", "+")
+        return f"{self.BASE_URL}/job-travel-remote?q={query}"
+
+
+class PowerToFlyFetcher(_GenericJobBoardFetcher):
+    """PowerToFly — diversity-focused remote & flexible jobs."""
+    source_name = "PowerToFly"
+    BASE_URL = "https://powertofly.com"
+
+    def _build_search_url(self, keyword: str, location: str) -> str:
+        query = keyword.replace(" ", "+")
+        return f"{self.BASE_URL}/jobs?search={query}"
+
+
+class AndelaFetcher(_GenericJobBoardFetcher):
+    """Andela — global talent marketplace for remote engineers."""
+    source_name = "Andela"
+    BASE_URL = "https://andela.com"
+
+    def _build_search_url(self, keyword: str, location: str) -> str:
+        query = keyword.replace(" ", "+")
+        return f"{self.BASE_URL}/jobs?q={query}"
+
+
+class DeelCareersFetcher(_GenericJobBoardFetcher):
+    """Deel — global payroll platform career listings."""
+    source_name = "Deel"
+    BASE_URL = "https://www.deel.com"
+
+    def _build_search_url(self, keyword: str, location: str) -> str:
+        query = keyword.replace(" ", "+")
+        return f"{self.BASE_URL}/careers?search={query}"
+
+
+class TrueUpFetcher(_GenericJobBoardFetcher):
+    """TrueUp — startup job aggregator."""
+    source_name = "TrueUp"
+    BASE_URL = "https://www.trueup.io"
+
+    def _build_search_url(self, keyword: str, location: str) -> str:
+        query = keyword.replace(" ", "+")
+        return f"{self.BASE_URL}/jobs?q={query}"

@@ -10,70 +10,48 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&family=Nunito:wght@300;400;500;600;700;800;900&family=Quicksand:wght@300;400;500;600;700;800&family=Saira+Condensed:wght@400&family=Cormorant+Garamond:wght@400&family=JetBrains+Mono:wght@400&display=swap"
     rel="stylesheet" />
   <link rel="stylesheet" href="/src/styles/main.css" />
 </head>
 
 <body>
+  <div id="loading-screen" class="loading-screen hidden">
+    <!-- Animation canvas injected here -->
+  </div>
   <div id="app">
 
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-logo">
-        <span class="logo-icon"></span>
+    <nav class="primary-nav" id="primary-nav">
+      <div class="nav-left">
         <span class="logo-text">JobHunter</span>
       </div>
-      <nav class="sidebar-nav">
-        <button class="nav-item active" id="nav-dashboard" data-page="dashboard">
-          <span class="nav-icon"></span> Dashboard
-        </button>
-        <button class="nav-item" id="nav-profile" data-page="profile">
-          <span class="nav-icon"></span> My Profile
-        </button>
-        <button class="nav-item" id="nav-jobs" data-page="jobs">
-          <span class="nav-icon"></span> Ranked Jobs
-        </button>
-        <button class="nav-item" id="nav-internships" data-page="internships">
-          <span class="nav-icon"></span> Internships
-        </button>
-        <button class="nav-item" id="nav-drafts" data-page="drafts">
-          <span class="nav-icon"></span> Review Queue
-        </button>
-        <button class="nav-item" id="nav-sent" data-page="sent">
-          <span class="nav-icon"></span> Sent Log
-        </button>
-        <button class="nav-item" id="nav-applied" data-page="applied">
-          <span class="nav-icon"></span> Applied Jobs
-        </button>
-        <button class="nav-item" id="nav-repos" data-page="repos">
-          <span class="nav-icon"></span> Repo Intel
-        </button>
-      </nav>
-      <div class="sidebar-footer">
-        <span class="version-badge">v1.0.0 · Phase 2</span>
+      <div class="nav-center">
+        <button class="nav-item active" id="nav-home" data-page="home">Home</button>
+        <button class="nav-item" id="nav-dashboard" data-page="dashboard">Dashboard</button>
+        <button class="nav-item" id="nav-jobs" data-page="jobs">Engine</button>
+        <button class="nav-item" id="nav-internships" data-page="internships">Notices</button>
+        <button class="nav-item" id="nav-drafts" data-page="drafts">Drafts</button>
+        <button class="nav-item" id="nav-applied" data-page="applied">Tracker</button>
+        <button class="nav-item" id="nav-repos" data-page="repos">Repos</button>
+        <button class="nav-item" id="nav-profile" data-page="profile">Profile</button>
       </div>
-    </aside>
+      <div class="nav-right">
+        <div class="user-chip">
+          <span class="user-avatar">K</span>
+        </div>
+      </div>
+    </nav>
 
     <main class="main-content" id="main-content">
-      <!-- Header -->
-      <header class="topbar">
-        <div class="topbar-left">
-          <h1 class="page-title" id="page-title">Dashboard</h1>
-          <span class="page-subtitle" id="page-subtitle">Overview of your job hunt</span>
-        </div>
-        <div class="topbar-right">
-          <div class="user-chip">
-            <span class="user-avatar">K</span>
-            <span class="user-name">Keshav</span>
-          </div>
-        </div>
-      </header>
+      <!-- Page content containers -->
 
 
+      <div id="page-home" class="page"></div>
       <div id="page-dashboard" class="page active"></div>
       <div id="page-profile" class="page"></div>
       <div id="page-jobs" class="page"></div>
       <div id="page-internships" class="page"></div>
+      <div id="page-freelancing" class="page"></div>
       <div id="page-drafts" class="page"></div>
       <div id="page-sent" class="page"></div>
       <div id="page-applied" class="page"></div>

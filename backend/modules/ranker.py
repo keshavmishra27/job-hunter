@@ -11,12 +11,22 @@ OFFLINE_ALLOWED = {"Delhi NCR", "Gurgaon", "Noida","Delhi","ghaziabad(hybrid)","
 REMOTE_HINTS = {"remote", "wfh", "work from home", "work-from-home", "anywhere in india", "pan india"}
 
 WEIGHTS = {
-    "project_overlap": 0.35,
+    "project_overlap": 0.25,
     "skill_match": 0.30,
     "role_match": 0.15,
     "location_fit": 0.10,
     "recency": 0.10,
+    "resume_match": 0.10,
 }
+
+_semantic_model = None
+
+def get_semantic_model():
+    global _semantic_model
+    if _semantic_model is None:
+        from sentence_transformers import SentenceTransformer
+        _semantic_model = SentenceTransformer('all-MiniLM-L6-v2')
+    return _semantic_model
 
 # GitHub repo matching keywords (for category-level fallback)
 REPO_TECH_MAPPING = {
@@ -854,15 +864,39 @@ def _recency(job: dict) -> float:
     return max(0.0, 1.0 - days_old / 30)
 
 
+def _resume_match(job: dict, profile: dict) -> float:
+    summary = profile.get("resume_summary")
+    if not summary:
+        return 0.5
+    
+    desc = job.get("description") or job.get("title") or ""
+    if not desc:
+        return 0.5
+        
+    try:
+        model = get_semantic_model()
+        from sentence_transformers import util
+        embeddings1 = model.encode(summary[:1000], convert_to_tensor=True)
+        embeddings2 = model.encode(desc[:1000], convert_to_tensor=True)
+        cosine_scores = util.cos_sim(embeddings1, embeddings2)
+        score = cosine_scores[0][0].item()
+        return max(0.0, min(1.0, score))
+    except Exception as e:
+        logger.error(f"[Ranker] Semantic matching failed: {e}")
+        return 0.5
+
+
 def score_job(job: dict, profile: dict, github_repos: list[dict] | None = None) -> dict:
     proj_score, matched_projects = _project_overlap(job, profile, github_repos)
     skill_score, matched_skills = _skill_match(job, profile)
+    resume_score = _resume_match(job, profile)
     breakdown = {
         "project_overlap": proj_score,
         "skill_match": skill_score,
         "role_match": _role_match(job, profile),
         "location_fit": _location_fit(job, profile),
         "recency": _recency(job),
+        "resume_match": resume_score,
     }
     total = sum(WEIGHTS[k] * v for k, v in breakdown.items())
     return {

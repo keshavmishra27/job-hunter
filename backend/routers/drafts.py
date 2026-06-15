@@ -19,11 +19,33 @@ class DraftUpdate(BaseModel):
 @router.post("/generate/{user_id}/{job_id}")
 async def generate_draft(user_id: str, job_id: str, db: AsyncSession = Depends(get_db)):
     from backend.models import User
+    from backend.models.opportunity import Opportunity
     
+    # Try legacy job_posts table first, then unified opportunities table
     job_result = await db.execute(select(JobPost).where(JobPost.id == job_id))
     job = job_result.scalar_one_or_none()
-    if not job:
-        raise HTTPException(404, "Job not found.")
+    
+    if job:
+        job_dict = {
+            "id": job.id,
+            "title": job.title,
+            "company": job.company,
+            "location": job.location,
+            "description": job.description,
+        }
+    else:
+        # Fallback: check the unified opportunities table
+        opp_result = await db.execute(select(Opportunity).where(Opportunity.id == job_id))
+        opp = opp_result.scalar_one_or_none()
+        if not opp:
+            raise HTTPException(404, "Job not found.")
+        job_dict = {
+            "id": opp.id,
+            "title": opp.title,
+            "company": opp.organization,
+            "location": opp.location,
+            "description": opp.description,
+        }
 
     profile_result = await db.execute(select(UserProfile).where(UserProfile.user_id == user_id))
     profile = profile_result.scalar_one_or_none()
@@ -32,14 +54,7 @@ async def generate_draft(user_id: str, job_id: str, db: AsyncSession = Depends(g
 
     user_result = await db.execute(select(User).where(User.id == user_id))
     user = user_result.scalar_one_or_none()
-    
-    job_dict = {
-        "id": job.id,
-        "title": job.title,
-        "company": job.company,
-        "location": job.location,
-        "description": job.description,
-    }
+
     profile_dict = {
         "name": user.name if user else "Applicant",
         "skills": profile.skills or [],

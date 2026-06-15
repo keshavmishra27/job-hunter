@@ -15,6 +15,7 @@ class RawJob:
     posted_date: datetime | None = None
     canonical_url: str | None = None
     fingerprint: str | None = None
+    opportunity_type: str = "internship"  # "internship" | "freelance"
     extra: dict = field(default_factory=dict)
 
 
@@ -22,7 +23,26 @@ class BaseFetcher(ABC):
     source_name: str = "unknown"
 
     @abstractmethod
-    async def fetch(self, keywords: list[str], location: str = "", **kwargs) -> list[RawJob]:
+    async def fetch(
+        self,
+        keywords: list[str],
+        location: str = "",
+        *,
+        strategy: str | None = None,
+        **kwargs,
+    ) -> list[RawJob]:
+        """
+        Fetch raw job postings from the source.
+
+        Args:
+            keywords: search terms
+            location: location filter
+            strategy: optional fetch strategy hint from the CapabilityRouter
+                      ("html", "browser", "api", etc.).  Adapters may ignore
+                      this and use their own HTTP client, or use it to
+                      switch between fetch approaches.
+            **kwargs: additional options (applied_fingerprints, force_refresh, etc.)
+        """
         ...
 
     def _safe_date(self, date_str: str | None) -> datetime | None:

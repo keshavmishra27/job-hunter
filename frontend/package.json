@@ -14,5 +14,9 @@
     "concurrently": "^8.2.0",
     "typescript": "^5.3.3",
     "vite": "^5.0.12"
+  },
+  "dependencies": {
+    "@types/three": "^0.184.1",
+    "three": "^0.184.0"
   }
 }

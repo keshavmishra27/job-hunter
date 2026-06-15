@@ -45,6 +45,9 @@ class Resume(Base):
     file_path: Mapped[str] = mapped_column(String)
     original_filename: Mapped[str | None] = mapped_column(String)
     parsed: Mapped[bool] = mapped_column(Boolean, default=False)
+    role_tag: Mapped[str | None] = mapped_column(String, nullable=True)
+    parsed_skills: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    parsed_summary: Mapped[str | None] = mapped_column(String, nullable=True)
     uploaded_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     user: Mapped["User"] = relationship("User", back_populates="resumes")

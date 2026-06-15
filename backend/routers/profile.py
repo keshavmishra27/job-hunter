@@ -17,6 +17,7 @@ settings = get_settings()
 @router.post("/upload-resume")
 async def upload_resume(
     user_id: str,
+    role_tag: str | None = None,
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ):
@@ -30,7 +31,7 @@ async def upload_resume(
     with open(dest, "wb") as f:
         shutil.copyfileobj(file.file, f)
 
-    resume = Resume(user_id=user_id, file_path=str(dest), original_filename=file.filename)
+    resume = Resume(user_id=user_id, file_path=str(dest), original_filename=file.filename, role_tag=role_tag)
     db.add(resume)
     await db.commit()
     await db.refresh(resume)
@@ -70,6 +71,8 @@ async def parse_resume(resume_id: str, db: AsyncSession = Depends(get_db)):
         )
         db.add(profile)
 
+    resume.parsed_skills = profile_data["skills"]
+    resume.parsed_summary = profile_data["resume_summary"]
     resume.parsed = True
     await db.commit()
 

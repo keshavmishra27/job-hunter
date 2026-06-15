@@ -77,3 +77,13 @@ htmlcov/
 # Misc
 .vscode-settings
 *.tmp
+
+# Unnecessary project files and folders
+apple/
+bugatti/
+scratch/
+DESIGN.md
+Scraping_Documentation.docx
+jobhunter.db
+test_score*.py
+test_wellfound.py

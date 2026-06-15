@@ -122,6 +122,33 @@ export const api = {
 
   githubRoles: () =>
     req<{ roles: Array<{ id: string; label: string; description: string }> }>("/github/roles"),
+
+  // --- Unified Opportunities (Phase 4) ---
+  fetchOpportunities: (userId: string, sourceGroups: string[], forceRefresh = false, enrich = false) =>
+    req<any>(
+      `/opportunities/fetch?user_id=${userId}&${sourceGroups.map((g) => `source_groups=${g}`).join("&")}&force_refresh=${forceRefresh}&enrich=${enrich}`,
+      { method: "POST" }
+    ),
+
+  getRankedOpportunities: (userId: string, limit = 30, sourceGroups: string[] = [], sources: string[] = []) => {
+    let query = `/opportunities/ranked/${userId}?limit=${limit}`;
+    if (sourceGroups.length) query += `&${sourceGroups.map(g => `source_groups=${g}`).join("&")}`;
+    if (sources.length) query += `&${sources.map(s => `sources=${s}`).join("&")}`;
+    return req<any[]>(query);
+  },
+
+  getOpportunity: (oppId: string) => req<any>(`/opportunities/${oppId}`),
+
+  updateOpportunityStatus: (oppId: string, userId: string, status: string, notes?: string) =>
+    req<any>(`/opportunities/${oppId}/status?user_id=${userId}`, {
+      method: "POST",
+      body: JSON.stringify({ status, notes }),
+    }),
+
+  enrichOpportunity: (oppId: string) => req<any>(`/opportunities/${oppId}/enrich`, { method: "POST" }),
+
+  getOpportunityStats: (userId: string) => req<any>(`/opportunities/stats/${userId}`),
+
   // --- Internships endpoints
   fetchInternships: (userId: string, sources: string[]) =>
     req<any>(`/internships/fetch?user_id=${userId}&${sources.map((s) => `sources=${s}`).join("&")}`, { method: "POST" }),
@@ -172,4 +199,43 @@ export const api = {
     req<{ success: boolean; internship_matches?: number; notices?: any[]; error?: string }>(
       `/gmail/sync?user_id=${userId}`, { method: "POST" },
     ),
+
+  // --- Freelancing (Lane 3) ---
+  fetchFreelanceJobs: (userId: string, sources: string[]) =>
+    req<{ fetched: number; unique: number; ranked: number; saved: number; top_5: any[] }>(
+      `/freelance/fetch?user_id=${userId}&${sources.map(s => `sources=${s}`).join("&")}`,
+      { method: "POST" },
+    ),
+
+  getRankedFreelance: (userId: string, limit = 30, sources: string[] = []) =>
+    req<any[]>(
+      `/freelance/ranked/${userId}?limit=${limit}${sources.length ? "&" + sources.map(s => `sources=${s}`).join("&") : ""}`,
+    ),
+
+  getFreelanceDetail: (id: string) =>
+    req<any>(`/freelance/${id}`),
+
+  updateFreelanceStatus: (id: string, userId: string, status: string) =>
+    req<any>(`/freelance/${id}/status?user_id=${userId}`, {
+      method: "POST",
+      body: JSON.stringify({ status }),
+    }),
+
+  getFreelanceStats: (userId: string) =>
+    req<{ total_gigs: number; saved: number; applied: number; in_progress: number }>(
+      `/freelance/stats/${userId}`,
+    ),
+
+  // --- Sources ---
+  getSources: () =>
+    req<any[]>("/sources/"),
+
+  getSourcesByCategory: (category: string) =>
+    req<any[]>(`/sources/${category}`),
+
+  toggleSource: (sourceName: string, enabled: boolean) =>
+    req<any>("/sources/toggle", {
+      method: "POST",
+      body: JSON.stringify({ source_name: sourceName, enabled }),
+    }),
 };
