@@ -180,24 +180,18 @@ The core logic of Job Hunter is compartmentalized into specific modules, routers
 |:---|:---|
 | `pipeline.py` | Unified Discovery Pipeline orchestrator unifying fetching, deduping, filtering, and ranking. |
 | `capability_router.py` | Routes fetch requests to appropriate source adapters based on capabilities. |
-| `source_registry.py` | Manages available adapters and sources (Internshala, Upwork, Gmail, etc). 
-|
+| `source_registry.py` | Manages available adapters and sources (Internshala, Upwork, Gmail, etc). |
 | `normalizer.py` | Unifies disparate job boards and freelance data into a single schema. |
 | `deduper.py` | Identifies and filters identical or duplicate notices using URL hashes and signatures. |
 | `classifier.py` | Classifies raw items into opportunity types (internship, freelance, notice). |
 | `eligibility_filter.py` | Applies hard filters based on user experience, duration, and locations. |
 | `ranker.py` | Evaluates and scores internship positions based on candidate profile. |
-
+| `freelance_scorer.py` | Evaluates freelance/Upwork gigs using budget, client rating, and tech overlap factors. |
 | `resume_parser.py` | Extracts skills, target roles, and work details from uploaded PDF resumes. |
-
 | `alert_engine.py` & `telegram_sender.py` | Dispatches priority push notifications to users via Telegram. |
-
 | `draft_generator.py` | Leverages LLM configurations to write highly contextual cover outreach drafts. |
-
 | `sender.py` | Delivers outgoing emails using SMTP, managing timeouts, retries, and queues. |
-
 | `github_client.py` & `repo_analyzer.py` | Direct integration with GitHub REST API for static analysis scanning. |
-
 | `repo_scorer.py` & `repo_improvements.py` | Computes weighted role scores and generates actionable project feedback. |
 
 ### API Routers (`backend/routers/`)
