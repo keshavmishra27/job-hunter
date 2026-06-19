@@ -13,7 +13,6 @@ from backend.database import init_db, engine
 from backend.config import get_settings
 from backend.routers import (
     profile_router,
-    jobs_router,
     drafts_router,
     send_router,
     dashboard_router,
@@ -24,7 +23,6 @@ from backend.routers import (
     gmail_router,
     freelancing_router,
     sources_router,
-    opportunities_router,
     autopilot_router,
     tracker_router,
 )
@@ -81,6 +79,11 @@ async def lifespan(app: FastAPI):
             "ALTER TABLE application_tracker ADD COLUMN answers_used JSON",
             "ALTER TABLE application_tracker ADD COLUMN portal_type VARCHAR",
             "ALTER TABLE application_tracker ADD COLUMN screenshot_path VARCHAR",
+            # Phase 5: Gmail Tracker Sync fields
+            "ALTER TABLE applications ADD COLUMN thread_id VARCHAR",
+            "ALTER TABLE applications ADD COLUMN resume_used VARCHAR",
+            "ALTER TABLE applications ADD COLUMN response_date DATETIME",
+            "ALTER TABLE applications ADD COLUMN rejection_reason TEXT",
         ]
         for stmt in migrations:
             try:
@@ -116,7 +119,6 @@ app.add_middleware(
 )
 
 app.include_router(profile_router)
-app.include_router(jobs_router)
 app.include_router(drafts_router)
 app.include_router(send_router)
 app.include_router(dashboard_router)
@@ -127,7 +129,6 @@ app.include_router(applied_notices_router)
 app.include_router(gmail_router)
 app.include_router(freelancing_router)
 app.include_router(sources_router)
-app.include_router(opportunities_router)
 app.include_router(autopilot_router)
 app.include_router(tracker_router)
 

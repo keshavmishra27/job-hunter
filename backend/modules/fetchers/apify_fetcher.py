@@ -4,6 +4,7 @@ from datetime import datetime
 from loguru import logger
 from apify_client import ApifyClientAsync
 from backend.modules.fetchers.base_fetcher import BaseFetcher, RawJob
+from backend.config import get_settings
 
 class BaseApifyFetcher(BaseFetcher):
     """
@@ -13,7 +14,7 @@ class BaseApifyFetcher(BaseFetcher):
     
     def __init__(self):
         super().__init__()
-        self.token = os.getenv("APIFY_TOKEN")
+        self.token = os.getenv("APIFY_TOKEN") or get_settings().apify_token
         if self.token:
             self.client = ApifyClientAsync(self.token)
         else:
@@ -28,10 +29,18 @@ class BaseApifyFetcher(BaseFetcher):
         
         try:
             # Start the actor and wait for it to finish
-            run = await self.client.actor(self.ACTOR_ID).call(run_input=run_input)
+            run = await self.client.actor(self.ACTOR_ID).call(run_input=run_input, timeout_secs=timeout_secs)
             
             # Fetch results from the default dataset
-            dataset_id = run["defaultDatasetId"]
+            if isinstance(run, dict):
+                dataset_id = run.get("defaultDatasetId")
+            else:
+                dataset_id = getattr(run, "defaultDatasetId", None) or getattr(run, "default_dataset_id", None)
+            
+            if not dataset_id:
+                logger.error(f"[{self.source_name}] Could not find dataset_id in run object.")
+                return []
+                
             dataset_client = self.client.dataset(dataset_id)
             
             # Fetch all items asynchronously
@@ -58,7 +67,9 @@ class ApifyInternshalaFetcher(BaseApifyFetcher):
         for keyword in keywords[:2]:
             run_input = {
                 "search": keyword,
-                "maxItems": 30,
+                "maxItems": 15,
+                "limit": 15,
+                "max": 15,
             }
             if location and location.lower() != "india":
                 # For internshala, the unfenced actor might not have native location filter unless via URL.
@@ -170,7 +181,8 @@ class ApifyIndeedFetcher(BaseApifyFetcher):
                 "position": keyword,
                 "country": "IN",
                 "location": location or "India",
-                "maxItems": 25,
+                "maxItems": 15,
+                "limit": 15,
                 "saveOnlyUniqueItems": True,
                 "jobType": "internship"
             }

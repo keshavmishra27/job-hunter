@@ -1,9 +1,10 @@
-# Job Hunter - AI Powered Internship Discovery & Developer Portfolio Intelligence
+# Job Hunter AI Powered Internship Discovery & Developer Portfolio Intelligence
 
-Job Hunter is a professional-grade, full-stack application designed to accelerate career growth for software engineers. It functions as a dual-engine platform:
+Job Hunter is a professional grade, full stack application designed to accelerate career growth for software engineers. It functions as a dual engine platform:
 
-1. **Unified Discovery Pipeline & Automated Outreach Engine**: Extracts candidate profiles from resume PDFs, fetches and crawls multiple job boards and freelance platforms (including Upwork, Internshala, Indeed, and custom government portals), categorizes and ranks roles with advanced semantic match scoring, and auto-generates personalized cold outreach drafts. It also features an Alert Engine to send notifications via Telegram.
-2. **GitHub Repository Intelligence Engine**: Syncs developer portfolios directly from GitHub, performs deep static analysis of repositories (checking structure, README content, test coverage, CI/CD pipelines, containerization, and deployment readiness), scores them against 8 custom engineering profiles (Backend, Frontend, Fullstack, MLOps, DevOps, Agentic AI, Data Science, and Mobile), and generates actionable improvement tips to transform raw side projects into production-ready repositories.
+1. **Unified Discovery Pipeline & Automated Outreach Engine**: Extracts candidate profiles from resume PDFs. It also features an Alert Engine to send notifications via Telegram and Gmail.
+
+2. **GitHub Repository Intelligence Engine**: Syncs developer portfolios directly from GitHub, performs deep static analysis of repositories (checking structure, README content, test coverage, CI/CD pipelines, containerization, and deployment readiness), scores them against 8 custom engineering profiles (Backend, Frontend, Fullstack, MLOps, DevOps, Agentic AI, Data Science, and Mobile), and generates actionable improvement tips to transform raw side projects into production ready repositories.
 
 ---
 
@@ -103,7 +104,7 @@ This sequence parses unstructured PDF resumes into a clean structured schema.
 flowchart TD
     A(["User Uploads Resume PDF"]) --> B["Extract PDF Text content using PyMuPDF"]
     B --> C{"Verify Text Extracted?"}
-    C -->|No| D(["Raise Parsing Exception & Request Re-upload"])
+    C -->|No| D(["Raise Parsing Exception & Request Re upload"])
     C -->|Yes| E["Run LLM-based Resume Parser"]
     E --> F["Extract Skills, Past Experience, Projects, Education, & Target Role"]
     F --> G["Generate Structured User Profile"]
@@ -155,14 +156,18 @@ flowchart TD
 ## Key Features & Capability Highlights
 
 *   **Unified Discovery Pipeline**: A single robust entry point (`pipeline.py`) that orchestrates capability routing, fetching, normalizing, filtering, and ranking.
-*   **Freelance Gig Scoring Engine**: Dedicated `freelance_scorer.py` evaluates Upwork and freelance opportunities based on budget fit, client quality, task clarity, and skill match.
+
 *   **Intelligent PDF Parser**: High accuracy resume parsing using PyMuPDF extractors combined with LLM prompting structures.
+
 *   **Semantic Matching Matrix**: Employs domain adjacency floors and keyword expansion to compute the exact semantic match between unstructured job specifications and the candidate's skills.
-*   **Alert Engine & Telegram Integration**: Instantly notifies users of high-priority opportunities or status changes directly via Telegram.
-*   **Dynamic Custom Scrapers**: Configure exact external career sites to parse announcements from. Supports generic Gmail parsing, custom govt sites, Upwork, Internshala, etc.
-*   **8 Role-Tailored Repository Evaluators**: Deeply scores portfolios based on specific role dimensions (e.g., DevOps weights CI/CD & Docker; Agentic AI weights tool usage).
+
+*   **Alert Engine & Telegram Integration**: Instantly notifies users of high priority opportunities or status changes directly via Telegram and Gmail
+
+*   **8 Role Tailored Repository Evaluators**: Deeply scores portfolios based on specific role dimensions (e.g., DevOps weights CI/CD & Docker; Agentic AI weights tool usage).
+
+
 *   **Actionable Debugger for Portfolios**: Shows detailed explanations and exact correction steps for all missing repository signals.
-*   **Throttled Outreach Mailer**: Uses SMTP with custom rate limits to prevent spam filter triggers, including auto-retries for failed deliveries.
+
 
 ---
 
@@ -175,25 +180,34 @@ The core logic of Job Hunter is compartmentalized into specific modules, routers
 |:---|:---|
 | `pipeline.py` | Unified Discovery Pipeline orchestrator unifying fetching, deduping, filtering, and ranking. |
 | `capability_router.py` | Routes fetch requests to appropriate source adapters based on capabilities. |
-| `source_registry.py` | Manages available adapters and sources (Internshala, Upwork, Gmail, etc). |
+| `source_registry.py` | Manages available adapters and sources (Internshala, Upwork, Gmail, etc). 
+|
 | `normalizer.py` | Unifies disparate job boards and freelance data into a single schema. |
 | `deduper.py` | Identifies and filters identical or duplicate notices using URL hashes and signatures. |
 | `classifier.py` | Classifies raw items into opportunity types (internship, freelance, notice). |
 | `eligibility_filter.py` | Applies hard filters based on user experience, duration, and locations. |
 | `ranker.py` | Evaluates and scores internship positions based on candidate profile. |
-| `freelance_scorer.py` | Evaluates freelance/Upwork gigs using budget, client rating, and tech overlap factors. |
+
 | `resume_parser.py` | Extracts skills, target roles, and work details from uploaded PDF resumes. |
+
 | `alert_engine.py` & `telegram_sender.py` | Dispatches priority push notifications to users via Telegram. |
+
 | `draft_generator.py` | Leverages LLM configurations to write highly contextual cover outreach drafts. |
+
 | `sender.py` | Delivers outgoing emails using SMTP, managing timeouts, retries, and queues. |
+
 | `github_client.py` & `repo_analyzer.py` | Direct integration with GitHub REST API for static analysis scanning. |
+
 | `repo_scorer.py` & `repo_improvements.py` | Computes weighted role scores and generates actionable project feedback. |
 
 ### API Routers (`backend/routers/`)
 | Router File | Prefix / Tag | Primary Responsibility |
 |:---|:---|:---|
 | `profile.py` | `/profile` | Handles resume uploading, user metadata profiles, and parsing. |
-| `jobs.py` | `/jobs` | Orchestrates scraper fetching, de-duplication, ranking, and detailed views. |
+| `internships.py` | `/internships` | Fetches, ranks, and retrieves software engineering internships. |
+| `freelancing.py` | `/freelancing` | Fetches and tracks freelance gigs from platforms like Upwork. |
+| `sources.py` | `/sources` | Manages scraping adapters and fetches opportunities from sources. |
+| `autopilot.py` | `/autopilot` | Manages the automated queue for sending drafts continuously. |
 | `drafts.py` | `/drafts` | Generation, editing, storage, and validation of LLM-generated outreach drafts. |
 | `send.py` | `/send` | Triggers dispatch of approved drafts, fetches sent history logs, and retries. |
 | `github.py` | `/github` | Connects tokens, syncs repository entries, runs static scoring, and webhooks. |
@@ -307,7 +321,7 @@ LINKEDIN_PASSWORD=supersecurepass
 
 ### Running Locally
 
-You can launch the backend and frontend in separate terminals, or use the pre-configured concurrent runner.
+You can launch the backend and frontend in separate terminals, or use the pre configured concurrent runner.
 
 #### Method A: Concurrent Runner (Single Command)
 Job Hunter is configured to launch both backend and frontend servers simultaneously using the `dev:all` script in the frontend directory:
@@ -346,9 +360,9 @@ Run all tests from the repository root:
 python -m pytest -v
 ```
 
-To run a specific test suite (e.g. testing the Wellfound/other scrapers):
+To run a specific test suite (e.g. testing the Indeed/other scrapers):
 ```bash
-python -m pytest tests/test_wellfound.py -q
+python -m pytest tests/test_indeed_fetcher.py -q
 ```
 
 ---
@@ -391,6 +405,9 @@ python -m pytest tests/test_wellfound.py -q
 - [x] Unified Discovery Pipeline unifying data ingestion.
 - [x] Upwork and Freelance Scrapers with custom scoring model.
 - [x] Telegram Alert Engine for high-priority notifications.
+- [x] Streamlined UI by migrating minibar into main navigation.
+- [x] Enhanced resume parser for dynamic preferred roles extraction and reliable database persistence.
+- [x] Removed legacy Startup Discovery module to simplify architecture.
 - [ ] Deployed multi-container cloud infrastructure (Docker, docker-compose).
 - [ ] Playwright-based LinkedIn and Indeed automated scrapers.
 - [ ] FAISS Vector store indexing for instant semantic search.

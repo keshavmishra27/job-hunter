@@ -27,5 +27,11 @@ class Application(Base):
     follow_up_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text)
 
+    # Tracking specific fields
+    thread_id: Mapped[str | None] = mapped_column(String, index=True, nullable=True)
+    resume_used: Mapped[str | None] = mapped_column(String, nullable=True)
+    response_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     job: Mapped["JobPost"] = relationship("JobPost")
     draft: Mapped["Draft"] = relationship("Draft")

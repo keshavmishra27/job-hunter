@@ -6,6 +6,7 @@ from sqlalchemy import select
 from backend.database import get_db
 from backend.models import Application, JobPost, Draft
 from backend.modules.deduper import job_fingerprint
+from backend.modules.gmail_tracker import GmailTrackerSync
 
 router = APIRouter(prefix="/applications", tags=["Applications"])
 
@@ -27,6 +28,12 @@ class UpdateApplicationRequest(BaseModel):
     follow_up_date: str | None = None
     notes: str | None = None
 
+
+@router.post("/sync-gmail")
+async def sync_gmail_applications(user_id: str, days_back: int = 60, db: AsyncSession = Depends(get_db)):
+    tracker_sync = GmailTrackerSync()
+    added_count = await tracker_sync.sync_applications(user_id, db, days_back)
+    return {"message": f"Successfully tracked {added_count} new applications from Gmail.", "added": added_count}
 
 @router.post("/mark")
 async def mark_applied(req: MarkAppliedRequest, db: AsyncSession = Depends(get_db)):

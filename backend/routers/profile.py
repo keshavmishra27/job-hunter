@@ -5,6 +5,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm.attributes import flag_modified
 from backend.database import get_db
 from backend.models import User, UserProfile, Resume
 from backend.modules.resume_parser import ResumeParser
@@ -59,6 +60,12 @@ async def parse_resume(resume_id: str, db: AsyncSession = Depends(get_db)):
         existing.preferred_roles = profile_data["preferred_roles"]
         existing.location_rule = profile_data["location_rule"]
         existing.resume_summary = profile_data["resume_summary"]
+
+        flag_modified(existing, "skills")
+        flag_modified(existing, "projects")
+        flag_modified(existing, "research_areas")
+        flag_modified(existing, "preferred_roles")
+        flag_modified(existing, "location_rule")
     else:
         profile = UserProfile(
             user_id=resume.user_id,
@@ -121,8 +128,10 @@ async def update_profile(user_id: str, update: ProfileUpdate, db: AsyncSession =
         profile.telegram_chat_id = update.telegram_chat_id
     if update.preferred_roles is not None:
         profile.preferred_roles = update.preferred_roles
+        flag_modified(profile, "preferred_roles")
     if update.skills is not None:
         profile.skills = update.skills
+        flag_modified(profile, "skills")
 
     await db.commit()
     await db.refresh(profile)

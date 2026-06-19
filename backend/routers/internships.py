@@ -2,8 +2,8 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete, func, or_
 from backend.database import get_db
-from backend.models import Notice, NoticeLink, AppliedNotice, Source
-from backend.modules.fetchers import InternshalaFetcher, IndeedFetcher, CompanyCareerFetcher, GovtPortalFetcher, TelegramChannelFetcher, GmailFetcher
+from backend.models import Notice, NoticeLink, AppliedNotice, Source, UserProfile, Application
+from backend.modules.fetchers import InternshalaFetcher, IndeedFetcher, LinkedInFetcher, CompanyCareerFetcher, GovtPortalFetcher, TelegramChannelFetcher, GmailFetcher
 from backend.modules.normalizer import normalize_many
 from backend.modules.internship_matcher import detect_year_fit
 from backend.modules.internship_scorer import score_notice_detailed
@@ -23,6 +23,7 @@ router = APIRouter(prefix="/internships", tags=["Internships"])
 FETCHERS = {
     "internshala": InternshalaFetcher,
     "indeed": IndeedFetcher,
+    "linkedin": LinkedInFetcher,
     "companycareers": CompanyCareerFetcher,
     "govtportal": GovtPortalFetcher,
     "telegram": TelegramChannelFetcher,
@@ -97,6 +98,12 @@ async def fetch_internships(user_id: str, sources: list[str] = Query(default=["c
         # initial eligibility from raw text (now with graduation year awareness)
         grad_year = profile_dict.get("graduation_year")
         eligibility = detect_year_fit((item.get("title") or "") + " " + (item.get("description") or ""), grad_year)
+
+        fingerprint = item.get("fingerprint")
+        if fingerprint:
+            existing = await db.execute(select(Notice.id).where(Notice.content_hash == fingerprint))
+            if existing.scalar_one_or_none():
+                continue
 
         # attempt to fetch the apply/source link and extract richer fields
         # Skip for Telegram and Gmail — already extracted or not applicable
@@ -197,7 +204,7 @@ async def fetch_internships(user_id: str, sources: list[str] = Query(default=["c
             sender_email=extra.get("sender_email"),
             subject=extra.get("subject"),
             fetched_at=datetime.utcnow(),
-            content_hash=None,
+            content_hash=item.get("fingerprint"),
         )
         db.add(notice)
         # add extracted links
@@ -326,8 +333,15 @@ async def get_ranked_internships(user_id: str, limit: int = 20, sources: list[st
 
     await db.commit()
 
+    # Fetch user's applied notices to attach status and applied_id
+    applied_res = await db.execute(
+        select(AppliedNotice).where(AppliedNotice.user_id == user_id)
+    )
+    applied_map = {a.notice_id: a for a in applied_res.scalars().all()}
+
     out = []
     for n in scored[:limit]:
+        app = applied_map.get(n.id)
         out.append({
             "notice_id": n.id,
             "title": n.title,
@@ -342,6 +356,8 @@ async def get_ranked_internships(user_id: str, limit: int = 20, sources: list[st
             "deadline": n.deadline.isoformat() if n.deadline else None,
             "sender_email": getattr(n, "sender_email", None),
             "subject": getattr(n, "subject", None),
+            "status": app.status if app else None,
+            "applied_id": app.id if app else None,
         })
     return out
 

@@ -1,39 +1,19 @@
-import sqlite3
+import asyncio
+import sys
+import os
+os.chdir("D:\\kfiles\\job-hunter")
+sys.path.append(".")
 
-conn = sqlite3.connect("data/job_hunter.db")
-c = conn.cursor()
+from backend.database import AsyncSessionLocal
+from backend.models.notice import Notice
+from sqlalchemy import select
 
-# Check applications
-c.execute("SELECT job_id, status, job_fingerprint FROM applications WHERE user_id='demo-user-1'")
-applied = c.fetchall()
-print(f"Applications ({len(applied)}):")
-for a in applied:
-    print(f"  job_id={a[0]}, status={a[1]}, fp={a[2]}")
+async def run():
+    async with AsyncSessionLocal() as db:
+        res = await db.execute(select(Notice.title, Notice.company, Notice.score, Notice.sender_email).where(Notice.source == "Gmail").order_by(Notice.score.desc()).limit(150))
+        notices = res.all()
+        for title, company, score, sender in notices:
+            if "indeed" not in (sender or "").lower():
+                print(f"[{score}] {title} | {company} | {sender}")
 
-# Check what the 13 job_matches look like
-c.execute("""
-    SELECT jm.job_id, jp.title, jp.company, jp.source, jm.score
-    FROM job_matches jm
-    JOIN job_posts jp ON jm.job_id = jp.id
-    WHERE jm.user_id='demo-user-1'
-    ORDER BY jm.score DESC
-""")
-matches = c.fetchall()
-print(f"\nJob matches ({len(matches)}):")
-for m in matches:
-    print(f"  {m[1]} @ {m[2]} (src={m[3]}, score={m[4]})")
-
-# Check how many Internshala titles are 'Unknown'
-c.execute("SELECT COUNT(*) FROM job_posts WHERE title='Unknown' AND source='Internshala'")
-print(f"\nInternshala 'Unknown' title count: {c.fetchone()[0]}")
-
-c.execute("SELECT COUNT(*) FROM job_posts WHERE title!='Unknown' AND source='Internshala'")
-print(f"Internshala valid title count: {c.fetchone()[0]}")
-
-# Check Indeed titles
-c.execute("SELECT title, company FROM job_posts WHERE source='Indeed' LIMIT 10")
-print(f"\nIndeed titles (sample):")
-for r in c.fetchall():
-    print(f"  {r[0]} @ {r[1]}")
-
-conn.close()
+asyncio.run(run())

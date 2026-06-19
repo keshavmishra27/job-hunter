@@ -20,14 +20,13 @@ SOURCE_CROWD_LEVEL = {
     "Arc.dev":        0.75,
     "Himalayas":      0.75,
     "Cutshort":       0.70,
+    "Internshala":    0.70,
+    "Indeed":         0.70,
+    "LinkedIn":       0.70,
     # Medium competition
-    "Internshala":    0.50,
     "Naukri":         0.45,
     "Foundit":        0.50,
     "Freshersworld":  0.45,
-    # High competition (mass boards)
-    "Indeed":         0.20,
-    "LinkedIn":       0.15,
 }
 
 # Heuristic keywords for company size

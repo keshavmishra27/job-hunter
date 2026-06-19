@@ -20,6 +20,9 @@ export const api = {
   getDashboardStats: (userId: string) =>
     req<Record<string, number>>(`/dashboard/stats/${userId}`),
 
+  getAnalytics: (userId: string) =>
+    req<any>(`/dashboard/analytics/${userId}`),
+
   uploadResume: (userId: string, file: File) => {
     const form = new FormData();
     form.append("file", file);
@@ -34,15 +37,6 @@ export const api = {
 
   getProfile: (userId: string) =>
     req<Record<string, unknown>>(`/profile/${userId}`),
-
-  fetchJobs: (userId: string, sources: string[], forceRefresh = false) =>
-    req<{ fetched: number; new_unique: number; ranked: number }>(
-      `/jobs/fetch?user_id=${userId}&${sources.map((s) => `sources=${s}`).join("&")}&force_refresh=${forceRefresh}`,
-      { method: "POST" }
-    ),
-
-  getRankedJobs: (userId: string, limit = 30, includeApplied = false, sources: string[] = ["internshala", "indeed", "naukri"]) =>
-    req<any[]>(`/jobs/ranked/${userId}?limit=${limit}&include_applied=${includeApplied}&${sources.map((s) => `sources=${s}`).join("&")}`),
 
   getDrafts: (userId: string) => req<any[]>(`/drafts/${userId}`),
 
@@ -94,6 +88,9 @@ export const api = {
   unmarkApplied: (applicationId: string) =>
     req<any>(`/applications/${applicationId}`, { method: "DELETE" }),
 
+  syncGmailApplications: (userId: string) =>
+    req<any>(`/applications/sync-gmail?user_id=${userId}`, { method: "POST" }),
+
   // --- GitHub Intelligence ---
   githubConnect: (token: string, userId = USER_ID) =>
     req<any>("/github/connect", {
@@ -122,32 +119,6 @@ export const api = {
 
   githubRoles: () =>
     req<{ roles: Array<{ id: string; label: string; description: string }> }>("/github/roles"),
-
-  // --- Unified Opportunities (Phase 4) ---
-  fetchOpportunities: (userId: string, sourceGroups: string[], forceRefresh = false, enrich = false) =>
-    req<any>(
-      `/opportunities/fetch?user_id=${userId}&${sourceGroups.map((g) => `source_groups=${g}`).join("&")}&force_refresh=${forceRefresh}&enrich=${enrich}`,
-      { method: "POST" }
-    ),
-
-  getRankedOpportunities: (userId: string, limit = 30, sourceGroups: string[] = [], sources: string[] = []) => {
-    let query = `/opportunities/ranked/${userId}?limit=${limit}`;
-    if (sourceGroups.length) query += `&${sourceGroups.map(g => `source_groups=${g}`).join("&")}`;
-    if (sources.length) query += `&${sources.map(s => `sources=${s}`).join("&")}`;
-    return req<any[]>(query);
-  },
-
-  getOpportunity: (oppId: string) => req<any>(`/opportunities/${oppId}`),
-
-  updateOpportunityStatus: (oppId: string, userId: string, status: string, notes?: string) =>
-    req<any>(`/opportunities/${oppId}/status?user_id=${userId}`, {
-      method: "POST",
-      body: JSON.stringify({ status, notes }),
-    }),
-
-  enrichOpportunity: (oppId: string) => req<any>(`/opportunities/${oppId}/enrich`, { method: "POST" }),
-
-  getOpportunityStats: (userId: string) => req<any>(`/opportunities/stats/${userId}`),
 
   // --- Internships endpoints
   fetchInternships: (userId: string, sources: string[]) =>

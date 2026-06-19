@@ -67,6 +67,14 @@ class ResumeParser:
                 found.append(area)
         return sorted(set(found))
 
+    def _extract_preferred_roles(self, text: str) -> list[str]:
+        found = []
+        text_lower = text.lower()
+        for role in self.ROLE_KEYWORDS:
+            if role.lower() in text_lower:
+                found.append(role)
+        return sorted(set(found)) if found else self.ROLE_KEYWORDS[:3]
+
     def _extract_name(self, text: str) -> str:
         lines = [l.strip() for l in text.split("\n") if l.strip()]
         if lines:
@@ -93,7 +101,7 @@ class ResumeParser:
             "skills": self._extract_skills(text),
             "projects": self._extract_projects(text),
             "research_areas": self._extract_research_areas(text),
-            "preferred_roles": self.ROLE_KEYWORDS[:3],
+            "preferred_roles": self._extract_preferred_roles(text),
             "location_rule": {
                 "offline_allowed": ["Delhi NCR", "Gurgaon", "Noida","Delhi","ghaziabad(hybrid)","ghaziabad","delhi(hybrid)","faridabad","agra, uttar pradesh","uttar pradesh","delhi, delhi","okhla, delhi","paschim vihar, delhi","saket, delhi","naraina, delhi, delhi","hauz khas, delhi, delhi","dilshad garden, delhi, delhi","tilak nagar, delhi, delhi","kirti nagar, delhi, delhi","connaught place, delhi, delhi","badarpur, delhi, delhi","india","India"],
                 "remote_allowed": True,

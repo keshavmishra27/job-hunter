@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&family=Nunito:wght@300;400;500;600;700;800;900&family=Quicksand:wght@300;400;500;600;700;800&family=Saira+Condensed:wght@400&family=Cormorant+Garamond:wght@400&family=JetBrains+Mono:wght@400&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&family=Nunito:wght@300;400;500;600;700;800;900&family=Quicksand:wght@300;400;500;600;700;800&family=Saira+Condensed:wght@400&family=Cormorant+Garamond:wght@400&family=JetBrains+Mono:wght@400&display=swap"
     rel="stylesheet" />
   <link rel="stylesheet" href="/src/styles/main.css" />
 </head>
@@ -21,26 +21,22 @@
   </div>
   <div id="app">
 
-    <nav class="primary-nav" id="primary-nav">
-      <div class="nav-left">
-        <span class="logo-text">JobHunter</span>
-      </div>
+    <!-- Nintendo 2001 Dual Nav -->
+    <nav class="nav-bar">
+      <div class="logo-pill">JOBHUNTER</div>
       <div class="nav-center">
-        <button class="nav-item active" id="nav-home" data-page="home">Home</button>
-        <button class="nav-item" id="nav-dashboard" data-page="dashboard">Dashboard</button>
-        <button class="nav-item" id="nav-jobs" data-page="jobs">Engine</button>
-        <button class="nav-item" id="nav-internships" data-page="internships">Notices</button>
-        <button class="nav-item" id="nav-drafts" data-page="drafts">Drafts</button>
-        <button class="nav-item" id="nav-applied" data-page="applied">Tracker</button>
-        <button class="nav-item" id="nav-repos" data-page="repos">Repos</button>
-        <button class="nav-item" id="nav-profile" data-page="profile">Profile</button>
+        <button class="nav-item active" id="nav-home" data-page="home">HOME</button>
+        <button class="nav-item" id="nav-dashboard" data-page="dashboard">DASHBOARD</button>
+        <button class="nav-item" id="nav-internships" data-page="internships">NOTICES</button>
+        <button class="nav-item" id="nav-drafts" data-page="drafts">DRAFTS</button>
+        <button class="nav-item" id="nav-applied" data-page="applied">TRACKER</button>
+        <button class="nav-item" id="nav-repos" data-page="repos">REPOS</button>
       </div>
-      <div class="nav-right">
-        <div class="user-chip">
-          <span class="user-avatar">K</span>
-        </div>
+      <div style="display:flex;gap:4px">
+        <button class="btn-amber" id="nav-profile" data-page="profile">PROFILE</button>
       </div>
     </nav>
+
 
     <main class="main-content" id="main-content">
       <!-- Page content containers -->
@@ -49,7 +45,6 @@
       <div id="page-home" class="page"></div>
       <div id="page-dashboard" class="page active"></div>
       <div id="page-profile" class="page"></div>
-      <div id="page-jobs" class="page"></div>
       <div id="page-internships" class="page"></div>
       <div id="page-freelancing" class="page"></div>
       <div id="page-drafts" class="page"></div>

@@ -9,7 +9,7 @@ DB_PATH = ROOT_DIR / "data" / "job_hunter.db"
 
 class Settings(BaseSettings):
     # pydantic-settings reads .env automatically — no os.getenv() needed
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(env_file=str(ROOT_DIR / ".env"), env_file_encoding="utf-8", extra="ignore")
 
     database_url: str = f"sqlite+aiosqlite:///{DB_PATH.as_posix()}"
     website_url: str = "http://localhost:5173"
@@ -31,6 +31,7 @@ class Settings(BaseSettings):
 
     telegram_bot_token: str = ""
     github_token: str = ""
+    apify_token: str = ""
 
     # Gmail / IMAP inbox scanning settings
     # Pydantic auto-maps IMAP_USER, IMAP_PASSWORD, etc. from .env

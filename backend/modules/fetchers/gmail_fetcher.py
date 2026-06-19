@@ -242,6 +242,14 @@ def _extract_apply_link(links: list[dict]) -> str | None:
         if _is_junk_link(url):
             continue
 
+        # Skip navigation URLs
+        if any(pat in url.lower() for pat in [
+            "subscriptions.indeed.com", "support.indeed.com", "indeed.com/legal", "indeed.onelink.me",
+            "/hp?co=", "/messages?", "/notifications?", "indeed.com/jobs?q=", "cm.naukri.com",
+            "unsubscribe", "manage-preferences", "privacy-policy"
+        ]):
+            continue
+
         url_lower = url.lower()
         text_lower = (link.get("text") or "").lower()
 
@@ -274,25 +282,28 @@ def _is_internship_mail(subject: str, sender: str, body_text: str, has_links: bo
     sender_low = sender.lower()
     body_low = body_text.lower()
 
-    # Auto-pass: known job portal domains (Naukri, Indeed, Internshala, etc.)
+    # Job portals send a lot of spam/promos. Even if trusted, require at least 
+    # some indication it's a job match or alert.
     if _is_trusted_sender(sender):
-        return True
+        if any(kw in subj_low for kw in SUBJECT_KEYWORDS) or "alert" in subj_low or "digest" in subj_low or "matching" in subj_low or "recommended" in subj_low:
+            return True
 
-    # Subject keyword match
-    if any(kw in subj_low for kw in SUBJECT_KEYWORDS):
+    has_subj = any(kw in subj_low for kw in SUBJECT_KEYWORDS)
+    has_sender = any(h in sender_low for h in SENDER_HINTS)
+    has_body = any(kw in body_low for kw in BODY_KEYWORDS)
+
+    if has_subj:
         signals += 1
-
-    # Sender hint match (check local part and domain)
-    if any(h in sender_low for h in SENDER_HINTS):
+    if has_sender:
         signals += 1
-
-    # Body keyword match
-    if any(kw in body_low for kw in BODY_KEYWORDS):
+    if has_body:
         signals += 1
-
-    # Has at least one external link
     if has_links:
         signals += 1
+
+    # Require at least one keyword match (subject or body)
+    if not (has_subj or has_body):
+        return False
 
     return signals >= 2
 
@@ -472,9 +483,9 @@ class GmailFetcher(BaseFetcher):
             # Pass 2: download full body for candidates only (cap at 50)
             for msg_id in candidates[:50]:
                 try:
-                    raw_job = self._process_email(mail, msg_id, user)
-                    if raw_job:
-                        results.append(raw_job)
+                    extracted_jobs = self._process_email(mail, msg_id, user)
+                    if extracted_jobs:
+                        results.extend(extracted_jobs)
                 except Exception as e:
                     logger.debug(f"[Gmail] Error processing email {msg_id}: {e}")
                     continue
@@ -488,11 +499,11 @@ class GmailFetcher(BaseFetcher):
 
         return results
 
-    def _process_email(self, mail: imaplib.IMAP4_SSL, msg_id: bytes, user_email: str) -> RawJob | None:
+    def _process_email(self, mail: imaplib.IMAP4_SSL, msg_id: bytes, user_email: str) -> list[RawJob]:
         """Process a single email: filter → parse → extract → build RawJob."""
         status, data = mail.fetch(msg_id, "(RFC822)")
         if status != "OK" or not data[0]:
-            return None
+            return []
 
         raw_email = data[0][1]
         msg = email_lib.message_from_bytes(raw_email)
@@ -536,7 +547,7 @@ class GmailFetcher(BaseFetcher):
 
         # ── B. Mail Filter ──
         if not _is_internship_mail(subject, sender_email, body_text, has_external_links):
-            return None
+            return []
 
         # ── C. Mail Parser ──
         clean_subj = _clean_subject(subject)
@@ -547,14 +558,149 @@ class GmailFetcher(BaseFetcher):
 
         # Use cleaned subject as title (role name is typically in the subject)
         title = clean_subj or "Untitled Internship"
-
-        # ── D. Apply Link Extractor ──
-        apply_link = _extract_apply_link(links)
-
+        
         # Cap description
         description = (body_text[:1500] if body_text else "").strip()
 
-        return RawJob(
+        # ── D. Apply Link Extractor (Multi-Job Splitting) ──
+        # URL patterns that indicate an actual individual job posting link
+        # (as opposed to navigation, tracking, management, or homepage links)
+        JOB_LINK_URL_PATTERNS = {
+            "indeed.com/rc/clk",        # Indeed job click-through
+            "indeed.com/pagead/clk",     # Indeed promoted job click-through
+            "indeed.com/viewjob",
+            "naukri.com/job-listings",
+            "naukri.com/job-detail",
+            "naukri.com/dl?",            # Naukri deep links (job notifications)
+            "instahyre.com/job/",
+            "internshala.com/internship/detail",
+            "linkedin.com/jobs/view",
+            "glassdoor.com/job-listing",
+            "cutshort.io/j/",
+            "wellfound.com/jobs/",
+            "foundit.in/job/",
+            "apna.co/job/",
+            "link.internshala.com/v1/emailclick", # Internshala tracking
+            "cutshort.io/api/tracking",           # Cutshort tracking
+            "mailesp.glassdoor.com",              # Glassdoor tracking
+            "e.linkedin.com",                     # LinkedIn tracking
+            "naukri.com/job-listings",
+            "naukri.com/job-detail",
+            "naukri.com/dl?",
+        }
+
+        # Link texts that are navigation/management, NOT job titles
+        NAV_LINK_TEXTS = {
+            "apply", "apply now", "view job", "view jobs", "view all",
+            "view all jobs", "click here", "read more", "view details",
+            "website", "company website", "see all", "see more",
+            "unsubscribe", "manage alerts", "manage job alerts",
+            "unsubscribe from this job alert", "edit this job alert",
+            "privacy policy", "terms", "terms of service",
+            "indeed terms of service", "help centre", "help center",
+            "since yesterday", "for last 7 days", "for last 14 days",
+            "learn more", "sign in", "log in", "download app",
+            "get the app", "contact us", "click now", "click now!",
+            "view all articles", "report a problem", "security advice",
+            "know more", "explore now", "download now",
+        }
+
+        # URL substrings that indicate navigation/management links (not job posts)
+        NAV_URL_PATTERNS = {
+            "subscriptions.indeed.com",
+            "support.indeed.com",
+            "indeed.com/legal",
+            "indeed.onelink.me",
+            "/hp?co=",
+            "/messages?",
+            "/notifications?",
+            "indeed.com/jobs?q=",  # search results page, not a single job
+            "cm.naukri.com",       # Naukri Campus marketing/navigation links
+        }
+
+        is_digest = _is_trusted_sender(sender_email) or "alert" in subject.lower() or "digest" in subject.lower()
+
+        jobs = []
+        seen_urls = set()
+        for link in links:
+            url = link.get("url", "")
+            text = (link.get("text") or "").strip()
+
+            if not url or not url.startswith(("http://", "https://")):
+                continue
+            if _is_junk_link(url):
+                continue
+            if url in seen_urls:
+                continue
+
+            url_lower = url.lower()
+            low_text = text.lower().strip()
+
+            # Skip navigation/management URLs
+            if any(pat in url_lower for pat in NAV_URL_PATTERNS):
+                continue
+
+            # Check if URL matches a known job-posting pattern
+            is_job_url = any(pat in url_lower for pat in JOB_LINK_URL_PATTERNS)
+
+            if is_job_url:
+                # It's a real job link — use link text as title if it's descriptive
+                if len(text) >= 5 and low_text not in NAV_LINK_TEXTS:
+                    job_title = text[:120]
+                else:
+                    job_title = title # Fall back to email subject
+
+                seen_urls.add(url)
+                jobs.append(RawJob(
+                    title=job_title,
+                    company=company,
+                    location=location,
+                    internship_type="Internship",
+                    description=description,
+                    apply_link=url,
+                    source="Gmail",
+                    posted_date=received_at,
+                    extra={
+                        "mode": mode,
+                        "source_type": "email",
+                        "sender_email": sender_email,
+                        "subject": subject,
+                        "message_id": message_id,
+                        "deadline": deadline.isoformat() if deadline else None,
+                        "is_digest": True,
+                    },
+                ))
+            elif is_digest and len(text) >= 10 and low_text not in NAV_LINK_TEXTS:
+                # For digest emails: also accept links with descriptive text
+                # that don't match a known job URL pattern (catches less common portals)
+                seen_urls.add(url)
+                jobs.append(RawJob(
+                    title=text[:120],
+                    company=company,
+                    location=location,
+                    internship_type="Internship",
+                    description=description,
+                    apply_link=url,
+                    source="Gmail",
+                    posted_date=received_at,
+                    extra={
+                        "mode": mode,
+                        "source_type": "email",
+                        "sender_email": sender_email,
+                        "subject": subject,
+                        "message_id": message_id,
+                        "deadline": deadline.isoformat() if deadline else None,
+                        "is_digest": True,
+                    },
+                ))
+
+        # If we found actual job links in a digest, return them individually
+        if jobs:
+            return jobs
+
+        # Fallback to single job parsing for non-digest emails
+        apply_link = _extract_apply_link(links)
+        return [RawJob(
             title=title,
             company=company,
             location=location,
@@ -571,4 +717,4 @@ class GmailFetcher(BaseFetcher):
                 "message_id": message_id,
                 "deadline": deadline.isoformat() if deadline else None,
             },
-        )
+        )]
