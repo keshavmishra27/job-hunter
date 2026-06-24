@@ -24,9 +24,9 @@ async def migrate():
     await init_db()
 
     async with AsyncSessionLocal() as db:
-        # Check if source tables exist
+                                      
         async with engine.begin() as conn:
-            # Check for job_posts table
+                                       
             try:
                 result = await conn.execute(text("SELECT COUNT(*) FROM job_posts"))
                 job_count = result.scalar()
@@ -35,7 +35,7 @@ async def migrate():
                 job_count = 0
                 logger.warning("job_posts table not found or empty")
 
-            # Check for notices table
+                                     
             try:
                 result = await conn.execute(text("SELECT COUNT(*) FROM notices"))
                 notice_count = result.scalar()
@@ -50,7 +50,7 @@ async def migrate():
 
         migrated = 0
 
-        # Migrate job_posts → opportunities
+                                           
         if job_count > 0:
             async with engine.begin() as conn:
                 rows = await conn.execute(text("""
@@ -61,7 +61,7 @@ async def migrate():
                 jobs = rows.fetchall()
 
             for job in jobs:
-                # Check if already migrated (by content_hash)
+                                                             
                 existing = await db.execute(text(
                     "SELECT id FROM opportunities WHERE content_hash = :hash"
                 ), {"hash": job[9]})
@@ -95,7 +95,7 @@ async def migrate():
             await db.commit()
             logger.info(f"Migrated {migrated} job_posts → opportunities")
 
-        # Migrate notices → opportunities
+                                         
         notice_migrated = 0
         if notice_count > 0:
             async with engine.begin() as conn:
@@ -109,8 +109,8 @@ async def migrate():
                 notices = rows.fetchall()
 
             for notice in notices:
-                # Check if already migrated
-                if notice[12]:  # content_hash
+                                           
+                if notice[12]:                
                     existing = await db.execute(text(
                         "SELECT id FROM opportunities WHERE content_hash = :hash"
                     ), {"hash": notice[12]})

@@ -35,7 +35,7 @@ function statusChip(status: string) {
   return `<span class="badge ${map[status] || "badge-new"}">${status}</span>`;
 }
 
-// Home / Landing page
+
 export async function renderHome() {
   const el = document.getElementById("page-home")!;
   el.innerHTML = `
@@ -91,11 +91,11 @@ export async function renderHome() {
     }
   });
 
-  // Auto-check backend once
+  
   document.getElementById("home-check-backend")?.dispatchEvent(new Event('click'));
 }
 
-// dashboard page
+
 
 export async function renderDashboard() {
   const el = document.getElementById("page-dashboard")!;
@@ -167,7 +167,7 @@ export async function renderDashboard() {
   }
 }
 
-// Profile page
+
 export async function renderProfile() {
   const el = document.getElementById("page-profile")!;
   el.innerHTML = `
@@ -258,7 +258,7 @@ export async function renderProfile() {
     try {
       const profile = await api.getProfile(USER_ID) as any;
 
-      // Populate settings inputs
+      
       if (profile.graduation_year) gradInput.value = String(profile.graduation_year);
       if (profile.telegram_chat_id) tgInput.value = profile.telegram_chat_id;
 
@@ -305,11 +305,11 @@ export async function renderProfile() {
           </div>
         </div>`;
     } catch {
-      // Profile not found yet — that's OK
+      
     }
   }
 
-  // Save settings button
+  
   document.getElementById("save-settings-btn")?.addEventListener("click", async () => {
     const btn = document.getElementById("save-settings-btn") as HTMLButtonElement;
     const statusDiv = document.getElementById("settings-status")!;
@@ -342,7 +342,7 @@ export async function renderProfile() {
     }
   });
 
-  // Send to Telegram button
+  
   document.getElementById("send-telegram-btn")?.addEventListener("click", async () => {
     const btn = document.getElementById("send-telegram-btn") as HTMLButtonElement;
     const statusDiv = document.getElementById("settings-status")!;
@@ -368,11 +368,11 @@ export async function renderProfile() {
 
 
 
-// Internship News Scraper page
+
 export async function renderInternships() {
   const el = document.getElementById("page-internships")!;
 
-  // Source registry: website + Telegram + Gmail
+  
   const WEB_SOURCES = [
     { id: "companycareers", label: "Company Careers", icon: "", type: "website" },
     { id: "govtportal", label: "Govt Portals", icon: "🏛️", type: "website" },
@@ -384,7 +384,7 @@ export async function renderInternships() {
     { id: "gmail", label: "Gmail Inbox", icon: "📧", type: "gmail" },
   ];
 
-  // Each tab has its own independent selection — no bleed-across
+  
   let webSelected = new Set(["companycareers"]);
   let tgSelected = new Set(["telegram"]);
   let gmailSelected = new Set(["gmail"]);
@@ -392,14 +392,14 @@ export async function renderInternships() {
   let allNotices: any[] = [];
   let activeSrcTab: "website" | "telegram" | "gmail" = "website";
 
-  // Returns only the sources for the currently visible tab
+  
   function activeSources(): string[] {
     if (activeSrcTab === "telegram") return [...tgSelected];
     if (activeSrcTab === "gmail") return [...gmailSelected];
     return [...webSelected];
   }
 
-  // ── Pipeline stage indicator ────────────────────────────────────────────────
+  
   const PIPELINE = ["Fetch", "Normalize", "Detect", "Extract Links", "Eligibility", "Dedup", "Score", "Alert"];
 
   function pipelineHTML(active = -1) {
@@ -409,7 +409,7 @@ export async function renderInternships() {
     </div>`;
   }
 
-  // ── Eligibility badge ───────────────────────────────────────────────────────
+  
   function eligBadge(status: string) {
     const label: Record<string, string> = {
       eligible: "Eligible", maybe: "Maybe", not_eligible: "Not Eligible", unknown: "Unknown",
@@ -417,7 +417,7 @@ export async function renderInternships() {
     return `<span class="category-tag">${label[status] || status}</span>`;
   }
 
-  // ── Deadline urgency chip ───────────────────────────────────────────────────
+  
   function deadlineChip(deadline: string | null) {
     if (!deadline) return "";
     const d = new Date(deadline);
@@ -428,7 +428,7 @@ export async function renderInternships() {
     return `<span class="date-pill">${days}d left</span>`;
   }
 
-  // ── Score ring (small) ──────────────────────────────────────────────────────
+  
   function scoreRing(score: number) {
     const pct = Math.round(score * 10);
     const col = pct >= 7 ? "#10b981" : pct >= 4 ? "#f59e0b" : "#6366f1";
@@ -439,7 +439,7 @@ export async function renderInternships() {
         fill="${col}" font-size="9" font-weight="700">${pct}/10</text></svg>`;
   }
 
-  // ── Render notices list ─────────────────────────────────────────────────────
+  
   function renderList(notices: any[]) {
     const list = document.getElementById("intern-feed")!;
     if (!notices.length) {
@@ -450,7 +450,7 @@ export async function renderInternships() {
       if (activeTab === "eligible") return n.status !== "saved" && n.status !== "applied" && (n.eligibility_status === "eligible" || n.eligibility_status === "maybe");
       if (activeTab === "saved") return n.status === "saved";
       if (activeTab === "applied") return n.status === "applied";
-      return n.status !== "saved" && n.status !== "applied"; // For "all", hide items already processed
+      return n.status !== "saved" && n.status !== "applied"; 
     });
     if (!filtered.length) {
       list.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">Nothing in this tab</div></div>`;
@@ -485,7 +485,7 @@ export async function renderInternships() {
         </div>
       </div>`).join("");
 
-    // Wire buttons
+    
     list.querySelectorAll(".view-notice-btn").forEach(btn => {
       btn.addEventListener("click", async () => {
         const id = (btn as HTMLElement).dataset.id!;
@@ -506,7 +506,7 @@ export async function renderInternships() {
             ${n.portal_link ? `<a href="${n.portal_link}" target="_blank" class="btn btn-primary" style="margin-top:20px;display:inline-flex">Apply Now →</a>` : ""}
           `);
 
-          // Async: load project matches
+          
           try {
             const pm = await api.projectMatch(id);
             const container = document.getElementById("project-match-container");
@@ -558,7 +558,7 @@ export async function renderInternships() {
                     <div style="font-size:11px;color:var(--text-secondary);margin-top:3px">${m.reasons.join(" · ")}</div></div></div>`;
             }).join("")}
             `;
-          } catch { /* project match failed silently */ }
+          } catch {  }
 
         } catch (e: any) { toast(e.message, "error"); }
       });
@@ -595,12 +595,12 @@ export async function renderInternships() {
     });
   }
 
-  // ── Load notices from backend ───────────────────────────────────────────────
+  
   async function loadNotices() {
     const feed = document.getElementById("intern-feed")!;
     feed.innerHTML = `<div style="display:flex;gap:8px;align-items:center"><div class="spinner"></div>Loading notices…</div>`;
     try {
-      // Load notices matching the active source tab only
+      
       const notices = await api.getRankedInternships(USER_ID, 200, activeSources());
       allNotices = notices;
       updateTabCounts(notices);
@@ -630,7 +630,7 @@ export async function renderInternships() {
     });
   }
 
-  // ── Initial render ──────────────────────────────────────────────────────────
+  
   el.innerHTML = `
     <div>
       <div class="title-md" style="margin-bottom:var(--spacing-md)">INTERNSHIP NEWS SCRAPER</div>
@@ -661,7 +661,7 @@ export async function renderInternships() {
       <div id="intern-feed" class="intern-feed"></div>
     </div>`;
 
-  // Source type tab switching (website ↔ telegram)
+  
   el.querySelectorAll(".intern-src-tab").forEach(tab => {
     tab.addEventListener("click", () => {
       const which = (tab as HTMLElement).dataset.srctab as "website" | "telegram" | "gmail";
@@ -674,12 +674,12 @@ export async function renderInternships() {
         which === "telegram" ? "flex" : "none";
       (document.getElementById("src-gmail-chips") as HTMLElement).style.display =
         which === "gmail" ? "flex" : "none";
-      // Reload feed to show only notices for the selected source tab
+      
       loadNotices();
     });
   });
 
-  // Source chip toggle — updates the correct tab's set based on data-group
+  
   el.querySelectorAll(".source-chip").forEach(chip => {
     chip.addEventListener("click", () => {
       const src = (chip as HTMLElement).dataset.source!;
@@ -691,7 +691,7 @@ export async function renderInternships() {
     });
   });
 
-  // Tab switching
+  
   el.querySelectorAll(".intern-tab").forEach(tab => {
     tab.addEventListener("click", () => {
       el.querySelectorAll(".intern-tab").forEach(t => t.classList.remove("active"));
@@ -701,7 +701,7 @@ export async function renderInternships() {
     });
   });
 
-  // Fetch button
+  
   document.getElementById("intern-fetch-btn")?.addEventListener("click", async () => {
     const btn = document.getElementById("intern-fetch-btn") as HTMLButtonElement;
     const status = document.getElementById("intern-fetch-status")!;
@@ -711,7 +711,7 @@ export async function renderInternships() {
     pipeWrap.style.display = "block";
     status.textContent = "";
 
-    // Animate pipeline stages
+    
     for (let i = 0; i < PIPELINE.length; i++) {
       pipeWrap.innerHTML = pipelineHTML(i);
       await new Promise(r => setTimeout(r, 320));
@@ -722,7 +722,7 @@ export async function renderInternships() {
       if (Array.isArray(res.warnings)) res.warnings.forEach((w: string) => toast(w, "error"));
       toast(`Fetched ${res.fetched} notices, saved ${res.saved}`, "success");
       status.textContent = `${res.saved} new notices`;
-      pipeWrap.innerHTML = pipelineHTML(PIPELINE.length); // all done
+      pipeWrap.innerHTML = pipelineHTML(PIPELINE.length); 
       await loadNotices();
     } catch (e: any) {
       toast(e.message, "error");
@@ -733,7 +733,7 @@ export async function renderInternships() {
     }
   });
 
-  // Fetch Gmail connection status on load
+  
   (async () => {
     try {
       const status = await api.gmailStatus();
@@ -745,14 +745,14 @@ export async function renderInternships() {
           el.innerHTML = `<span style="color:var(--text-muted)">Not configured — add IMAP_USER and IMAP_PASSWORD to .env</span>`;
         }
       }
-    } catch { /* backend offline */ }
+    } catch {  }
   })();
 
   loadNotices();
 }
 
 
-// Drafts for the comapany/startup page
+
 export async function renderDrafts() {
   const el = document.getElementById("page-drafts")!;
   el.innerHTML = `<div style="display:flex;align-items:center;gap:8px"><div class="spinner"></div>Loading drafts…</div>`;
@@ -856,7 +856,7 @@ export async function renderDrafts() {
   }
 }
 
-// ─── Repo Intelligence Page ──────────────────────────────────────────────────
+
 
 let _currentRole = "fullstack";
 
@@ -1613,7 +1613,7 @@ export async function renderFreelancing() {
       });
     });
 
-    // Update tab counts
+    
     const counts = {
       all: gigs.length,
       saved: gigs.filter(g => g.status === "saved").length,
@@ -1640,8 +1640,8 @@ export async function renderFreelancing() {
     }
   }
 
-  // ── Render the page ────────────────────────────────────────────────────
-  // ── Render the page ────────────────────────────────────────────────────
+  
+  
   el.innerHTML = `
     <div>
       <div class="title-md" style="margin-bottom:var(--spacing-md)">FREELANCE HUB</div>
@@ -1663,7 +1663,7 @@ export async function renderFreelancing() {
       <div id="fl-feed"></div>
     </div>`;
 
-  // Wire source chip toggles
+  
   el.querySelectorAll("#fl-source-chips .source-chip").forEach(chip => {
     chip.addEventListener("click", () => {
       const src = (chip as HTMLElement).dataset.source!;
@@ -1673,7 +1673,7 @@ export async function renderFreelancing() {
     });
   });
 
-  // Wire tab switching
+  
   el.querySelectorAll(".fl-tab").forEach(tab => {
     tab.addEventListener("click", () => {
       el.querySelectorAll(".fl-tab").forEach(t => t.classList.remove("active"));
@@ -1683,7 +1683,7 @@ export async function renderFreelancing() {
     });
   });
 
-  // Wire fetch button
+  
   document.getElementById("fl-fetch-btn")?.addEventListener("click", async () => {
     const btn = document.getElementById("fl-fetch-btn") as HTMLButtonElement;
     const status = document.getElementById("fl-fetch-status")!;
@@ -1696,7 +1696,7 @@ export async function renderFreelancing() {
     pipeWrap.style.display = "block";
     status.textContent = "";
 
-    // Animate pipeline
+    
     for (let i = 0; i < FL_PIPELINE.length; i++) {
       pipeWrap.innerHTML = flPipelineHTML(i);
       await new Promise(r => setTimeout(r, 400));
@@ -1717,6 +1717,6 @@ export async function renderFreelancing() {
     }
   });
 
-  // Load existing gigs
+  
   loadGigs();
 }

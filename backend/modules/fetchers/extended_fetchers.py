@@ -47,12 +47,12 @@ class LinkedInFetcher(BaseFetcher):
 
     async def fetch(self, keywords: list[str], location: str = "India", **kwargs) -> list[RawJob]:
         results: list[RawJob] = []
-        # Fetch once combining top 2 keywords — LinkedIn search handles OR well
+                                                                               
         query = " OR ".join(keywords[:2])
         params = {
             "keywords": query,
             "location": location or "India",
-            "f_JT": "I",           # Job type = Internship
+            "f_JT": "I",                                  
             "trk": "public_jobs_jobs-search-bar_search-submit",
         }
         try:
@@ -86,7 +86,7 @@ class LinkedInFetcher(BaseFetcher):
                 if not title:
                     continue
 
-                # Infer mode from location text
+                                               
                 loc_lower = (location or "").lower()
                 mode_extra: dict = {}
                 if "remote" in loc_lower or "work from home" in loc_lower:
@@ -108,7 +108,7 @@ class LinkedInFetcher(BaseFetcher):
                 logger.debug(f"[LinkedIn] card parse error: {e}")
         return jobs
 
-    # Kept for interface compatibility
+                                      
     def _parse_json(self, data: dict) -> list[RawJob]:
         return []
 
@@ -173,7 +173,7 @@ class FreshersworldFetcher(BaseFetcher):
     async def fetch(self, keywords: list[str], location: str = "", **kwargs) -> list[RawJob]:
         results: list[RawJob] = []
         for keyword in keywords[:3]:
-            # Freshersworld slug-based URL: more reliable than ?searchkey= query param
+                                                                                      
             slug = keyword.replace(" ", "-").lower()
             url = f"{self.BASE_URL}/internship-jobs/keyword-{slug}/all-cities"
             try:
@@ -188,7 +188,7 @@ class FreshersworldFetcher(BaseFetcher):
         return results
 
     def _parse_listings(self, soup: BeautifulSoup) -> list[RawJob]:
-        # Freshersworld renders server-side; try multiple known card selectors
+                                                                              
         cards = (
             soup.select(".jobs-list-item")
             or soup.select(".job-container")
@@ -247,7 +247,7 @@ class CutshortFetcher(BaseFetcher):
         results: list[RawJob] = []
         for keyword in keywords[:3]:
             query = keyword.replace(" ", "+")
-            # Use the slug URL format for better server-side rendering
+                                                                      
             slug = keyword.replace(" ", "-").lower()
             url = f"{self.BASE_URL}/jobs/{slug}-jobs"
             try:
@@ -263,7 +263,7 @@ class CutshortFetcher(BaseFetcher):
 
     def _parse_listings(self, soup: BeautifulSoup) -> list[RawJob]:
         jobs: list[RawJob] = []
-        # Cutshort is JS-rendered; the SSR shell exposes job links in <a href="/job/..."> tags
+                                                                                              
         job_links = [
             a for a in soup.select("a[href]")
             if "/job/" in (a.get("href") or "")
@@ -279,7 +279,7 @@ class CutshortFetcher(BaseFetcher):
                 title = _text(link_el).strip()
                 if not title or len(title) < 3:
                     continue
-                # Company is often in the sibling/parent text; try to grab it
+                                                                             
                 parent = link_el.find_parent(["li", "div", "article"])
                 company = "Unknown"
                 if parent:
@@ -347,7 +347,7 @@ class WellfoundFetcher(BaseFetcher):
                     return []
                 resp.raise_for_status()
 
-            # Try extracting __NEXT_DATA__
+                                          
             soup = BeautifulSoup(resp.text, "lxml")
             next_data_tag = soup.select_one('script#__NEXT_DATA__')
             if next_data_tag and next_data_tag.string:
@@ -358,7 +358,7 @@ class WellfoundFetcher(BaseFetcher):
                 except _json.JSONDecodeError:
                     logger.warning("[Wellfound] __NEXT_DATA__ JSON decode failed")
 
-            # Fallback: try standard HTML parsing if __NEXT_DATA__ is empty
+                                                                           
             if not results:
                 results = self._parse_html(soup)
                 logger.info(f"[Wellfound] HTML fallback → {len(results)} listings")
@@ -373,7 +373,7 @@ class WellfoundFetcher(BaseFetcher):
         """Extract jobs from __NEXT_DATA__ props."""
         jobs: list[RawJob] = []
         try:
-            # Navigate through Next.js pageProps — structure may vary
+                                                                     
             props = data.get("props", {}).get("pageProps", {})
             listings = (
                 props.get("listings")
@@ -453,7 +453,7 @@ class WorkAtAStartupFetcher(BaseFetcher):
 
     async def fetch(self, keywords: list[str], location: str = "", **kwargs) -> list[RawJob]:
         results: list[RawJob] = []
-        # The /search endpoint returns 404; use /internships browse page instead
+                                                                                
         url = f"{self.BASE_URL}/internships"
         try:
             async with httpx.AsyncClient(headers=HEADERS, timeout=20, follow_redirects=True) as client:
@@ -467,7 +467,7 @@ class WorkAtAStartupFetcher(BaseFetcher):
         return results
 
     def _parse_listings(self, soup: BeautifulSoup) -> list[RawJob]:
-        # Page is partially SSR; try known card and company-listing selectors
+                                                                             
         cards = (
             soup.select(".company-listing")
             or soup.select(".job-card")
@@ -505,15 +505,15 @@ class WorkAtAStartupFetcher(BaseFetcher):
         return jobs
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Telegram public channel scraper — uses t.me/s/<channel> web preview
-# No bot token or authentication required.
-# ─────────────────────────────────────────────────────────────────────────────
+                                                                               
+                                                                     
+                                          
+                                                                               
 
 import re
 
-# Curated list of active public Telegram channels with internship notices.
-# Each entry: (channel_username, display_name)
+                                                                          
+                                              
 DEFAULT_TELEGRAM_CHANNELS = [
     ("JobsAndInternshipsIndia", "Jobs & Internships India"),
     ("internshipsalert",        "Internships Alert"),
@@ -522,14 +522,14 @@ DEFAULT_TELEGRAM_CHANNELS = [
     ("TechJobsIndia",           "Tech Jobs India"),
 ]
 
-# Keywords that signal an internship notice (message-level filter)
+                                                                  
 INTERN_KEYWORDS = {
     "intern", "internship", "trainee", "training", "fresher",
     "final year", "pre-final", "3rd year", "hiring", "apply now",
     "stipend", "opportunity", "openings", "off campus",
 }
 
-# Keywords that indicate a link is an apply link
+                                                
 APPLY_LINK_HINTS = {"apply", "form", "careers", "jobs", "join", "application", "internship"}
 
 
@@ -565,7 +565,7 @@ class TelegramChannelFetcher(BaseFetcher):
                     if resp.status_code != 200:
                         logger.warning(f"[Telegram] {username} → HTTP {resp.status_code}")
                         continue
-                    soup = BeautifulSoup(resp.content, "lxml")  # use .content (bytes) for correct encoding
+                    soup = BeautifulSoup(resp.content, "lxml")                                             
                     jobs = self._parse_channel(soup, username, display_name)
                     results.extend(jobs)
                     logger.info(f"[Telegram] @{username} → {len(jobs)} notices")
@@ -586,7 +586,7 @@ class TelegramChannelFetcher(BaseFetcher):
                 if not self._is_internship_notice(raw_text):
                     continue
 
-                # Extract apply links from message
+                                                  
                 apply_link = None
                 all_links = []
                 for a in text_el.select("a[href]"):
@@ -600,11 +600,11 @@ class TelegramChannelFetcher(BaseFetcher):
                             apply_link = href
                     all_links.append(href)
 
-                # Fallback: use first external link as apply link
+                                                                 
                 if not apply_link and all_links:
                     apply_link = all_links[0]
 
-                # Infer title from first non-empty line (often the role name)
+                                                                             
                 lines = [l.strip() for l in raw_text.splitlines() if l.strip()]
                 title = self._extract_title(lines)
                 if not title:
@@ -613,7 +613,7 @@ class TelegramChannelFetcher(BaseFetcher):
                 company = self._extract_company(lines, raw_text)
                 location_str = self._extract_location(raw_text)
 
-                # Mode detection
+                                
                 extra: dict = {}
                 low = raw_text.lower()
                 if "remote" in low or "wfh" in low or "work from home" in low:
@@ -621,7 +621,7 @@ class TelegramChannelFetcher(BaseFetcher):
                 elif "hybrid" in low:
                     extra["mode"] = "hybrid"
 
-                # Source channel link
+                                     
                 msg_link_el = msg.select_one(".tgme_widget_message_date")
                 source_link = msg_link_el.get("href") if msg_link_el and msg_link_el.has_attr("href") else None
 
@@ -630,7 +630,7 @@ class TelegramChannelFetcher(BaseFetcher):
                     company=company or display_name,
                     location=location_str,
                     internship_type="Internship",
-                    description=raw_text[:1000],  # cap at 1000 chars for DB
+                    description=raw_text[:1000],                            
                     apply_link=apply_link or source_link,
                     source=f"Telegram/{username}",
                     extra={**extra, "channel": username, "source_link": source_link or ""},
@@ -673,9 +673,9 @@ class TelegramChannelFetcher(BaseFetcher):
         return None
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Additional Job Board Fetchers
-# ─────────────────────────────────────────────────────────────────────────────
+                                                                               
+                               
+                                                                               
 
 class _GenericJobBoardFetcher(BaseFetcher):
     """
@@ -846,7 +846,7 @@ class HimalayasFetcher(BaseFetcher):
                     if len(description) > 500:
                         description = description[:500]
 
-                    # Determine mode
+                                    
                     extra: dict = {}
                     emp_type = (item.get("employmentType") or item.get("employment_type") or "").lower()
                     if "remote" in loc.lower() or item.get("remote"):
@@ -875,8 +875,8 @@ class OttaFetcher(_GenericJobBoardFetcher):
     BASE_URL = "https://app.otta.com"
 
     async def fetch(self, keywords: list[str], location: str = "", **kwargs) -> list[RawJob]:
-        # Otta is fully JS-rendered (React SPA) — no SSR HTML available.
-        # Returns empty until API integration is configured.
+                                                                        
+                                                            
         logger.warning(
             "[Otta] Skipping fetch — site is a fully client-rendered SPA. "
             "Configure Otta API credentials for job access."

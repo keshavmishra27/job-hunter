@@ -19,7 +19,7 @@ def _strip_tracking_params(url: str) -> str:
 
 
 def _canonicalize(url: str) -> str:
-    # remove fragment, lowercase host, strip trailing slash
+                                                           
     try:
         parsed = urlparse(url)
         path = parsed.path.rstrip('/')
@@ -30,12 +30,12 @@ def _canonicalize(url: str) -> str:
 
 async def resolve_final_url(url: str, timeout: int = 10) -> tuple[str, str]:
     """Follow redirects and return (final_url, content_type)."""
-    # Skip non-HTTP schemes immediately — no network call needed
+                                                                
     if not url or not url.startswith(("http://", "https://")):
         return url, ''
     try:
         async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
-            # Use HEAD first to save bandwidth; fallback to GET
+                                                               
             try:
                 r = await client.head(url)
                 r.raise_for_status()
@@ -50,7 +50,7 @@ async def resolve_final_url(url: str, timeout: int = 10) -> tuple[str, str]:
 
 
 async def clean_and_resolve_links(links: list[dict], base_url: str | None = None, follow: bool = True) -> list[dict]:
-    # Schemes that are never followable HTTP links
+                                                  
     SKIP_SCHEMES = ("javascript:", "tg://", "mailto:", "data:", "tel:", "sms:", "void(", "#")
     out = []
     seen = set()
@@ -58,12 +58,12 @@ async def clean_and_resolve_links(links: list[dict], base_url: str | None = None
         raw = l.get('url') or l.get('href') or l.get('text')
         if not raw:
             continue
-        # Skip non-navigable schemes before any processing
+                                                          
         if any(raw.startswith(s) for s in SKIP_SCHEMES):
             continue
         if base_url and not raw.startswith(('http://', 'https://')):
             raw = urljoin(base_url, raw)
-        # After join, still skip if not http(s)
+                                               
         if not raw.startswith(('http://', 'https://')):
             continue
 

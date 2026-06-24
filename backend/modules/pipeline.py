@@ -48,7 +48,7 @@ from backend.modules.classifier import classify
 from backend.modules.keyword_expander import expand_keywords, flatten_to_query_list
 
 
-# ─── Pipeline Result ─────────────────────────────────────────────────────────
+                                                                               
 
 @dataclass
 class PipelineResult:
@@ -66,7 +66,7 @@ class PipelineResult:
     ranked_items: list[dict] = field(default_factory=list)
 
 
-# ─── Profile & GitHub Helpers ────────────────────────────────────────────────
+                                                                               
 
 async def _load_profile(user_id: str, db: AsyncSession) -> dict:
     """Load user profile as a dict."""
@@ -148,7 +148,7 @@ async def _get_applied_fingerprints(user_id: str, db: AsyncSession) -> tuple[set
     return fingerprints, urls
 
 
-# ─── Source Group → Opportunity Type Mapping ─────────────────────────────────
+                                                                               
 
 SOURCE_GROUP_TO_OPP_TYPE = {
     "internship": "internship",
@@ -159,7 +159,7 @@ SOURCE_GROUP_TO_OPP_TYPE = {
 }
 
 
-# ─── Main Pipeline ───────────────────────────────────────────────────────────
+                                                                               
 
 async def run_pipeline(
     user_id: str,
@@ -177,12 +177,12 @@ async def run_pipeline(
     """
     result = PipelineResult()
 
-    # 1. Load user profile and GitHub repos
+                                           
     profile_dict = await _load_profile(user_id, db)
     github_repos = await _load_github_repos(user_id, db)
     applied_fps, applied_urls = await _get_applied_fingerprints(user_id, db)
 
-    # 2. Build search keywords from profile
+                                           
     keyword_groups = expand_keywords(
         skills=profile_dict.get("skills") or [],
         preferred_roles=profile_dict.get("preferred_roles") or [],
@@ -190,12 +190,11 @@ async def run_pipeline(
     )
     keywords = flatten_to_query_list(keyword_groups)
     if not keywords:
-        keywords = (profile_dict.get("preferred_roles") or [])[:3] + \
-                   (profile_dict.get("skills") or [])[:3]
+        keywords = (profile_dict.get("preferred_roles") or [])[:3] +                   (profile_dict.get("skills") or [])[:3]
     if not keywords:
         keywords = ["internship", "python", "web development"]
 
-    # Determine search locations
+                                
     location_rule = profile_dict.get("location_rule") or {}
     search_locations = []
     if location_rule.get("remote_allowed", False):
@@ -211,7 +210,7 @@ async def run_pipeline(
         f"keywords={keywords[:5]}, locations={search_locations}"
     )
 
-    # 3. Get enabled sources for requested groups
+                                                 
     sources = await get_enabled_sources_multi(db, source_groups)
     if not sources:
         result.errors.append(f"No enabled sources found for groups: {source_groups}")
@@ -219,7 +218,7 @@ async def run_pipeline(
 
     logger.info(f"[Pipeline] {len(sources)} enabled sources: {[s.name for s in sources]}")
 
-    # 4. Fetch from all sources via CapabilityRouter
+                                                    
     router = get_capability_router()
     all_raw = []
 
@@ -245,7 +244,7 @@ async def run_pipeline(
             })
             all_raw.extend(fr.items)
 
-            # Update source fetch status in DB
+                                              
             await update_fetch_status(
                 db, fr.source_name, fr.status, count=len(fr.items)
             )
@@ -256,11 +255,11 @@ async def run_pipeline(
         await db.commit()
         return result
 
-    # 5. Normalize
+                  
     normalized = normalize_many(all_raw)
     result.normalized = len(normalized)
 
-    # 6. Deduplicate against existing opportunities
+                                                   
     existing_result = await db.execute(
         select(Opportunity.content_hash, Opportunity.title, Opportunity.organization, Opportunity.location)
     )
@@ -285,7 +284,7 @@ async def run_pipeline(
     )
     result.deduplicated = len(unique)
 
-    # 7. Filter out already-applied
+                                   
     unique = [
         item for item in unique
         if canonical_fingerprint({
@@ -296,13 +295,13 @@ async def run_pipeline(
         }) not in applied_fps
     ]
 
-    # 8. Classify opportunity type
+                                  
     for item in unique:
         opp_type = classify(item, item.get("source", ""))
         item["opportunity_type"] = opp_type
 
-    # 9. Eligibility filter
-    # For freelance items, skip experience/duration checks
+                           
+                                                          
     internship_items = [i for i in unique if i.get("opportunity_type") != "freelance"]
     freelance_items = [i for i in unique if i.get("opportunity_type") == "freelance"]
 
@@ -323,10 +322,10 @@ async def run_pipeline(
     result.eligible = len(eligible)
     result.filtered_out = len(filtered_intern) + len(filtered_freelance)
 
-    # 10. Rank (fit score)
+                          
     ranked = rank_jobs(eligible, profile_dict, github_repos)
 
-    # 10b. Competition estimation
+                                 
     from backend.modules.competition_estimator import estimate_competition
     for item in ranked:
         comp = estimate_competition(item)
@@ -334,19 +333,19 @@ async def run_pipeline(
         item["competition_label"] = comp["competition_label"]
         item["competition_reasons"] = comp["competition_reasons"]
         
-        # Combined opportunity score (0.6 * Fit + 0.4 * Competition Advantage)
+                                                                              
         fit = item.get("score", 0)
         item["opportunity_score"] = round(0.6 * fit + 0.4 * comp["competition_score"], 4)
 
-    # Re-sort by opportunity_score
+                                  
     ranked.sort(key=lambda x: x.get("opportunity_score", 0), reverse=True)
     result.ranked = len(ranked)
 
-    # 11. Enrich (optional, async)
+                                  
     if enrich and ranked:
         try:
             from backend.modules.enrichment import enrich_batch
-            # Only enrich top items to keep it fast
+                                                   
             top_to_enrich = ranked[:min(limit, 20)]
             ranked[:len(top_to_enrich)] = await enrich_batch(
                 top_to_enrich, max_concurrency=3, timeout=10
@@ -354,12 +353,12 @@ async def run_pipeline(
         except Exception as e:
             logger.warning(f"[Pipeline] Enrichment failed: {e}")
 
-    # 12. Store as Opportunity rows
+                                   
     saved = 0
     for item in ranked[:limit]:
         source_name = item.get("source", "Unknown")
 
-        # Determine source_group from source name
+                                                 
         source_group = None
         for src in sources:
             if src.name == source_name:
@@ -399,7 +398,7 @@ async def run_pipeline(
         )
         db.add(opp)
 
-        # Store freelance details if applicable
+                                               
         if item.get("opportunity_type") == "freelance" and any(
             item.get(k) is not None
             for k in ("budget_min", "budget_max", "client_rating")
@@ -428,7 +427,7 @@ async def run_pipeline(
     await db.commit()
     result.saved = saved
 
-    # Top items for API response
+                                
     result.ranked_items = ranked
     result.top_items = []
     for r in ranked[:5]:

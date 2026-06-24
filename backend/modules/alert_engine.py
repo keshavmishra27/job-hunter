@@ -28,7 +28,7 @@ async def alert_on_notice(db: AsyncSession, user_id: str, notice: object, score:
     Returns the Alert or None.
     """
     try:
-        # Basic rules: if score >= threshold and eligibility indicates eligible
+                                                                               
         eligible = getattr(notice, "eligibility_status", None) or getattr(notice, "eligibility_text", None)
         if score >= threshold or (eligible and "eligible" in str(eligible).lower()):
             title = getattr(notice, "title", "New internship")

@@ -53,12 +53,12 @@ class GmailTrackerSync:
             
             added_count = 0
             for item in results:
-                # Check if application already exists for this thread
+                                                                     
                 existing = await db.execute(select(Application).where(Application.thread_id == item["thread_id"]))
                 if existing.scalar_one_or_none():
                     continue
                 
-                # We need a job post to link this application to
+                                                                
                 job_id = str(uuid.uuid4())
                 job = JobPost(
                     id=job_id,
@@ -127,12 +127,12 @@ class GmailTrackerSync:
                     
                     if self._is_application_confirmation(subject, body_text):
                         company = _extract_company_from_sender(from_header)
-                        # Remove common subject prefixes like 'Application Received:'
+                                                                                     
                         role = re.sub(r"(?i)^(application received|thank you for applying)[\s:-]*", "", subject).strip()
                         if not role:
                             role = "Unknown Role"
                             
-                        # Extract date
+                                      
                         date_str = msg.get("Date")
                         parsed_date = None
                         if date_str:
@@ -168,20 +168,20 @@ class GmailTrackerSync:
             mail.login(settings.gmail_user, settings.gmail_app_password)
             mail.select("INBOX", readonly=True)
             
-            # Simple check for emails in the thread (usually same Subject or In-Reply-To)
-            # A more robust check uses UID SEARCH HEADER Message-ID
-            # For simplicity, we just look for replies in the last few days
+                                                                                         
+                                                                   
+                                                                           
             since_str = since_date.strftime("%d-%b-%Y")
             status, msg_ids = mail.search(None, f'(SINCE "{since_str}")')
             if status == "OK" and msg_ids[0]:
-                for msg_id in reversed(msg_ids[0].split()[:20]): # look at last 20 emails
+                for msg_id in reversed(msg_ids[0].split()[:20]):                         
                     st, data = mail.fetch(msg_id, "(BODY.PEEK[HEADER.FIELDS (IN-REPLY-TO MESSAGE-ID)])")
                     if st == "OK" and data[0]:
                         msg = email_lib.message_from_bytes(data[0][1])
                         reply_to = _decode_header_value(msg.get("In-Reply-To", ""))
                         msg_id_val = _decode_header_value(msg.get("Message-ID", ""))
                         if thread_id in reply_to or thread_id in msg_id_val:
-                            # It's part of the thread! Fetch body
+                                                                 
                             st_body, body_data = mail.fetch(msg_id, "(RFC822)")
                             if st_body == "OK" and body_data[0]:
                                 full_msg = email_lib.message_from_bytes(body_data[0][1])

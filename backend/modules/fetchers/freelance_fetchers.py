@@ -14,9 +14,9 @@ from loguru import logger
 from backend.modules.fetchers.base_fetcher import BaseFetcher, RawJob
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Fiverr
-# ─────────────────────────────────────────────────────────────────────────────
+                                                                               
+        
+                                                                               
 
 class FiverrFetcher(BaseFetcher):
     """Fiverr buyer requests / gig search. Requires session auth."""
@@ -29,9 +29,9 @@ class FiverrFetcher(BaseFetcher):
         return []
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Freelancer.com
-# ─────────────────────────────────────────────────────────────────────────────
+                                                                               
+                
+                                                                               
 
 class FreelancerComFetcher(BaseFetcher):
     """Freelancer.com API integration. Has a public API at api.freelancer.com."""
@@ -44,7 +44,7 @@ class FreelancerComFetcher(BaseFetcher):
         jobs: list[RawJob] = []
 
         try:
-            # Freelancer has a public search endpoint
+                                                     
             async with httpx.AsyncClient(timeout=15) as client:
                 resp = await client.get(
                     "https://www.freelancer.com/api/projects/0.1/projects/active",
@@ -93,9 +93,9 @@ class FreelancerComFetcher(BaseFetcher):
         return jobs
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Guru
-# ─────────────────────────────────────────────────────────────────────────────
+                                                                               
+      
+                                                                               
 
 class GuruFetcher(BaseFetcher):
     """Guru.com job listing scraper stub."""
@@ -108,9 +108,9 @@ class GuruFetcher(BaseFetcher):
         return []
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Toptal
-# ─────────────────────────────────────────────────────────────────────────────
+                                                                               
+        
+                                                                               
 
 class ToptalFetcher(BaseFetcher):
     """Toptal job board scraper stub. Toptal is invite-only."""
@@ -123,9 +123,9 @@ class ToptalFetcher(BaseFetcher):
         return []
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Contra
-# ─────────────────────────────────────────────────────────────────────────────
+                                                                               
+        
+                                                                               
 
 class ContraFetcher(BaseFetcher):
     """Contra opportunities scraper stub."""
@@ -137,9 +137,9 @@ class ContraFetcher(BaseFetcher):
         return []
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# PeoplePerHour
-# ─────────────────────────────────────────────────────────────────────────────
+                                                                               
+               
+                                                                               
 
 class PeoplePerHourFetcher(BaseFetcher):
     """PeoplePerHour project listing scraper stub."""
@@ -151,9 +151,9 @@ class PeoplePerHourFetcher(BaseFetcher):
         return []
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Arc.dev
-# ─────────────────────────────────────────────────────────────────────────────
+                                                                               
+         
+                                                                               
 
 class ArcFetcher(BaseFetcher):
     """Arc.dev remote job scraper stub."""
@@ -165,9 +165,9 @@ class ArcFetcher(BaseFetcher):
         return []
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Turing
-# ─────────────────────────────────────────────────────────────────────────────
+                                                                               
+        
+                                                                               
 
 class TuringFetcher(BaseFetcher):
     """Turing.com job board scraper stub."""
@@ -179,9 +179,9 @@ class TuringFetcher(BaseFetcher):
         return []
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Lemon.io
-# ─────────────────────────────────────────────────────────────────────────────
+                                                                               
+          
+                                                                               
 
 class LemonioFetcher(BaseFetcher):
     """Lemon.io developer matching platform scraper stub."""
@@ -193,9 +193,9 @@ class LemonioFetcher(BaseFetcher):
         return []
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Gun.io
-# ─────────────────────────────────────────────────────────────────────────────
+                                                                               
+        
+                                                                               
 
 class GunioFetcher(BaseFetcher):
     """Gun.io freelance project scraper stub."""
@@ -207,9 +207,9 @@ class GunioFetcher(BaseFetcher):
         return []
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 99Designs
-# ─────────────────────────────────────────────────────────────────────────────
+                                                                               
+           
+                                                                               
 
 class NinetyNineDesignsFetcher(BaseFetcher):
     """99Designs contest/project scraper stub."""
@@ -221,9 +221,9 @@ class NinetyNineDesignsFetcher(BaseFetcher):
         return []
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Dribbble Jobs
-# ─────────────────────────────────────────────────────────────────────────────
+                                                                               
+               
+                                                                               
 
 class DribbbleFetcher(BaseFetcher):
     """Dribbble Jobs scraper stub."""
@@ -235,9 +235,9 @@ class DribbbleFetcher(BaseFetcher):
         return []
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Behance
-# ─────────────────────────────────────────────────────────────────────────────
+                                                                               
+         
+                                                                               
 
 class BehanceFetcher(BaseFetcher):
     """Behance job board scraper stub."""

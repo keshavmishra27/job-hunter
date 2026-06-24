@@ -2,7 +2,7 @@ import asyncio
 import os
 import sys
 
-# Add parent directory to path to allow imports
+                                               
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from backend.modules.fetchers.indeed_fetcher import IndeedFetcher
@@ -12,7 +12,7 @@ from backend.models import Application, UserProfile
 
 async def main():
     async with AsyncSessionLocal() as db:
-        # Get applied history
+                             
         user_id = "demo-user-1"
         applied_history = await db.execute(
             select(Application.job_fingerprint, Application.canonical_url).where(Application.user_id == user_id)
@@ -23,7 +23,7 @@ async def main():
         
         print(f"Loaded {len(applied_fingerprints)} fingerprints and {len(applied_urls)} URLs.")
         
-        # Get user profile keywords
+                                   
         result = await db.execute(select(UserProfile).where(UserProfile.user_id == user_id))
         profile = result.scalar_one_or_none()
         keywords = ["AI intern", "ML intern", "Machine Learning intern"]

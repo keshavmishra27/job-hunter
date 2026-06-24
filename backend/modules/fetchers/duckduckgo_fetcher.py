@@ -73,7 +73,7 @@ class DuckDuckGoFetcher(BaseFetcher):
                                     else:
                                         title = full_title
                             
-                            # Naive check to ensure it's likely a job post
+                                                                          
                             if "job" not in link.lower() and link.count("/") < 4:
                                 continue
 

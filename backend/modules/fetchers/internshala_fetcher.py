@@ -57,12 +57,12 @@ class InternshalaFetcher(BaseFetcher):
 
         for card in cards[:20]:
             try:
-                # Updated selectors — Internshala changed their HTML in 2025
+                                                                            
                 title_el = (
                     card.select_one(".job-title-href")
                     or card.select_one(".job-internship-name a")
                     or card.select_one(".job-internship-name")
-                    # Legacy fallbacks (kept for resilience)
+                                                            
                     or card.select_one(".profile a")
                     or card.select_one(".profile")
                 )
@@ -74,7 +74,7 @@ class InternshalaFetcher(BaseFetcher):
                 location_el = (
                     card.select_one("#location_names")
                     or card.select_one("[class*='location']")
-                    # Legacy fallbacks
+                                      
                     or card.select_one(".location_link")
                     or card.select_one(".location")
                 )
@@ -89,18 +89,18 @@ class InternshalaFetcher(BaseFetcher):
 
                 title = title_el.get_text(strip=True) if title_el else "Unknown"
                 company = company_el.get_text(strip=True) if company_el else "Unknown"
-                # Clean up "Actively hiring" badge text that's included inside .company_name
+                                                                                            
                 company = re.sub(r'Actively\s*hiring', '', company).strip()
                 location = location_el.get_text(strip=True) if location_el else None
                 internship_type = type_el.get_text(strip=True) if type_el else None
                 apply_link = (INTERNSHALA_BASE + link_el["href"]) if link_el and link_el.get("href") else None
                 posted_date = self._safe_date(date_el.get_text(strip=True) if date_el else None)
 
-                # Skip cards with empty/unknown titles
+                                                      
                 if not title or title == "Unknown":
                     continue
 
-                # Detect remote/WFH from location text
+                                                      
                 loc_lower = (location or "").lower()
                 mode = None
                 if "work from home" in loc_lower or "remote" in loc_lower:
@@ -108,7 +108,7 @@ class InternshalaFetcher(BaseFetcher):
                 elif "hybrid" in loc_lower:
                     mode = "hybrid"
 
-                # Build description from available snippets
+                                                           
                 desc_parts = []
                 if stipend_el:
                     desc_parts.append(f"Stipend: {stipend_el.get_text(strip=True)}")

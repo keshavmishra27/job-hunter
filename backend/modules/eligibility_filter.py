@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 from loguru import logger
 
 
-# ─── Constants ───────────────────────────────────────────────────────────────
+                                                                               
 
 REMOTE_HINTS = {
     "remote", "wfh", "work from home", "work-from-home",
@@ -31,7 +31,7 @@ REMOTE_HINTS = {
 MAX_DURATION_MONTHS = 6
 
 
-# ─── Individual Checks ──────────────────────────────────────────────────────
+                                                                              
 
 def _has_valid_title(job: dict) -> bool:
     """Check that title is present and not 'Unknown'."""
@@ -43,7 +43,7 @@ def _is_expired(job: dict, max_days: int = 30) -> bool:
     """Return True if the job is older than max_days."""
     posted = job.get("posted_date") or job.get("posted_at")
     if not posted:
-        return False  # No date → keep it, don't drop blindly
+        return False                                         
     try:
         if isinstance(posted, str):
             posted = datetime.fromisoformat(posted)
@@ -73,14 +73,14 @@ def _detect_duration_months(text: str) -> int | None:
     t = text.lower()
     max_months = None
 
-    # Pattern: "X-Y months" or "X to Y months"
+                                              
     range_pattern = re.findall(r'(\d+)\s*(?:to|-)\s*(\d+)\s*months?', t)
     for low, high in range_pattern:
         val = int(high)
         if max_months is None or val > max_months:
             max_months = val
 
-    # Pattern: standalone "X months"
+                                    
     single_pattern = re.findall(r'(\d+)\s*months?', t)
     for m in single_pattern:
         val = int(m)
@@ -89,7 +89,7 @@ def _detect_duration_months(text: str) -> int | None:
         if max_months is None or val > max_months:
             max_months = val
 
-    # Pattern: "X weeks" → convert
+                                  
     week_pattern = re.findall(r'(\d+)\s*weeks?', t)
     for w in week_pattern:
         int_months = math.ceil(int(w) / 4.0)
@@ -128,7 +128,7 @@ def _location_filter(job: dict, profile: dict) -> bool:
     allowed_cities = [loc.lower() for loc in (location_rule.get("offline_allowed") or [])]
 
     if not allowed_cities:
-        return True  # No restriction
+        return True                  
 
     if _is_remote(job):
         return True
@@ -149,10 +149,10 @@ def _deadline_filter(job: dict) -> bool:
             deadline = deadline.replace(tzinfo=timezone.utc)
         return deadline > datetime.now(tz=timezone.utc)
     except Exception:
-        return True  # If we can't parse, keep it
+        return True                              
 
 
-# ─── Main Filter ─────────────────────────────────────────────────────────────
+                                                                               
 
 def filter_eligible(
     jobs: list[dict],
@@ -174,37 +174,37 @@ def filter_eligible(
     filtered_out: list[dict] = []
 
     for job in jobs:
-        # 1. Title validity
+                           
         if not _has_valid_title(job):
             job["_filter_reason"] = "invalid_title"
             filtered_out.append(job)
             continue
 
-        # 2. Expiry
+                   
         if _is_expired(job, max_days=max_days):
             job["_filter_reason"] = "expired"
             filtered_out.append(job)
             continue
 
-        # 3. Experience requirement
+                                   
         if check_experience and not _experience_filter(job):
             job["_filter_reason"] = "experience_required"
             filtered_out.append(job)
             continue
 
-        # 4. Duration cap
+                         
         if check_duration and not _duration_filter(job):
             job["_filter_reason"] = "duration_too_long"
             filtered_out.append(job)
             continue
 
-        # 5. Location
+                     
         if check_location and not _location_filter(job, profile):
             job["_filter_reason"] = "location_mismatch"
             filtered_out.append(job)
             continue
 
-        # 6. Deadline validity
+                              
         if check_deadline and not _deadline_filter(job):
             job["_filter_reason"] = "deadline_passed"
             filtered_out.append(job)

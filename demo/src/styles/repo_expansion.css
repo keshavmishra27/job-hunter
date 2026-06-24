@@ -1,4 +1,4 @@
-/* Repo Expansion Modal Styles */
+
 .expansion-header {
   display: flex;
   justify-content: space-between;
@@ -227,7 +227,7 @@
 
 #modal {
   overflow-y: auto !important;
-  /* Customize scrollbar for a cleaner look */
+  
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
 }

@@ -14,20 +14,20 @@ class AutopilotRequest(BaseModel):
     max_queue: int = 25
     max_per_company: int = 2
 
-# Mock status store for now since we don't have a DB table yet for autopilot runs
+                                                                                 
 _autopilot_status = {}
 
 async def _run_autopilot_task(user_id: str, opportunity_type: str, max_queue: int, max_per_company: int):
     _autopilot_status[user_id] = {"status": "running", "queue": []}
     try:
         async with AsyncSessionLocal() as db:
-            # 1. Run pipeline to fetch, deduplicate, and rank
+                                                             
             result = await run_pipeline(user_id, [opportunity_type], db)
             
-            # 2. Extract top ranked
+                                   
             ranked_items = result.ranked_items
             
-            # 3. Build queue
+                            
             queue = AutopilotQueue.build_queue(ranked_items, max_queue=max_queue, max_per_company=max_per_company)
             
             _autopilot_status[user_id] = {

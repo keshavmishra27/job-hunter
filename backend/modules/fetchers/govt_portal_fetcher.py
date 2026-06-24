@@ -26,7 +26,7 @@ class GovtPortalFetcher(BaseFetcher):
                     resp = await client.get(portal)
                     resp.raise_for_status()
                     soup = BeautifulSoup(resp.text, "lxml")
-                    # find links to PDFs or announcement items
+                                                              
                     links = soup.select("a[href]")[:60]
                     for a in links:
                         href = a.get("href")

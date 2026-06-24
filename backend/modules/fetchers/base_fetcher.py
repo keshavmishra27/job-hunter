@@ -15,7 +15,7 @@ class RawJob:
     posted_date: datetime | None = None
     canonical_url: str | None = None
     fingerprint: str | None = None
-    opportunity_type: str = "internship"  # "internship" | "freelance"
+    opportunity_type: str = "internship"                              
     extra: dict = field(default_factory=dict)
 
 

@@ -11,7 +11,7 @@ class AppliedNotice(Base):
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     notice_id: Mapped[str] = mapped_column(String, ForeignKey("notices.id"))
     user_id: Mapped[str] = mapped_column(String)
-    status: Mapped[str] = mapped_column(String, default="saved")  # saved/viewed/opened/applied/dismissed
+    status: Mapped[str] = mapped_column(String, default="saved")                                         
     notes: Mapped[str | None] = mapped_column(String)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 

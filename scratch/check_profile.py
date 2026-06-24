@@ -12,7 +12,7 @@ async def main():
             print(f"skills:   {row[2]}")
             print()
 
-        # Also check a sample job description
+                                             
         r2 = await s.execute(text("SELECT id, title, company, description FROM job_posts LIMIT 2"))
         for row in r2.fetchall():
             print(f"--- job: {row[1]} @ {row[2]} ---")

@@ -22,7 +22,7 @@ HEADERS = {
     "Upgrade-Insecure-Requests": "1",
 }
 
-# Patterns that indicate a job listing has expired
+                                                  
 EXPIRED_MARKERS = [
     "this job has expired",
     "this job is no longer available",
@@ -36,8 +36,8 @@ class IndeedFetcher(BaseFetcher):
 
     async def fetch(self, keywords: list[str], location: str = "India", **kwargs) -> list[RawJob]:
         results: list[RawJob] = []
-        # force_refresh=True bypasses the applied-fingerprint cache so the user
-        # always gets fresh results when they explicitly click "Fetch & Rank".
+                                                                               
+                                                                              
         force_refresh: bool = kwargs.get("force_refresh", False)
         applied_fingerprints = set() if force_refresh else kwargs.get("applied_fingerprints", set())
         applied_urls = set() if force_refresh else kwargs.get("applied_urls", set())
@@ -45,16 +45,16 @@ class IndeedFetcher(BaseFetcher):
             logger.info("[Indeed] force_refresh=True — bypassing applied fingerprint cache")
         seen_in_run = set()
 
-        # Handle remote specifically
+                                    
         is_remote = location.lower() == "remote"
         base_location = location if not is_remote else "India"
         remote_param = "&sc=0kf%3Aattr%28DSQF7%29%3B" if is_remote else ""
 
         import urllib.parse
         
-        # Query builder
+                       
         def build_url(query_keys, loc, start=0):
-            # Wrap multi-word keywords in quotes for exact phrase matching
+                                                                          
             quoted_keys = [f'"{k}"' if ' ' in k else k for k in query_keys[:3]]
             query = " OR ".join(quoted_keys)
             encoded_query = urllib.parse.quote_plus(query)
@@ -64,14 +64,14 @@ class IndeedFetcher(BaseFetcher):
         try:
             async with httpx.AsyncClient(headers=HEADERS, timeout=20, follow_redirects=True) as client:
                 
-                # We will attempt up to 2 fallback levels: 
-                # Level 0: Original keywords + Location
-                # Level 1: Broader keywords + Location
-                # Level 2: Broader keywords + India (if not remote)
+                                                           
+                                                       
+                                                      
+                                                                   
                 
                 fallbacks = [
                     (keywords, base_location),
-                    ([k for k in keywords if len(k) > 4][:2], base_location), # Broader keywords
+                    ([k for k in keywords if len(k) > 4][:2], base_location),                   
                 ]
                 if not is_remote and base_location != "India":
                     fallbacks.append(([k for k in keywords if len(k) > 4][:2], "India"))
@@ -105,10 +105,10 @@ class IndeedFetcher(BaseFetcher):
                         if not cards:
                             break
                             
-                        # Filter duplicates before fetching details
+                                                                   
                         to_enrich = []
                         for card in cards:
-                            # Generate fingerprint
+                                                  
                             temp_job = {
                                 "title": card["title"],
                                 "company": card["company"],
@@ -118,7 +118,7 @@ class IndeedFetcher(BaseFetcher):
                             fingerprint = canonical_fingerprint(temp_job)
                             card["fingerprint"] = fingerprint
                             
-                            # Deduplicate
+                                         
                             if fingerprint in applied_fingerprints:
                                 logger.debug(f"[Indeed] Skipped (Applied): {card['title']} at {card['company']}")
                                 continue
@@ -134,7 +134,7 @@ class IndeedFetcher(BaseFetcher):
                         logger.info(f"[Indeed] Enriching {len(to_enrich)} fresh non-applied jobs")
                         
                         if to_enrich:
-                            sem = asyncio.Semaphore(3) # lowered from 5 to avoid rate limits
+                            sem = asyncio.Semaphore(3)                                      
                             tasks = [self._enrich_card(client, card, sem) for card in to_enrich]
                             enriched = await asyncio.gather(*tasks, return_exceptions=True)
                             
@@ -148,12 +148,12 @@ class IndeedFetcher(BaseFetcher):
                         if len(results) >= fresh_jobs_needed:
                             break
                             
-                        # If we didn't add much, we might need to go to next page
+                                                                                 
                         start += 10
-                        await asyncio.sleep(1) # sleep to avoid rate limiting
+                        await asyncio.sleep(1)                               
                     
                     if len(results) >= fresh_jobs_needed:
-                        # Found enough jobs, no need to fallback
+                                                                
                         break
                         
         except Exception as e:
@@ -185,7 +185,7 @@ class IndeedFetcher(BaseFetcher):
                 company = company_el.get_text(strip=True) if company_el else "Unknown"
                 location = location_el.get_text(strip=True) if location_el else None
                 
-                # job id is data-jk or from the href
+                                                    
                 jk = card.get("data-jk")
                 href = link_el["href"] if link_el and link_el.get("href") else None
                 
@@ -197,11 +197,11 @@ class IndeedFetcher(BaseFetcher):
                 posted_date = self._safe_date(date_el.get_text(strip=True) if date_el else None)
                 snippet = snippet_el.get_text(strip=True) if snippet_el else None
 
-                # Skip cards with empty/unknown titles
+                                                      
                 if not title or title == "Unknown":
                     continue
                     
-                # We require apply_link to fingerprint uniquely
+                                                               
                 if not apply_link:
                     continue
 
@@ -222,7 +222,7 @@ class IndeedFetcher(BaseFetcher):
     async def _enrich_card(self, client: httpx.AsyncClient, card: dict, sem: asyncio.Semaphore) -> RawJob | None:
         """Fetch the detail page for a card to get full description and check expired status."""
         apply_link = card.get("apply_link")
-        description = card.get("snippet")  # fallback if detail fetch fails
+        description = card.get("snippet")                                  
 
         if apply_link:
             try:
@@ -231,16 +231,16 @@ class IndeedFetcher(BaseFetcher):
                     if resp.status_code == 200:
                         detail_soup = BeautifulSoup(resp.text, "lxml")
 
-                        # Check for expired banner
+                                                  
                         page_text = detail_soup.get_text(separator=" ").lower()
                         for marker in EXPIRED_MARKERS:
                             if marker in page_text:
                                 logger.info(
                                     f"[Indeed] Skipping expired: {card['title']} @ {card['company']}"
                                 )
-                                return None  # Skip this job entirely
+                                return None                          
 
-                        # Extract full job description
+                                                      
                         desc_el = (
                             detail_soup.select_one("#jobDescriptionText")
                             or detail_soup.select_one(".jobsearch-JobComponent-description")

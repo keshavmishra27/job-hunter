@@ -45,7 +45,7 @@ def canonical_fingerprint(job: dict) -> str:
     return hashlib.sha256(key.encode()).hexdigest()
 
 
-# ─── Description Similarity ─────────────────────────────────────────────────
+                                                                              
 
 def _char_trigrams(text: str) -> set[str]:
     """Extract character trigrams from normalized text."""
@@ -63,7 +63,7 @@ def description_similarity(desc_a: str | None, desc_b: str | None) -> float:
     if not desc_a or not desc_b:
         return 0.0
 
-    # Only compare first 500 chars to keep it fast
+                                                  
     tg_a = _char_trigrams(desc_a[:500])
     tg_b = _char_trigrams(desc_b[:500])
 
@@ -75,7 +75,7 @@ def description_similarity(desc_a: str | None, desc_b: str | None) -> float:
     return intersection / union if union > 0 else 0.0
 
 
-# ─── Main Dedup ──────────────────────────────────────────────────────────────
+                                                                               
 
 def deduplicate(
     jobs: list[dict],
@@ -107,17 +107,17 @@ def deduplicate(
         h = job.get("fingerprint") or job_fingerprint(job)
         job["content_hash"] = h
 
-        # Layer 1: exact content hash
+                                     
         if h in seen_hashes:
             logger.debug(f"[Deduper] Hash duplicate: {job.get('title')} @ {job.get('company')}")
             continue
 
-        # Layer 2: title + company + location signature
+                                                       
         if signature in seen_signatures:
             logger.debug(f"[Deduper] Signature duplicate: {job.get('title')} @ {job.get('company')}")
             continue
 
-        # Layer 3: description similarity (for cross-source dedup)
+                                                                  
         if use_description_similarity and unique_descriptions:
             desc = job.get("description") or ""
             is_desc_dupe = False

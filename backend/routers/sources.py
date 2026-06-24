@@ -28,7 +28,7 @@ class PatchSourceRequest(BaseModel):
     fetch_mode: str | None = None
 
 
-# ─── Grouped View (new primary endpoint) ────────────────────────────────────
+                                                                              
 
 @router.get("/groups")
 async def list_source_groups(db: AsyncSession = Depends(get_db)):
@@ -41,7 +41,7 @@ async def list_source_groups(db: AsyncSession = Depends(get_db)):
 async def list_sources_in_group(group: str, db: AsyncSession = Depends(get_db)):
     """Return sources for a specific source_group."""
     sources = await get_enabled_sources(db, group=None)
-    # Return all (enabled + disabled) for the given group
+                                                         
     result = await db.execute(
         select(Source).where(Source.source_group == group).order_by(Source.name)
     )
@@ -80,7 +80,7 @@ async def list_enabled_in_group(group: str, db: AsyncSession = Depends(get_db)):
     ]
 
 
-# ─── Individual Source CRUD ──────────────────────────────────────────────────
+                                                                               
 
 @router.patch("/{source_id}")
 async def patch_source(source_id: str, req: PatchSourceRequest, db: AsyncSession = Depends(get_db)):
@@ -105,13 +105,13 @@ async def patch_source(source_id: str, req: PatchSourceRequest, db: AsyncSession
     return {"id": source.id, "name": source.name, "enabled": source.enabled}
 
 
-# ─── Backward-compatible endpoints ──────────────────────────────────────────
+                                                                              
 
 @router.get("/")
 async def list_sources(db: AsyncSession = Depends(get_db)):
     """List all sources from the registry, merged with DB state."""
     seed = get_all_sources()
-    # Fetch DB overrides (enabled/disabled state)
+                                                 
     result = await db.execute(select(Source))
     db_sources = {s.name: s for s in result.scalars().all()}
 
@@ -172,7 +172,7 @@ async def toggle_source(req: ToggleSourceRequest, db: AsyncSession = Depends(get
     if source:
         source.enabled = req.enabled
     else:
-        # Create a DB row from seed data
+                                        
         seed = get_all_sources()
         seed_match = next((s for s in seed if s["name"] == req.source_name), None)
         if not seed_match:

@@ -14,7 +14,7 @@ const PAGE_MAP: Record<string, { title: string; subtitle: string; render: () => 
 };
 
 async function navigate(page: string) {
-  // Show Loading Animation
+  
   toggleLoadingAnimation(true);
 
   document.querySelectorAll("[data-page]").forEach((el) => el.classList.remove("active"));
@@ -41,7 +41,7 @@ async function navigate(page: string) {
   await meta.render();
   setAnimationPage(page);
 
-  // Hide Loading Animation
+  
   toggleLoadingAnimation(false);
 }
 

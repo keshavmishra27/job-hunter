@@ -1,6 +1,6 @@
 const BASE = import.meta.env.BASE_URL + "demo";
 
-// For demo mode, we just fetch static JSON files.
+
 async function fetchMock<T>(filename: string): Promise<T> {
   const res = await fetch(`${BASE}/${filename}`);
   if (!res.ok) {
@@ -63,7 +63,7 @@ export const api = {
   syncGmailApplications: async (userId: string) =>
     ({ synced: 0 }),
 
-  // --- GitHub Intelligence ---
+  
   githubConnect: async (token: string, userId = USER_ID) =>
     ({ success: true }),
 
@@ -85,7 +85,7 @@ export const api = {
   githubRoles: async () =>
     ({ roles: [{ id: "frontend", label: "Frontend", description: "Frontend Developer" }, { id: "backend", label: "Backend", description: "Backend Developer" }] }),
 
-  // --- Internships endpoints
+  
   fetchInternships: async (userId: string, sources: string[]) =>
     ({ fetched: 3, new_matches: 3 }),
 
@@ -97,7 +97,7 @@ export const api = {
   projectMatch: async (noticeId: string, userId = USER_ID) =>
     ({ matches: [], notice_keywords: [] }),
 
-  // applied notices (save/view/dismiss)
+  
   markAppliedNotice: async (payload: any) =>
     ({ success: true }),
 
@@ -109,15 +109,15 @@ export const api = {
   deleteAppliedNotice: async (appliedId: string) =>
     ({ success: true }),
 
-  // --- Profile Settings ---
+  
   updateProfile: async (userId: string, update: any) =>
     ({ success: true }),
 
-  // --- Telegram ---
+  
   sendToTelegram: async (userId: string, minScore = 4.0, limit = 20) =>
     ({ sent: 1, skipped: 0, chat_id: "demo-chat" }),
 
-  // --- Gmail ---
+  
   gmailStatus: async () =>
     ({ connected: true, email: "demo@gmail.com", days_back: 30 }),
 
@@ -127,7 +127,7 @@ export const api = {
   gmailSync: async (userId = USER_ID) =>
     ({ success: true, internship_matches: 0, notices: [] }),
 
-  // --- Freelancing (Lane 3) ---
+  
   fetchFreelanceJobs: async (userId: string, sources: string[]) =>
     ({ fetched: 0, unique: 0, ranked: 0, saved: 0, top_5: [] }),
 
@@ -143,7 +143,7 @@ export const api = {
   getFreelanceStats: async (userId: string) =>
     ({ total_gigs: 0, saved: 0, applied: 0, in_progress: 0 }),
 
-  // --- Sources ---
+  
   getSources: async () =>
     [
       { name: "companycareers", category: "internship", enabled: true },

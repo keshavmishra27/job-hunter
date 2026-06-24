@@ -57,29 +57,29 @@ def parse_text_fields(text: str) -> dict:
     }
 
     low = t.lower()
-    # eligibility heuristics
+                            
     elig_triggers = ["3rd year", "3rd-year", "third year", "pre-final", "prefinal", "pre final", "3rd"]
     for trig in elig_triggers:
         if trig in low:
             res["eligibility_text"] = trig
             break
 
-    # stipend
+             
     st = re.search(r"(rs\.?\s?[\d,]+|₹\s?[\d,]+|stipend[:\s]\s?[\d,]+)", t, flags=re.I)
     if st:
         res["stipend"] = st.group(0)
 
-    # location
+              
     loc = re.search(r"(location[:\s]\s*([A-Za-z.,\s\-]+))", t, flags=re.I)
     if loc:
         res["location"] = loc.group(2).strip()
 
-    # deadline
+              
     d = _find_dates(t)
     if d:
         res["deadline"] = d
 
-    # links
+           
     urls = re.findall(r"https?://[\w\-\./?&=%#]+", t)
     for u in urls:
         kind = "portal" if any(k in u.lower() for k in ["apply", "career", "jobs", "forms.gle", "google.com/forms"]) else None
@@ -97,13 +97,13 @@ def extract_from_html(html: str, base_url: Optional[str] = None) -> dict:
             title = el.get_text(strip=True)
             break
 
-    # gather visible paragraph text
+                                   
     paragraphs = [p.get_text(" ", strip=True) for p in soup.find_all("p")]
     body_text = "\n".join(paragraphs).strip() or soup.get_text(" ", strip=True)
 
     parsed = parse_text_fields(body_text)
     links = _extract_links_from_soup(soup, base_url=base_url)
-    # merge unique links
+                        
     existing_urls = {l["url"] for l in parsed["links"]}
     for l in links:
         if l["url"] not in existing_urls:
@@ -121,21 +121,21 @@ def extract_from_html(html: str, base_url: Optional[str] = None) -> dict:
 
 
 def extract_text_from_pdf_bytes(pdf_bytes: bytes) -> str | None:
-    # try pdfminer.six
+                      
     try:
         from pdfminer.high_level import extract_text
 
         try:
             text = extract_text(io.BytesIO(pdf_bytes))
         except Exception:
-            # fallback: write to temp file path not attempted here, return None
+                                                                               
             text = None
         if text:
             return text
     except Exception:
         pass
 
-    # try PyPDF2
+                
     try:
         from PyPDF2 import PdfReader
 

@@ -7,7 +7,7 @@ from backend.modules.internship_matcher import detect_year_fit
 
 OFFLINE_ALLOWED = {"Delhi NCR", "Gurgaon", "Noida","Delhi","ghaziabad(hybrid)","ghaziabad","delhi(hybrid)","faridabad","agra, uttar pradesh","uttar pradesh","delhi, delhi","okhla, delhi","paschim vihar, delhi","saket, delhi","naraina, delhi, delhi","hauz khas, delhi, delhi","dilshad garden, delhi, delhi","tilak nagar, delhi, delhi","kirti nagar, delhi, delhi","connaught place, delhi, delhi","badarpur, delhi, delhi","india","India"}
 
-# Substrings that indicate a job is remote / WFH even when mode field is missing
+                                                                                
 REMOTE_HINTS = {"remote", "wfh", "work from home", "work-from-home", "anywhere in india", "pan india"}
 
 WEIGHTS = {
@@ -28,7 +28,7 @@ def get_semantic_model():
         _semantic_model = SentenceTransformer('all-MiniLM-L6-v2')
     return _semantic_model
 
-# GitHub repo matching keywords (for category-level fallback)
+                                                             
 REPO_TECH_MAPPING = {
     "frontend": ["react", "vue", "angular", "svelte", "next", "nuxt", "html", "css", "js", "typescript"],
     "backend": ["fastapi", "django", "flask", "node", "express", "spring", "java", "python", "go", "rust"],
@@ -38,7 +38,7 @@ REPO_TECH_MAPPING = {
     "devops": ["docker", "kubernetes", "aws", "gcp", "azure", "ci", "cd", "terraform", "ansible"],
 }
 
-# Title words that map to a REPO_TECH_MAPPING category (for fallback when job desc is sparse)
+                                                                                             
 REPO_CATEGORY_HINTS = {
     "ai": "ai",
     "ml": "ai",
@@ -58,61 +58,61 @@ REPO_CATEGORY_HINTS = {
     "cloud": "devops",
 }
 
-# Master set of recognized tech keywords (shared by job AND project extraction)
+                                                                               
 TECH_KEYWORDS_SET = {
-    # Frontend
+              
     "react", "vue", "angular", "svelte", "nextjs", "nuxtjs", "html", "css",
-    # Backend
+             
     "fastapi", "django", "flask", "express", "spring boot", "node",
-    # Languages
+               
     "python", "javascript", "typescript", "golang", "rust", "java", "kotlin", "cpp",
-    # AI/ML frameworks
+                      
     "tensorflow", "pytorch", "keras", "sklearn", "scikit-learn",
     "pandas", "numpy", "huggingface", "openai", "langchain",
     "computer vision", "deep learning", "machine learning",
     "natural language processing", "nlp",
-    # LLM / GenAI
+                 
     "llm", "rag", "transformers", "bert", "gpt", "llama",
     "stable diffusion", "diffusion", "embedding", "vector database",
     "chromadb", "pinecone", "weaviate", "faiss",
     "crewai", "autogen", "agentops", "agentic",
-    # DevOps
+            
     "docker", "kubernetes", "terraform", "ansible",
-    # Cloud
+           
     "aws", "gcp", "azure",
-    # Databases
+               
     "sql", "postgres", "postgresql", "mongodb", "redis", "firebase",
-    # Tools
+           
     "graphql", "websocket", "microservices", "git", "github",
-    # Automation
+                
     "selenium", "playwright", "puppeteer", "automation",
     "rpa", "robotic process automation",
 }
 
-# Generic techs that appear in almost every job — downweight in matching
+                                                                        
 GENERIC_TECHS = {
     "python", "javascript", "typescript", "java", "html", "css",
     "git", "github", "sql", "node", "c",
 }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Domain adjacency floor map
-#
-# If a candidate has any skill from a domain GROUP, jobs in the same group
-# get a minimum skill_match floor.
-#
-# Floor tiers (mirror the scoring prompt):
-#   0.90 → exact skill match (handled by literal matching already)
-#   0.70 → same domain, closely related skill → floor = 0.70
-#   0.60 → same broad domain (AI sibling) → floor = 0.60
-#   0.50 → adjacent domain using same fundamentals → floor = 0.50
-#   0.30 → transferable skill overlap → floor = 0.30
-# ─────────────────────────────────────────────────────────────────────────────
+                                                                               
+                            
+ 
+                                                                          
+                                  
+ 
+                                          
+                                                                  
+                                                            
+                                                        
+                                                                 
+                                                    
+                                                                               
 
-# Map of skill-fragment → set of domain tags this skill belongs to.
+                                                                   
 _SKILL_TO_DOMAIN_TAGS: dict[str, set[str]] = {
-    # GenAI / Agentic / LLM
+                           
     "genai":           {"ai", "ml", "nlp", "cv", "data_science"},
     "generative":      {"ai", "ml", "nlp", "cv", "data_science"},
     "agentic":         {"ai", "ml", "nlp", "data_science"},
@@ -128,7 +128,7 @@ _SKILL_TO_DOMAIN_TAGS: dict[str, set[str]] = {
     "transformers":    {"ai", "ml", "nlp"},
     "stable diffusion":{"ai", "cv"},
     "diffusion":       {"ai", "cv"},
-    # ML
+        
     "machine learning":{"ml", "ai", "data_science"},
     "deep learning":   {"ml", "ai", "cv", "nlp"},
     "tensorflow":      {"ml", "ai", "cv"},
@@ -137,18 +137,18 @@ _SKILL_TO_DOMAIN_TAGS: dict[str, set[str]] = {
     "scikit":          {"ml", "data_science"},
     "sklearn":         {"ml", "data_science"},
     "xgboost":         {"ml", "data_science"},
-    # NLP
+         
     "nlp":             {"nlp", "ai", "ml"},
     "natural language": {"nlp", "ai", "ml"},
     "spacy":           {"nlp", "ml"},
     "nltk":            {"nlp", "ml"},
     "bert":            {"nlp", "ai", "ml"},
-    # Computer Vision
+                     
     "computer vision": {"cv", "ai", "ml"},
     "opencv":          {"cv", "ml"},
     "yolo":            {"cv", "ml", "ai"},
     "cnn":             {"cv", "ml", "ai"},
-    # Data Science
+                  
     "data science":    {"data_science", "ml"},
     "data analytics":  {"data_science"},
     "data analysis":   {"data_science"},
@@ -156,7 +156,7 @@ _SKILL_TO_DOMAIN_TAGS: dict[str, set[str]] = {
     "numpy":           {"data_science", "ml"},
     "tableau":         {"data_science"},
     "power bi":        {"data_science"},
-    # Web
+         
     "react":           {"frontend", "web"},
     "fastapi":         {"backend", "web"},
     "django":          {"backend", "web"},
@@ -165,44 +165,44 @@ _SKILL_TO_DOMAIN_TAGS: dict[str, set[str]] = {
     "node":            {"backend", "web"},
     "frontend":        {"frontend", "web"},
     "backend":         {"backend", "web"},
-    # DevOps
+            
     "docker":          {"devops", "cloud"},
     "kubernetes":      {"devops", "cloud"},
     "aws":             {"devops", "cloud"},
     "gcp":             {"devops", "cloud"},
     "azure":           {"devops", "cloud"},
     "devops":          {"devops", "cloud"},
-    # Automation
+                
     "selenium":        {"automation", "qa"},
     "automation":      {"automation"},
     "rpa":             {"automation"},
 }
 
-# Job title/description fragment → domain tags that job belongs to.
+                                                                   
 _JOB_TO_DOMAIN_TAGS: dict[str, set[str]] = {
-    # AI / GenAI
+                
     "generative ai":   {"ai"},
     "llm":             {"ai", "nlp"},
     "large language":  {"ai", "nlp"},
     "agentic":         {"ai"},
     "genai":           {"ai"},
-    # ML
+        
     "machine learning":{"ml", "ai"},
     "deep learning":   {"ml", "ai"},
     "neural":          {"ml", "ai"},
     "tensorflow":      {"ml", "ai"},
     "pytorch":         {"ml", "ai"},
-    # NLP
+         
     "nlp":             {"nlp", "ai", "ml"},
     "natural language": {"nlp", "ai", "ml"},
     "text classification": {"nlp", "ml"},
     "sentiment":       {"nlp", "ml"},
-    # CV
+        
     "computer vision": {"cv", "ai", "ml"},
     "image processing":{"cv", "ml"},
     "object detection":{"cv", "ml", "ai"},
     "cnn":             {"cv", "ml", "ai"},
-    # Data Science
+                  
     "data science":    {"data_science", "ml"},
     "data analytics":  {"data_science"},
     "data analyst":    {"data_science"},
@@ -210,7 +210,7 @@ _JOB_TO_DOMAIN_TAGS: dict[str, set[str]] = {
     "business intelligence": {"data_science"},
     "power bi":        {"data_science"},
     "tableau":         {"data_science"},
-    # Web
+         
     "frontend":        {"frontend", "web"},
     "backend":         {"backend", "web"},
     "full stack":      {"frontend", "backend", "web"},
@@ -219,23 +219,23 @@ _JOB_TO_DOMAIN_TAGS: dict[str, set[str]] = {
     "django":          {"backend", "web"},
     "fastapi":         {"backend", "web"},
     "node":            {"backend", "web"},
-    # DevOps
+            
     "devops":          {"devops", "cloud"},
     "cloud":           {"cloud", "devops"},
     "aws":             {"cloud", "devops"},
     "kubernetes":      {"devops", "cloud"},
     "docker":          {"devops", "cloud"},
-    # Automation
+                
     "automation":      {"automation"},
     "rpa":             {"automation"},
     "qa":              {"qa", "automation"},
     "testing":         {"qa", "automation"},
 }
 
-# Domain-pair → adjacency floor (what skill_match score should be floored to)
-# "same"    = exact same domain tag → 0.70 floor
-# "sibling" = AI sub-domain siblings (nlp ↔ cv ↔ ml ↔ ai) → 0.60 floor
-# "adjacent"= related but different top-level domain → 0.50 floor
+                                                                             
+                                                
+                                                                      
+                                                                 
 _AI_DOMAIN_TAGS = {"ai", "ml", "nlp", "cv"}
 
 
@@ -248,7 +248,7 @@ def _get_domain_floor(profile_skills: list[str], job_text: str) -> float:
     """
     text_lower = job_text.lower()
 
-    # --- Collect candidate domain tags from skills ---
+                                                       
     candidate_tags: set[str] = set()
     for skill in profile_skills:
         skill_lower = skill.lower()
@@ -259,7 +259,7 @@ def _get_domain_floor(profile_skills: list[str], job_text: str) -> float:
     if not candidate_tags:
         return 0.0
 
-    # --- Collect job domain tags from job text ---
+                                                   
     job_tags: set[str] = set()
     for fragment, tags in _JOB_TO_DOMAIN_TAGS.items():
         if fragment in text_lower:
@@ -268,26 +268,26 @@ def _get_domain_floor(profile_skills: list[str], job_text: str) -> float:
     if not job_tags:
         return 0.0
 
-    # --- Determine overlap and floor ---
+                                         
     overlap = candidate_tags & job_tags
 
     if not overlap:
         return 0.0
 
-    # Same exact domain tag match → strong floor
+                                                
     if overlap:
-        # Both candidate and job are AI sub-domains → AI sibling floor
+                                                                      
         ai_candidate = bool(candidate_tags & _AI_DOMAIN_TAGS)
         ai_job = bool(job_tags & _AI_DOMAIN_TAGS)
         if ai_candidate and ai_job:
-            # Direct same-tag hit (e.g., both "ml") → 0.70 floor
+                                                                
             same_tag = candidate_tags & job_tags & _AI_DOMAIN_TAGS
             if same_tag:
                 return 0.70
-            # Sibling AI tags (e.g., candidate has "ai", job has "cv") → 0.60 floor
+                                                                                   
             return 0.60
 
-        # Non-AI same domain (web, devops, etc.) → 0.70 floor for exact match
+                                                                             
         non_ai_same = (
             (candidate_tags & {"frontend", "backend", "web"}) &
             (job_tags & {"frontend", "backend", "web"})
@@ -295,7 +295,7 @@ def _get_domain_floor(profile_skills: list[str], job_text: str) -> float:
         if non_ai_same:
             return 0.70
 
-        # Adjacent domain overlap (e.g., data_science ↔ ml) → 0.50 floor
+                                                                        
         data_candidate = bool(candidate_tags & {"data_science"})
         ml_job = bool(job_tags & {"ml", "ai"})
         if data_candidate and ml_job:
@@ -306,7 +306,7 @@ def _get_domain_floor(profile_skills: list[str], job_text: str) -> float:
         if ml_candidate and data_job:
             return 0.50
 
-        # General overlap in same non-AI domain
+                                               
         if overlap:
             return 0.40
 
@@ -361,7 +361,7 @@ def _is_expired(job: dict, max_days: int = 30) -> bool:
     """Return True if the job is older than max_days (treat it as expired)."""
     posted = job.get("posted_date")
     if not posted:
-        return False  # No date info → keep it, don't drop blindly
+        return False                                              
     try:
         if isinstance(posted, str):
             posted = datetime.fromisoformat(posted)
@@ -403,24 +403,24 @@ def _detect_duration_months(text: str) -> int | None:
     
     max_months = None
     
-    # Pattern: "X-Y months" or "X to Y months" (take the max)
+                                                             
     range_pattern = re.findall(r'(\d+)\s*(?:to|-)\s*(\d+)\s*months?', t)
     for low, high in range_pattern:
         val = int(high)
         if max_months is None or val > max_months:
             max_months = val
     
-    # Pattern: standalone "X months" or "X month"
+                                                 
     single_pattern = re.findall(r'(\d+)\s*months?', t)
     for m in single_pattern:
         val = int(m)
-        # Ignore unreasonable values (> 24 months is probably not a duration)
+                                                                             
         if val > 24:
             continue
         if max_months is None or val > max_months:
             max_months = val
     
-    # Pattern: "X weeks" — convert to months (4 weeks ≈ 1 month)
+                                                                
     week_pattern = re.findall(r'(\d+)\s*weeks?', t)
     for w in week_pattern:
         val_months = int(w) / 4.0
@@ -431,7 +431,7 @@ def _detect_duration_months(text: str) -> int | None:
     return max_months
 
 
-# Maximum internship duration the user is willing to do (in months)
+                                                                   
 MAX_DURATION_MONTHS = 6
 
 
@@ -453,7 +453,7 @@ def _duration_filter(job: dict) -> bool:
 
 def _hard_filter(job: dict, profile: dict) -> bool:
     """Hard filters — always applied regardless of profile settings."""
-    # 0. Drop jobs with missing/unknown titles
+                                              
     title = (job.get("title") or "").strip().lower()
     if not title or title == "unknown":
         logger.debug(
@@ -461,30 +461,30 @@ def _hard_filter(job: dict, profile: dict) -> bool:
         )
         return False
 
-    # 1. Drop expired postings
+                              
     if _is_expired(job):
         logger.debug(
             f"[Ranker] Dropped (expired): {job.get('title')} @ {job.get('company')}"
         )
         return False
 
-    # 2. Drop jobs requiring experience that the user doesn't have
+                                                                  
     if not _experience_filter(job):
         return False
 
-    # 3. Drop internships longer than MAX_DURATION_MONTHS
+                                                         
     if not _duration_filter(job):
         return False
 
-    # 4. Location filter — always enforced when offline_allowed cities are set.
-    #    Remote jobs always pass. Offline jobs must match an allowed city.
-    #    If offline_allowed is empty/unset, all locations pass (no restriction).
+                                                                               
+                                                                          
+                                                                                
     location_rule = profile.get("location_rule") or {}
     allowed_cities = [loc.lower() for loc in (location_rule.get("offline_allowed") or [])]
 
-    if allowed_cities:  # Only filter when the user has explicitly set cities
+    if allowed_cities:                                                       
         if _is_remote(job):
-            return True  # Remote jobs always pass
+            return True                           
         location = (job.get("location") or "").lower()
         if any(a in location or location in a for a in allowed_cities):
             return True
@@ -494,7 +494,7 @@ def _hard_filter(job: dict, profile: dict) -> bool:
         )
         return False
 
-    return True  # No city restriction set — let everything through
+    return True                                                    
 
 
 def _build_search_text(job: dict) -> str:
@@ -519,9 +519,9 @@ def _skill_match(job: dict, profile: dict) -> tuple[float, list[str]]:
 
     literal_score = min(len(matched) / max(len(profile_skills), 1), 1.0)
 
-    # Apply domain adjacency floor — ensures same-domain jobs (e.g. CV for an AI
-    # candidate) never score unfairly low just because the exact sub-skill isn't
-    # literally mentioned in the job description.
+                                                                                
+                                                                                
+                                                 
     domain_floor = _get_domain_floor(profile_skills, text)
     score = max(literal_score, domain_floor)
 
@@ -579,30 +579,30 @@ def _project_overlap(job: dict, profile: dict, github_repos: list[dict] | None =
     job_title = (job.get("title") or "").lower()
     job_desc = (job.get("description") or "").lower()
 
-    # Extract tech keywords from the full job text
+                                                  
     job_techs = _extract_tech_from_text(text)
 
     resume_score = 0.0
     github_score = 0.0
     matched_projects = []
 
-    # --- Resume project scoring ---
+                                    
     if projects:
         for project in projects:
             proj_score = 0.0
 
-            # Strategy 1: tech-keyword intersection
+                                                   
             proj_techs = _extract_tech_from_text(project)
             if proj_techs and job_techs:
                 common = proj_techs & job_techs
                 if common:
-                    # Score = fraction of project's techs that the job requires
+                                                                               
                     proj_score = len(common) / max(len(proj_techs), len(job_techs))
                     logger.debug(
                         f"[ProjectOverlap] '{project[:40]}' tech match: {common} score={proj_score:.2f}"
                     )
 
-            # Strategy 2: raw word fallback (project words appear in job text)
+                                                                              
             if proj_score == 0.0:
                 words = [w.lower() for w in project.split() if len(w) > 3]
                 if words:
@@ -615,15 +615,15 @@ def _project_overlap(job: dict, profile: dict, github_repos: list[dict] | None =
                 if proj_score > resume_score:
                     resume_score = proj_score
 
-    # --- GitHub repo scoring ---
-    # Score ALL repos and pick the TOP 3 most relevant per job.
+                                 
+                                                               
     if github_repos:
         scored_repos = []
         for repo in github_repos:
             tech_score = _score_github_repo_overlap(repo, job_title, job_desc, text, job_techs)
             if tech_score <= 0:
                 continue
-            # Name + topic relevance bonus
+                                          
             repo_name = (repo.get("name") or "").lower()
             repo_topics_list = [t.lower() for t in (repo.get("topics") or [])]
             repo_desc_text = (repo.get("description") or "").lower()
@@ -640,7 +640,7 @@ def _project_overlap(job: dict, profile: dict, github_repos: list[dict] | None =
 
         if scored_repos:
             scored_repos.sort(key=lambda x: x[0], reverse=True)
-            # Pick top 3 relevant repos (not just 1)
+                                                    
             top_repos = scored_repos[:3]
             best_tech = top_repos[0][1]
             github_score = best_tech
@@ -648,7 +648,7 @@ def _project_overlap(job: dict, profile: dict, github_repos: list[dict] | None =
                 rp_name = rp.get("name", "GitHub project")
                 matched_projects.append(f"[GitHub] {rp_name}")
 
-    # Combine: GitHub weighted 70%, resume 30% (when GitHub data exists)
+                                                                        
     if github_repos and github_score > 0:
         final_score = (github_score * 0.7) + (resume_score * 0.3)
     else:
@@ -665,8 +665,8 @@ def _extract_job_tech_requirements(job_title: str, job_desc: str, full_text: str
 
 
 
-# Domain-specific keyword groups for deep README matching
-# These distinguish sub-domains within AI/ML (e.g. CNN vs GenAI vs NLP)
+                                                         
+                                                                       
 _DOMAIN_KEYWORDS = {
     "genai": {
         "generative", "llm", "large language model", "gpt", "chatbot", "chat bot",
@@ -744,7 +744,7 @@ def _score_github_repo_overlap(
     if job_techs is None:
         job_techs = _extract_tech_from_text(full_text)
 
-    # Build repo tech text: description + topics + primary language + ALL languages
+                                                                                   
     repo_desc = (repo.get("description") or "").lower()
     repo_topics = [t.lower() for t in (repo.get("topics") or [])]
     repo_language = (repo.get("language") or "").lower()
@@ -752,13 +752,13 @@ def _score_github_repo_overlap(
     all_lang_names = " ".join(k.lower() for k in languages_all.keys())
     repo_text = f"{repo_desc} {' '.join(repo_topics)} {repo_language} {all_lang_names}"
 
-    # Include README content for deep matching
+                                              
     readme = (repo.get("readme_content") or "").lower()
-    deep_text = f"{repo_text} {readme[:3000]}"  # Cap README to avoid noise
+    deep_text = f"{repo_text} {readme[:3000]}"                             
 
     repo_techs = _extract_tech_from_text(deep_text)
 
-    # --- Strategy 1: specificity-weighted tech intersection ---
+                                                                
     direct_score = 0.0
     if job_techs and repo_techs:
         common = repo_techs & job_techs
@@ -773,7 +773,7 @@ def _score_github_repo_overlap(
 
             direct_score = min(weighted_hits / weighted_total, 1.0)
 
-    # --- Strategy 2: category-based matching (capped lower, fallback only) ---
+                                                                               
     category_score = 0.0
     category = _get_job_category(job_title)
     if category and category in REPO_TECH_MAPPING:
@@ -786,7 +786,7 @@ def _score_github_repo_overlap(
     if base_score == 0.0:
         return 0.0
 
-    # --- Strategy 3: semantic name/topic match against job title ---
+                                                                     
     repo_name_lower = (repo.get("name") or "").lower()
     name_words = set(w for w in re.split(r'[-_\s]+', repo_name_lower) if len(w) > 2)
     topic_words = set(w for w in repo_topics if len(w) > 2)
@@ -798,30 +798,30 @@ def _score_github_repo_overlap(
     semantic_bonus = min(title_overlap * 0.12 + semantic_hits * 0.04, 0.30)
     base_score = min(base_score + semantic_bonus, 1.0)
 
-    # --- Strategy 4: deep README domain matching ---
-    # Detects whether repo is about GenAI vs CNN vs NLP etc., and checks
-    # if the job is in the same domain. Penalizes domain mismatches.
+                                                     
+                                                                        
+                                                                    
     if readme:
         job_domains = _detect_domain(f"{job_title} {job_desc}")
         repo_domains = _detect_domain(deep_text)
 
         if job_domains and repo_domains:
-            # Find the job's primary domain
+                                           
             job_primary = max(job_domains, key=job_domains.get)
             repo_primary = max(repo_domains, key=repo_domains.get)
 
             if job_primary == repo_primary:
-                # Same domain — boost score
+                                           
                 base_score = min(base_score + 0.15, 1.0)
                 logger.debug(
                     f"[RepoOverlap] Domain MATCH: repo='{repo.get('name')}' "
                     f"job_domain={job_primary} repo_domain={repo_primary}"
                 )
             elif repo_domains.get(job_primary, 0) > 0:
-                # Repo has some relevance to job domain but it's not primary
-                pass  # no penalty, no bonus
+                                                                            
+                pass                        
             else:
-                # Domain mismatch — penalize (e.g. CNN repo for GenAI job)
+                                                                          
                 base_score *= 0.4
                 logger.debug(
                     f"[RepoOverlap] Domain MISMATCH: repo='{repo.get('name')}' "
@@ -829,7 +829,7 @@ def _score_github_repo_overlap(
                     f"— score reduced to {base_score:.3f}"
                 )
 
-    # Quality multiplier: reward well-documented, tested repos
+                                                              
     analysis_signals = repo.get("analysis_signals") or {}
     quality_mult = 1.0
     if analysis_signals.get("has_readme"):
@@ -913,7 +913,7 @@ def rank_jobs(jobs: list[dict], profile: dict, github_repos: list[dict] | None =
         if not _hard_filter(j, profile):
             continue
         sc = score_job(j, profile, github_repos)
-        # Drop garbage matches that score below 25%
+                                                   
         if sc["score"] < 0.25:
             continue
             

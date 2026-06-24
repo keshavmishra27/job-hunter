@@ -92,17 +92,17 @@ export async function renderApplied() {
 with open(r"d:\kfiles\job-hunter\frontend\src\pages\pages.ts", "a", encoding="utf-8") as f:
     f.write(content)
 
-# Also patch the jobs section: add showApplied toggle and mark-applied button
+                                                                             
 with open(r"d:\kfiles\job-hunter\frontend\src\pages\pages.ts", "r", encoding="utf-8") as f:
     src = f.read()
 
-# 1) Add showApplied variable after "let selected = new Set(["internshala"]);"
+                                                                              
 src = src.replace(
     'let selected = new Set(["internshala"]);\n\n  el.innerHTML',
     'let selected = new Set(["internshala"]);\n  let showApplied = false;\n\n  el.innerHTML'
 )
 
-# 2) Add toggle UI - replace the fetch button line and span
+                                                           
 old_btn_block = '<button class="btn btn-primary" id="fetch-btn">\u26a1 Fetch &amp; Rank</button>\n      <span id="fetch-status" style="font-size:13px;color:var(--text-secondary);margin-left:12px"></span>'
 new_btn_block = '''<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
         <button class="btn btn-primary" id="fetch-btn">\u26a1 Fetch &amp; Rank</button>
@@ -114,7 +114,7 @@ new_btn_block = '''<div style="display:flex;align-items:center;gap:16px;flex-wra
       </div>'''
 src = src.replace(old_btn_block, new_btn_block)
 
-# 3) Add toggle listener after the source-chip forEach block
+                                                            
 old_chip_end = '    });\n  });\n\n  document.getElementById("fetch-btn")'
 new_chip_end = '''    });
   });
@@ -127,13 +127,13 @@ new_chip_end = '''    });
   document.getElementById("fetch-btn")'''
 src = src.replace(old_chip_end, new_chip_end)
 
-# 4) Pass showApplied into getRankedJobs
+                                        
 src = src.replace(
     'const jobs = await api.getRankedJobs(USER_ID);',
     'const jobs = await api.getRankedJobs(USER_ID, 30, showApplied);'
 )
 
-# 5) Add applied badge to job title and mark-applied button
+                                                           
 old_job_title = '<div class="job-title">${j.title}</div>'
 new_job_title = '<div class="job-title">${j.title} ${j.is_applied ? \'<span class="badge badge-applied">\u2713 Applied</span>\' : \'\'}</div>'
 src = src.replace(old_job_title, new_job_title)
@@ -144,7 +144,7 @@ new_draft_btn = '''<button class="btn btn-primary btn-sm gen-draft-btn" data-job
             </div>'''
 src = src.replace(old_draft_btn, new_draft_btn)
 
-# 6) Add mark-applied event listener after gen-draft-btn forEach
+                                                                
 old_gen_end = '''      });
     } catch (e: any) {
       list.innerHTML = `<div class="empty-state"><div class="empty-icon">\u26a0\ufe0f</div><div class="empty-title">${e.message}</div></div>`;

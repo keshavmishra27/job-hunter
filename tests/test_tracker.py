@@ -8,19 +8,19 @@ from backend.models.application import Application
 async def test_classify_response_mock():
     tracker = ApplicationTracker()
     
-    # Test Interview
+                    
     status, reason = await tracker.classify_response("We would like to invite you for an interview on Monday.")
     assert status == "Interview"
     
-    # Test Assessment
+                     
     status, reason = await tracker.classify_response("Please complete this hackerrank assessment before Friday.")
     assert status == "Assessment"
     
-    # Test Rejected
+                   
     status, reason = await tracker.classify_response("Unfortunately we will not be moving forward with your application.")
     assert status == "Rejected"
     
-    # Test Offer
+                
     status, reason = await tracker.classify_response("We are thrilled to offer you the position.")
     assert status == "Offer"
 
@@ -28,7 +28,7 @@ async def test_classify_response_mock():
 async def test_monitor_application_updates_status():
     tracker = ApplicationTracker()
     
-    # Mocking check_thread_for_replies to return a rejection email
+                                                                  
     async def mock_check(thread_id, date):
         return "Unfortunately, we decided to go with another candidate due to a profile mismatch."
         

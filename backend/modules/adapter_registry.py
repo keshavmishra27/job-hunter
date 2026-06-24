@@ -17,14 +17,14 @@ from loguru import logger
 if TYPE_CHECKING:
     from backend.modules.fetchers.base_fetcher import BaseFetcher
 
-# ─── Lazy imports ────────────────────────────────────────────────────────────
-# We import lazily to avoid circular imports and speed up module load.
+                                                                               
+                                                                      
 
 
 def _build_registry() -> dict[str, type]:
     """Build the complete adapter registry.  Called once on first access."""
     from backend.modules.fetchers import (
-        # Internship / job board fetchers
+                                         
         ApifyInternshalaFetcher,
         ApifyIndeedFetcher,
         CompanyCareerFetcher,
@@ -38,7 +38,7 @@ def _build_registry() -> dict[str, type]:
         ApifyWellfoundFetcher,
         ApifyNaukriFetcher,
         WorkAtAStartupFetcher,
-        # Remote / additional job boards
+                                        
         ArcJobsFetcher,
         HimalayasFetcher,
         OttaFetcher,
@@ -49,7 +49,7 @@ def _build_registry() -> dict[str, type]:
         AndelaFetcher,
         DeelCareersFetcher,
         TrueUpFetcher,
-        # Freelance fetchers
+                            
         UpworkFetcher,
         FiverrFetcher,
         FreelancerComFetcher,
@@ -68,7 +68,7 @@ def _build_registry() -> dict[str, type]:
     )
 
     return {
-        # ── Internship Boards ───────────────────────────────────────────
+                                                                          
         "internshala":       ApifyInternshalaFetcher,
         "indeed":            ApifyIndeedFetcher,
         "linkedin":          ApifyLinkedInFetcher,
@@ -77,12 +77,12 @@ def _build_registry() -> dict[str, type]:
         "freshersworld":     FreshersworldFetcher,
         "cutshort":          CutshortFetcher,
 
-        # ── Startup Boards ──────────────────────────────────────────────
+                                                                          
         "wellfound":         ApifyWellfoundFetcher,
         "workatastartup":    WorkAtAStartupFetcher,
         "trueup":            TrueUpFetcher,
 
-        # ── Remote Boards ───────────────────────────────────────────────
+                                                                          
         "arcdev":            ArcJobsFetcher,
         "himalayas":         HimalayasFetcher,
         "otta":              OttaFetcher,
@@ -93,13 +93,13 @@ def _build_registry() -> dict[str, type]:
         "andela":            AndelaFetcher,
         "deel":              DeelCareersFetcher,
 
-        # ── Notice Channels ─────────────────────────────────────────────
+                                                                          
         "company_career":    CompanyCareerFetcher,
         "govt_portal":       GovtPortalFetcher,
         "telegram":          TelegramChannelFetcher,
         "gmail":             GmailFetcher,
 
-        # ── Freelance Boards ────────────────────────────────────────────
+                                                                          
         "upwork":            UpworkFetcher,
         "fiverr":            FiverrFetcher,
         "freelancer_com":    FreelancerComFetcher,
@@ -115,12 +115,12 @@ def _build_registry() -> dict[str, type]:
         "dribbble":          DribbbleFetcher,
         "behance":           BehanceFetcher,
         
-        # ── Discovery Engines ───────────────────────────────────────────
+                                                                          
         "duckduckgo":        DuckDuckGoFetcher,
     }
 
 
-# Singleton: built on first call
+                                
 _REGISTRY: dict[str, type] | None = None
 
 
@@ -131,7 +131,7 @@ def _get_registry() -> dict[str, type]:
     return _REGISTRY
 
 
-# ─── Public API ──────────────────────────────────────────────────────────────
+                                                                               
 
 def get_adapter(parser_type: str) -> type | None:
     """Resolve a parser_type to its fetcher class.  Returns None if unknown."""

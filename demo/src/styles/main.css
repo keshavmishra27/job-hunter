@@ -1,5 +1,5 @@
 :root {
-  /* Bugatti Design Tokens */
+  
   --colors-primary: #ffffff;
   --colors-ink: #ffffff;
   --colors-body: #cccccc;
@@ -19,17 +19,17 @@
   --colors-warning: #d4a017;
   --colors-success: #5fa657;
 
-  /* Typography Substitutes */
+  
   --font-display: 'Saira Condensed', sans-serif;
   --font-body: 'Cormorant Garamond', serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-  /* Rounded */
+  
   --rounded-none: 0px;
   --rounded-pill: 9999px;
   --rounded-full: 9999px;
 
-  /* Spacing */
+  
   --spacing-xxs: 4px;
   --spacing-xs: 8px;
   --spacing-sm: 12px;
@@ -40,7 +40,7 @@
   --spacing-section: 120px;
 }
 
-/* Reset and Global */
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -69,7 +69,7 @@ a {
   text-decoration: none;
 }
 
-/* Typography Classes */
+
 .display-xl {
   font-family: var(--font-display);
   font-size: 64px;
@@ -159,7 +159,7 @@ a {
   letter-spacing: 0;
 }
 
-/* Layout */
+
 .main-content {
   width: 100%;
   max-width: 1200px;
@@ -182,7 +182,7 @@ a {
   to { opacity: 1; transform: none; }
 }
 
-/* Top Nav */
+
 .top-nav {
   background-color: transparent;
   color: var(--colors-on-dark);
@@ -214,7 +214,7 @@ a {
   color: var(--colors-on-dark);
 }
 
-/* Buttons */
+
 .button-primary {
   background-color: transparent;
   color: var(--colors-on-dark);
@@ -254,7 +254,7 @@ a {
   color: var(--colors-on-primary);
 }
 
-/* Links */
+
 .text-link {
   background-color: transparent;
   color: var(--colors-link);
@@ -269,7 +269,7 @@ a {
   opacity: 0.7;
 }
 
-/* Tabs & Chips */
+
 .intern-src-tab, .intern-tab {
   font-family: var(--font-mono);
   font-size: 12px;
@@ -315,7 +315,7 @@ a {
   border-color: var(--colors-on-dark);
 }
 
-/* Components */
+
 .hero-photo-band {
   background-color: transparent;
   color: var(--colors-on-dark);
@@ -426,7 +426,7 @@ a {
   text-align: center;
 }
 
-/* Utilities */
+
 .flex { display: flex; }
 .flex-col { display: flex; flex-direction: column; }
 .items-center { align-items: center; }
@@ -444,7 +444,7 @@ a {
 .mb-lg { margin-bottom: var(--spacing-lg); }
 .mb-xl { margin-bottom: var(--spacing-xl); }
 
-/* Spinners & Status */
+
 .spinner {
   width: 16px;
   height: 16px;
@@ -475,7 +475,7 @@ a {
   background-color: var(--colors-warning);
 }
 
-/* Modals & Toasts */
+
 .modal-overlay {
   position: fixed;
   inset: 0;

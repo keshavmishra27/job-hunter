@@ -70,7 +70,7 @@ def normalize(raw: RawJob) -> dict:
     location = _clean(raw.location)
     apply_link = raw.apply_link
 
-    # Compute fingerprint for dedup
+                                   
     fingerprint = raw.fingerprint or _compute_fingerprint(title, company, location, apply_link)
 
     result = {
@@ -86,15 +86,15 @@ def normalize(raw: RawJob) -> dict:
         "apply_link": apply_link,
         "canonical_url": getattr(raw, 'canonical_url', None),
         "fingerprint": fingerprint,
-        "raw_text": _clean(raw.description),  # raw_text mirrors description initially
+        "raw_text": _clean(raw.description),                                          
         "posted_date": raw.posted_date,
-        "posted_at": raw.posted_date,  # alias for unified model
+        "posted_at": raw.posted_date,                           
         "opportunity_type": getattr(raw, 'opportunity_type', 'internship'),
         "status": "new",
         "fetched_at": datetime.utcnow(),
     }
 
-    # Carry freelance-specific extras through
+                                             
     if result["opportunity_type"] == "freelance":
         _freelance_keys = (
             "budget_min", "budget_max", "budget_type", "currency",
@@ -107,7 +107,7 @@ def normalize(raw: RawJob) -> dict:
             if key in extra:
                 result[key] = extra[key]
 
-    # Carry notice-specific extras through
+                                          
     if extra.get("eligibility_text"):
         result["eligibility_text"] = extra["eligibility_text"]
     if extra.get("deadline"):

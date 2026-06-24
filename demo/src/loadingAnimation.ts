@@ -27,7 +27,7 @@ export function initLoadingAnimation(containerId: string) {
     canvas.style.width = '100%';
     canvas.style.height = '100%';
     canvas.style.pointerEvents = 'none';
-    canvas.style.zIndex = '9999'; // Ensure it's on top within the container
+    canvas.style.zIndex = '9999'; 
     container.appendChild(canvas);
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 2);
