@@ -1,0 +1,18 @@
+[
+  {
+    "id": "app-1",
+    "job_title": "Software Engineering Intern",
+    "company": "Google",
+    "status": "interviewing",
+    "applied_at": "2026-06-10T10:00:00Z",
+    "source": "companycareers"
+  },
+  {
+    "id": "app-2",
+    "job_title": "Frontend Developer Intern",
+    "company": "Meta",
+    "status": "applied",
+    "applied_at": "2026-06-15T11:30:00Z",
+    "source": "companycareers"
+  }
+]

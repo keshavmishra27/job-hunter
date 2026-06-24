@@ -1,0 +1,24 @@
+{
+  "name": "job-hunter-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "predev:all": "powershell -Command \"Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }; exit 0\"",
+    "dev:all": "concurrently \"..\\.venv\\Scripts\\python -m uvicorn backend.main:app --reload --reload-dir ../backend --host 127.0.0.1 --port 8000 --app-dir ..\" \"npm:dev\" -k",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "gh-pages -d dist"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.12",
+    "gh-pages": "^6.1.1"
+  },
+  "dependencies": {
+    "@types/three": "^0.184.1",
+    "three": "^0.184.0"
+  }
+}

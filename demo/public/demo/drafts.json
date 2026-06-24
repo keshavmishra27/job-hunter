@@ -1,0 +1,20 @@
+[
+  {
+    "id": "draft-1",
+    "job_title": "Frontend Engineering Intern",
+    "company": "Vercel",
+    "subject": "Application for Frontend Engineering Intern - Demo User",
+    "body": "Hi Hiring Team,\n\nI am very interested in the Frontend Engineering Intern role at Vercel. With my background in React and Next.js, and my recent open-source contributions, I would be a great fit for your team.\n\nBest,\nDemo User",
+    "status": "pending",
+    "created_at": "2026-06-24T08:00:00Z"
+  },
+  {
+    "id": "draft-2",
+    "job_title": "Fullstack Software Engineer Intern",
+    "company": "Stripe",
+    "subject": "Fullstack Intern Application",
+    "body": "Dear Stripe Team,\n\nI am writing to apply for the Fullstack Intern position...",
+    "status": "approved",
+    "created_at": "2026-06-23T16:45:00Z"
+  }
+]

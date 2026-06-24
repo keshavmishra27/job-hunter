@@ -1,0 +1,32 @@
+[
+  {
+    "id": "repo-1",
+    "name": "job-hunter-demo",
+    "html_url": "https://github.com/demo/job-hunter",
+    "description": "AI Powered Internship Discovery & Developer Portfolio Intelligence",
+    "language": "TypeScript",
+    "stars": 128,
+    "role_score": 98,
+    "feedback": ["Excellent use of Vite and React", "Great README documentation", "Consider adding more unit tests"]
+  },
+  {
+    "id": "repo-2",
+    "name": "react-3d-portfolio",
+    "html_url": "https://github.com/demo/portfolio",
+    "description": "Immersive 3D developer portfolio using Three.js",
+    "language": "JavaScript",
+    "stars": 45,
+    "role_score": 92,
+    "feedback": ["Impressive 3D integration", "Add GitHub Actions for CI/CD"]
+  },
+  {
+    "id": "repo-3",
+    "name": "api-gateway-service",
+    "html_url": "https://github.com/demo/api-gateway",
+    "description": "High-performance API gateway in Go",
+    "language": "Go",
+    "stars": 89,
+    "role_score": 85,
+    "feedback": ["Good architecture", "Add Dockerfile for containerization"]
+  }
+]

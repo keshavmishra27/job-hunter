@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Job Hunter — Internship Discovery Assistant</title>
+  <meta name="description"
+    content="AI-powered internship discovery, ranking and outreach assistant. Find, rank, and apply for internships with personalised email drafts." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&family=Nunito:wght@300;400;500;600;700;800;900&family=Quicksand:wght@300;400;500;600;700;800&family=Saira+Condensed:wght@400&family=Cormorant+Garamond:wght@400&family=JetBrains+Mono:wght@400&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="/src/styles/main.css" />
+</head>
+
+<body>
+  <div id="loading-screen" class="loading-screen hidden">
+    <!-- Animation canvas injected here -->
+  </div>
+  <div id="app">
+
+    <!-- Bugatti Top Nav -->
+    <nav class="top-nav">
+      <div class="wordmark-display">JOBHUNTER</div>
+      <div class="nav-links">
+        <button class="nav-link active" id="nav-home" data-page="home">HOME</button>
+        <button class="nav-link" id="nav-dashboard" data-page="dashboard">DASHBOARD</button>
+        <button class="nav-link" id="nav-internships" data-page="internships">NOTICES</button>
+        <button class="nav-link" id="nav-drafts" data-page="drafts">DRAFTS</button>
+        <button class="nav-link" id="nav-applied" data-page="applied">TRACKER</button>
+        <button class="nav-link" id="nav-repos" data-page="repos">REPOS</button>
+      </div>
+      <div class="nav-right">
+        <button class="button-primary" id="nav-profile" data-page="profile">PROFILE</button>
+      </div>
+    </nav>
+
+    <main class="main-content" id="main-content">
+      <!-- Page content containers -->
+
+
+      <div id="page-home" class="page"></div>
+      <div id="page-dashboard" class="page active"></div>
+      <div id="page-profile" class="page"></div>
+      <div id="page-internships" class="page"></div>
+      <div id="page-freelancing" class="page"></div>
+      <div id="page-drafts" class="page"></div>
+      <div id="page-sent" class="page"></div>
+      <div id="page-applied" class="page"></div>
+      <div id="page-repos" class="page"></div>
+    </main>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div class="modal" id="modal">
+      <button class="modal-close" id="modal-close">✕</button>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+
+</html>
