@@ -1,0 +1,35 @@
+[
+  {
+    "id": "internship-1",
+    "title": "Frontend Engineering Intern",
+    "company": "Vercel",
+    "location": "Remote",
+    "description": "Join our team to build next-generation web experiences using React and Next.js.",
+    "url": "https://vercel.com/careers",
+    "score": 9.8,
+    "source": "companycareers",
+    "posted_date": "2026-06-20T10:00:00Z"
+  },
+  {
+    "id": "internship-2",
+    "title": "Fullstack Software Engineer Intern",
+    "company": "Stripe",
+    "location": "San Francisco, CA",
+    "description": "Work on core infrastructure and product features.",
+    "url": "https://stripe.com/jobs",
+    "score": 9.2,
+    "source": "companycareers",
+    "posted_date": "2026-06-22T14:30:00Z"
+  },
+  {
+    "id": "internship-3",
+    "title": "React Developer Intern",
+    "company": "Supabase",
+    "location": "Remote",
+    "description": "Help us build the open source Firebase alternative.",
+    "url": "https://supabase.com/careers",
+    "score": 8.9,
+    "source": "companycareers",
+    "posted_date": "2026-06-23T09:15:00Z"
+  }
+]
