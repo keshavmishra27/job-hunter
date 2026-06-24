@@ -35,7 +35,7 @@ export function initAnimation() {
     // LOAD MODELS
     const loader = new GLTFLoader();
 
-    loader.load('/models/ancient.glb', (gltf) => {
+    loader.load(`${import.meta.env.BASE_URL}models/ancient.glb`, (gltf) => {
         homeModel = gltf.scene;
         // Position and scale adjustments (tweak as needed based on model size)
         homeModel.position.set(0, -30, 0); 
@@ -51,7 +51,7 @@ export function initAnimation() {
         }
     }, undefined, (error) => console.error('Error loading ancient.glb:', error));
 
-    loader.load('/models/platform.glb', (gltf) => {
+    loader.load(`${import.meta.env.BASE_URL}models/platform.glb`, (gltf) => {
         otherModel = gltf.scene;
         // Position and scale adjustments
         otherModel.position.set(0, -20, 0); 

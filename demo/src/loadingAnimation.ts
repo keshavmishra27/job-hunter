@@ -38,7 +38,7 @@ export function initLoadingAnimation(containerId: string) {
     scene.add(directionalLight);
 
     const loader = new GLTFLoader();
-    loader.load('/loading_animate.glb', (gltf) => {
+    loader.load(`${import.meta.env.BASE_URL}loading_animate.glb`, (gltf) => {
         const model = gltf.scene;
         
         const box = new THREE.Box3().setFromObject(model);
