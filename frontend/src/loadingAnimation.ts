@@ -1,143 +1,85 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
-let isAnimating = false;
+let mixer: THREE.AnimationMixer;
+let clock = new THREE.Clock();
+let renderer: THREE.WebGLRenderer;
+let animationFrameId: number;
 
 export function initLoadingAnimation(containerId: string) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    // CONFIG
-    const COUNT = 20000;
-    const SPEED_MULT = 1;
-    const AUTO_SPIN = true;
+    container.innerHTML = '';
 
-    // SETUP
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x000000, 0.01);
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
-    camera.position.set(0, 0, 100);
-    
-    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.z = 5;
+
+    renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    container.appendChild(renderer.domElement);
-
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.autoRotate = AUTO_SPIN;
-    controls.autoRotateSpeed = 2.0;
-    controls.enableZoom = false;
-    controls.enablePan = false;
-
-    // POST PROCESSING
-    const composer = new EffectComposer(renderer);
-    composer.addPass(new RenderPass(scene, camera));
-    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
-    bloomPass.strength = 1.8; bloomPass.radius = 0.4; bloomPass.threshold = 0;
-    composer.addPass(bloomPass);
-
-    // SWARM OBJECTS
-    const dummy = new THREE.Object3D();
-    const color = new THREE.Color();
-    const target = new THREE.Vector3();
+    renderer.setPixelRatio(window.devicePixelRatio);
     
-    // INSTANCED MESH
-    const geometry = new THREE.TetrahedronGeometry(0.25);
-    const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    
-    const instancedMesh = new THREE.InstancedMesh(geometry, material, COUNT);
-    instancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    scene.add(instancedMesh);
+    const canvas = renderer.domElement;
+    canvas.style.position = 'absolute';
+    canvas.style.top = '0';
+    canvas.style.left = '0';
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.pointerEvents = 'none';
+    canvas.style.zIndex = '9999'; // Ensure it's on top within the container
+    container.appendChild(canvas);
 
-    // DATA ARRAYS
-    const positions: THREE.Vector3[] = [];
-    for(let i=0; i<COUNT; i++) {
-        positions.push(new THREE.Vector3((Math.random()-0.5)*100, (Math.random()-0.5)*100, (Math.random()-0.5)*100));
-        instancedMesh.setColorAt(i, color.setHex(0x00ff88)); // Init Color
-    }
+    const ambientLight = new THREE.AmbientLight(0xffffff, 2);
+    scene.add(ambientLight);
 
-    // CONTROL STUBS
-    const PARAMS: Record<string, number> = {"speed":1,"spread":60,"chaos":0.15};
-    const addControl = (id: string, label: string, min: number, max: number, val: number) => {
-        return PARAMS[id] !== undefined ? PARAMS[id] : val;
-    };
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
+    directionalLight.position.set(5, 5, 5);
+    scene.add(directionalLight);
 
-    // ANIMATION LOOP
-    const clock = new THREE.Clock();
-    
+    const loader = new GLTFLoader();
+    loader.load(`${import.meta.env.BASE_URL}loading_animate.glb`, (gltf) => {
+        const model = gltf.scene;
+        
+        const box = new THREE.Box3().setFromObject(model);
+        const size = box.getSize(new THREE.Vector3()).length();
+        const center = box.getCenter(new THREE.Vector3());
+
+        model.position.x += (model.position.x - center.x);
+        model.position.y += (model.position.y - center.y);
+        model.position.z += (model.position.z - center.z);
+        
+        const scale = 3.0 / size;
+        model.scale.set(scale, scale, scale);
+
+        scene.add(model);
+
+        if (gltf.animations && gltf.animations.length > 0) {
+            mixer = new THREE.AnimationMixer(model);
+            gltf.animations.forEach((clip) => {
+                mixer.clipAction(clip).play();
+            });
+        }
+    }, undefined, (error) => {
+        console.error('Error loading loading animation:', error);
+    });
+
     function animate() {
-        requestAnimationFrame(animate);
-        
-        if (!isAnimating) return; // Pause calculation when hidden
-
-        const time = clock.getElapsedTime() * SPEED_MULT;
-        
-        // Shader Time Update
-        if((material as any).uniforms && (material as any).uniforms.uTime) {
-            (material as any).uniforms.uTime.value = time;
-        }
-
-        controls.update();
-
-        // SWARM LOGIC
-        const count = COUNT; 
-        for(let i=0; i<COUNT; i++) {
-             // USER CODE INJECTION START
-             const speed = addControl("speed", "Rotation Speed", 0.1, 3, 1);
-             const spread = addControl("spread", "Spread", 20, 150, 60);
-             const chaos = addControl("chaos", "Chaos", 0, 1, 0.15);
-             
-             const t = time * speed;
-             const phi = (i / count) * Math.PI * 2;
-             const layer = Math.floor(i / (count / 5));
-             
-             // Five rings — one for each term: e, i, π, +1, 0
-             const radius = spread * (0.4 + 0.15 * layer);
-             const tilt = (layer * Math.PI) / 5 + t * 0.3;
-             
-             const x = Math.cos(phi + t + layer) * radius + Math.sin(tilt) * chaos * 20;
-             const y = Math.sin(phi + t + layer) * radius * Math.cos(tilt) + Math.sin(time * 0.7 + i * 0.01) * chaos * 15;
-             const z = Math.sin(phi * 2 + t) * radius * 0.5 + layer * 8 * Math.sin(t * 0.2);
-             
-             target.set(x, y, z);
-             
-             // Color cycles through gold → cyan → white — feels mathematical/elegant
-             const hue = (i / count + time * 0.05) % 1;
-             const sat = 0.7 + 0.3 * Math.sin(phi + time);
-             color.setHSL(hue * 0.25 + 0.5, sat, 0.6 + 0.2 * Math.sin(phi));
-             // USER CODE INJECTION END
-
-             // LERP & UPDATE
-             positions[i].lerp(target, 0.1);
-             dummy.position.copy(positions[i]);
-             dummy.updateMatrix();
-             instancedMesh.setMatrixAt(i, dummy.matrix);
-             instancedMesh.setColorAt(i, color); 
-        }
-        instancedMesh.instanceMatrix.needsUpdate = true;
-        if (instancedMesh.instanceColor) {
-            instancedMesh.instanceColor.needsUpdate = true;
-        }
-
-        composer.render();
+        animationFrameId = requestAnimationFrame(animate);
+        const delta = clock.getDelta();
+        if (mixer) mixer.update(delta);
+        renderer.render(scene, camera);
     }
-    
-    // Start animation loop
     animate();
 
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
-        composer.setSize(window.innerWidth, window.innerHeight);
     });
 }
 
 export function toggleLoadingAnimation(show: boolean) {
-    isAnimating = show;
     const container = document.getElementById('loading-screen');
     if (container) {
         if (show) {
@@ -146,8 +88,8 @@ export function toggleLoadingAnimation(show: boolean) {
         } else {
             container.classList.remove('visible');
             setTimeout(() => {
-                if (!isAnimating) container.classList.add('hidden');
-            }, 300); // Matches CSS transition duration
+                container.classList.add('hidden');
+            }, 300);
         }
     }
 }

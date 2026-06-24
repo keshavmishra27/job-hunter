@@ -1,6 +1,7 @@
 import { renderHome, renderDashboard, renderProfile, renderDrafts, renderSent, renderApplied, renderRepos, renderInternships, renderFreelancing, closeModal } from "./pages/pages";
+import "./styles/repo_expansion.css";
 import { initLoadingAnimation, toggleLoadingAnimation } from "./loadingAnimation";
-import { initAnimation } from "./animation";
+import { initAnimation, setAnimationPage } from "./animation";
 
 const PAGE_MAP: Record<string, { title: string; subtitle: string; render: () => Promise<void> }> = {
   dashboard: { title: "Dashboard", subtitle: "Overview of your job hunt", render: renderDashboard },
@@ -35,10 +36,10 @@ async function navigate(page: string) {
   const subtitleEl = document.getElementById("page-subtitle");
   if (subtitleEl) subtitleEl.textContent = meta.subtitle;
 
-  // Let loading screen show for a minimum duration to be visible
   await new Promise(r => setTimeout(r, 600));
 
   await meta.render();
+  setAnimationPage(page);
 
   // Hide Loading Animation
   toggleLoadingAnimation(false);

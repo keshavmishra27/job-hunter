@@ -6,6 +6,14 @@ Job Hunter is a professional grade, full stack application designed to accelerat
 
 2. **GitHub Repository Intelligence Engine**: Syncs developer portfolios directly from GitHub, performs deep static analysis of repositories (checking structure, README content, test coverage, CI/CD pipelines, containerization, and deployment readiness), scores them against 8 custom engineering profiles (Backend, Frontend, Fullstack, MLOps, DevOps, Agentic AI, Data Science, and Mobile), and generates actionable improvement tips to transform raw side projects into production ready repositories.
 
+## 🌐 Live Demo
+
+You can view the fully interactive static demo of Job Hunter hosted on GitHub Pages:
+**[View Live Demo](https://keshavmishra27.github.io/job-hunter/)**
+
+> [!NOTE]
+> The demo is a static build running mocked API responses to showcase the frontend UI and the interactive 3D animations without requiring the backend server to be active. To deploy your own demo, navigate to `demo/` and run `npm run deploy`.
+
 ---
 
 ## System Architecture
@@ -168,6 +176,7 @@ flowchart TD
 
 *   **Actionable Debugger for Portfolios**: Shows detailed explanations and exact correction steps for all missing repository signals.
 
+*   **Immersive 3D UI**: Features a dynamic background and loading screen using Three.js with interactive GLB models, delivering an engaging user experience.
 
 ---
 
@@ -191,8 +200,7 @@ The core logic of Job Hunter is compartmentalized into specific modules, routers
 | `alert_engine.py` & `telegram_sender.py` | Dispatches priority push notifications to users via Telegram. |
 | `draft_generator.py` | Leverages LLM configurations to write highly contextual cover outreach drafts. |
 | `sender.py` | Delivers outgoing emails using SMTP, managing timeouts, retries, and queues. |
-| `github_client.py` & `repo_analyzer.py` | Direct integration with GitHub REST API for static analysis scanning. |
-| `repo_scorer.py` & `repo_improvements.py` | Computes weighted role scores and generates actionable project feedback. |
+| `github_client.py` & `repo_analyzer.py` | Direct integration with GitHub REST API for static analysis scanning. || `repo_scorer.py` & `repo_improvements.py` | Computes weighted role scores and generates actionable project feedback. |
 
 ### API Routers (`backend/routers/`)
 | Router File | Prefix / Tag | Primary Responsibility |
@@ -402,6 +410,7 @@ python -m pytest tests/test_indeed_fetcher.py -q
 - [x] Streamlined UI by migrating minibar into main navigation.
 - [x] Enhanced resume parser for dynamic preferred roles extraction and reliable database persistence.
 - [x] Removed legacy Startup Discovery module to simplify architecture.
+- [x] Integrated interactive 3D background models and an immersive 3D loading animation using Three.js and GLTFLoader.
 - [ ] Deployed multi-container cloud infrastructure (Docker, docker-compose).
 - [ ] Playwright-based LinkedIn and Indeed automated scrapers.
 - [ ] FAISS Vector store indexing for instant semantic search.

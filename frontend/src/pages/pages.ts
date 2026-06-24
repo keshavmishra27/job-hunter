@@ -39,35 +39,35 @@ function statusChip(status: string) {
 export async function renderHome() {
   const el = document.getElementById("page-home")!;
   el.innerHTML = `
-    <div class="hero-panel">
-      <div style="text-align:center;max-width:600px">
-        <h1 class="display-hero" style="margin:0">JOB HUNTER</h1>
-        <p class="body-sm" style="margin:16px 0;color:var(--text-on-primary)">AI-assisted internship discovery, ranking and outreach — get started in seconds.</p>
-        <div style="display:flex;gap:12px;justify-content:center;margin-top:24px">
-          <button class="btn-signal" id="home-open-app">Open App</button>
-          <button class="btn-amber" id="home-upload-resume">Upload Resume</button>
-          <button class="btn-amber" id="home-check-backend">Check Backend</button>
+    <div class="hero-photo-band">
+      <div style="max-width:800px;margin:0 auto">
+        <h1 class="display-xl" style="margin:0">JOB HUNTER</h1>
+        <p class="body-md" style="margin:24px 0;color:var(--colors-muted)">AI-assisted internship discovery, ranking and outreach — get started in seconds.</p>
+        <div class="flex items-center justify-center gap-md" style="margin-top:40px">
+          <button class="button-primary" id="home-open-app">Open App</button>
+          <button class="button-primary" id="home-upload-resume">Upload Resume</button>
+          <button class="button-primary" id="home-check-backend">Check Backend</button>
         </div>
-        <div style="margin-top:24px;color:var(--text-on-primary);font-size:11px">
-          <div>STATUS: <span id="home-backend-status">Checking...</span></div>
+        <div style="margin-top:40px;color:var(--colors-muted)" class="caption-uppercase">
+          STATUS: <span id="home-backend-status">Checking...</span>
         </div>
       </div>
     </div>
 
-    <div>
-      <div class="section-label-bar">QUICK TOUR</div>
-      <div style="display:flex;gap:16px;margin-top:16px">
-        <div class="chrome-panel-light" style="flex:1">
-          <div class="ui-label">Fetch & Rank</div>
-          <div class="body-sm" style="margin-top:8px">Pull opportunities from multiple sources and rank them for you.</div>
+    <div style="margin-top:var(--spacing-section)">
+      <div class="title-md" style="margin-bottom:var(--spacing-lg)">QUICK TOUR</div>
+      <div class="flex gap-lg">
+        <div class="newsroom-article-card" style="flex:1">
+          <div class="title-sm">Fetch & Rank</div>
+          <div class="body-sm mt-sm" style="color:var(--colors-muted)">Pull opportunities from multiple sources and rank them for you.</div>
         </div>
-        <div class="chrome-panel-light" style="flex:1">
-          <div class="ui-label">Drafts</div>
-          <div class="body-sm" style="margin-top:8px">Generate outreach drafts tailored to each role and review them.</div>
+        <div class="newsroom-article-card" style="flex:1">
+          <div class="title-sm">Drafts</div>
+          <div class="body-sm mt-sm" style="color:var(--colors-muted)">Generate outreach drafts tailored to each role and review them.</div>
         </div>
-        <div class="chrome-panel-light" style="flex:1">
-          <div class="ui-label">Repo Intelligence</div>
-          <div class="body-sm" style="margin-top:8px">Analyze your GitHub to surface matching projects for a role.</div>
+        <div class="newsroom-article-card" style="flex:1">
+          <div class="title-sm">Repo Intelligence</div>
+          <div class="body-sm mt-sm" style="color:var(--colors-muted)">Analyze your GitHub to surface matching projects for a role.</div>
         </div>
       </div>
     </div>`;
@@ -106,28 +106,28 @@ export async function renderDashboard() {
       api.getDashboardStats(USER_ID),
       api.getAnalytics(USER_ID).catch(() => null)
     ]);
-    
+
     let analyticsHtml = "";
     if (analytics) {
       analyticsHtml = `
-      <div style="margin-top:24px">
-        <div class="section-label-bar">OUTCOME ANALYTICS</div>
-        <div style="display:flex;flex-wrap:wrap;gap:12px;margin:16px 0">
-          <div class="chrome-panel-light" style="flex:1;min-width:150px;text-align:center"><div class="display-hero" style="font-size:32px">${analytics.applications_sent}</div><div class="ui-label">Applications Sent</div></div>
-          <div class="chrome-panel-light" style="flex:1;min-width:150px;text-align:center"><div class="display-hero" style="font-size:32px">${analytics.interviews}</div><div class="ui-label">Interviews</div></div>
-          <div class="chrome-panel-light" style="flex:1;min-width:150px;text-align:center"><div class="display-hero" style="font-size:32px">${analytics.offers}</div><div class="ui-label">Offers</div></div>
-          <div class="chrome-panel-light" style="flex:1;min-width:150px;text-align:center"><div class="display-hero" style="font-size:32px">${analytics.response_rate_percent}%</div><div class="ui-label">Response Rate</div></div>
+      <div class="mt-xl">
+        <div class="title-md mb-md">OUTCOME ANALYTICS</div>
+        <div class="flex gap-md mb-md flex-wrap">
+          <div class="career-callout-card flex-1" style="text-align:center"><div class="display-lg">${analytics.applications_sent}</div><div class="caption-uppercase mt-sm" style="color:var(--colors-muted)">Applications Sent</div></div>
+          <div class="career-callout-card flex-1" style="text-align:center"><div class="display-lg">${analytics.interviews}</div><div class="caption-uppercase mt-sm" style="color:var(--colors-muted)">Interviews</div></div>
+          <div class="career-callout-card flex-1" style="text-align:center"><div class="display-lg">${analytics.offers}</div><div class="caption-uppercase mt-sm" style="color:var(--colors-muted)">Offers</div></div>
+          <div class="career-callout-card flex-1" style="text-align:center"><div class="display-lg">${analytics.response_rate_percent}%</div><div class="caption-uppercase mt-sm" style="color:var(--colors-muted)">Response Rate</div></div>
         </div>
-        <div style="display:flex;gap:12px;margin:16px 0">
-          <div class="chrome-panel-light" style="flex:1">
-             <div class="ui-label">RESUME PERFORMANCE</div>
-             <div class="body-sm" style="margin-top:8px"><strong>Best:</strong> ${analytics.best_resume}</div>
-             <div class="body-sm" style="margin-top:4px"><strong>Worst:</strong> ${analytics.worst_resume}</div>
+        <div class="flex gap-md mb-md">
+          <div class="newsroom-article-card flex-1">
+             <div class="title-sm">RESUME PERFORMANCE</div>
+             <div class="body-sm mt-sm" style="color:var(--colors-muted)"><strong>Best:</strong> ${analytics.best_resume}</div>
+             <div class="body-sm mt-sm" style="color:var(--colors-muted)"><strong>Worst:</strong> ${analytics.worst_resume}</div>
           </div>
-          <div class="chrome-panel-light" style="flex:1">
-             <div class="ui-label">SOURCE SUCCESS RATES</div>
-             <div style="margin-top:8px">
-               ${Object.entries(analytics.source_success_rates || {}).map(([src, rate]) => `<div class="body-sm" style="display:flex;justify-content:space-between"><span>${src}</span><span>${rate}%</span></div>`).join("")}
+          <div class="newsroom-article-card flex-1">
+             <div class="title-sm">SOURCE SUCCESS RATES</div>
+             <div class="mt-sm">
+               ${Object.entries(analytics.source_success_rates || {}).map(([src, rate]) => `<div class="body-sm flex justify-between" style="color:var(--colors-muted)"><span>${src}</span><span>${rate}%</span></div>`).join("")}
              </div>
           </div>
         </div>
@@ -135,25 +135,25 @@ export async function renderDashboard() {
     }
 
     el.innerHTML = `
-      <div class="hero-panel systems">
-        <h1 class="display-hero" style="margin:0">DASHBOARD</h1>
+      <div class="hero-photo-band" style="padding-top:40px;padding-bottom:40px;text-align:left">
+        <h1 class="display-lg" style="margin:0">DASHBOARD</h1>
       </div>
       <div>
-        <div class="section-label-bar">STATISTICS</div>
-        <div style="display:flex;flex-wrap:wrap;gap:12px;margin:16px 0">
-          <div class="chrome-panel-light" style="flex:1;min-width:150px;text-align:center"><div class="display-hero" style="font-size:32px">${stats.total_jobs_fetched ?? 0}</div><div class="ui-label">Jobs Fetched</div></div>
-          <div class="chrome-panel-light" style="flex:1;min-width:150px;text-align:center"><div class="display-hero" style="font-size:32px">${stats.matched_for_user ?? 0}</div><div class="ui-label">Matched</div></div>
-          <div class="chrome-panel-light" style="flex:1;min-width:150px;text-align:center"><div class="display-hero" style="font-size:32px">${stats.drafts_pending_review ?? 0}</div><div class="ui-label">Drafts to Review</div></div>
-          <div class="chrome-panel-light" style="flex:1;min-width:150px;text-align:center"><div class="display-hero" style="font-size:32px">${stats.drafts_approved ?? 0}</div><div class="ui-label">Approved</div></div>
-          <div class="chrome-panel-light" style="flex:1;min-width:150px;text-align:center"><div class="display-hero" style="font-size:32px">${stats.emails_sent ?? 0}</div><div class="ui-label">Emails Sent</div></div>
+        <div class="title-md mb-md">STATISTICS</div>
+        <div class="flex gap-md mb-lg flex-wrap">
+          <div class="career-callout-card flex-1" style="text-align:center"><div class="display-lg">${stats.total_jobs_fetched ?? 0}</div><div class="caption-uppercase mt-sm" style="color:var(--colors-muted)">Jobs Fetched</div></div>
+          <div class="career-callout-card flex-1" style="text-align:center"><div class="display-lg">${stats.matched_for_user ?? 0}</div><div class="caption-uppercase mt-sm" style="color:var(--colors-muted)">Matched</div></div>
+          <div class="career-callout-card flex-1" style="text-align:center"><div class="display-lg">${stats.drafts_pending_review ?? 0}</div><div class="caption-uppercase mt-sm" style="color:var(--colors-muted)">Drafts to Review</div></div>
+          <div class="career-callout-card flex-1" style="text-align:center"><div class="display-lg">${stats.drafts_approved ?? 0}</div><div class="caption-uppercase mt-sm" style="color:var(--colors-muted)">Approved</div></div>
+          <div class="career-callout-card flex-1" style="text-align:center"><div class="display-lg">${stats.emails_sent ?? 0}</div><div class="caption-uppercase mt-sm" style="color:var(--colors-muted)">Emails Sent</div></div>
         </div>
       </div>
       ${analyticsHtml}
-      <div>
-        <div class="section-label-bar">QUICK ACTIONS</div>
-        <div class="chrome-panel" style="display:flex;gap:12px;padding:16px">
-          <button class="btn-amber" id="dash-drafts-btn">REVIEW DRAFTS</button>
-          <button class="btn-amber" id="dash-freelance-btn">BROWSE FREELANCING</button>
+      <div class="mt-xl">
+        <div class="title-md mb-md">QUICK ACTIONS</div>
+        <div class="newsroom-article-card flex gap-md">
+          <button class="button-primary" id="dash-drafts-btn">REVIEW DRAFTS</button>
+          <button class="button-primary" id="dash-freelance-btn">BROWSE FREELANCING</button>
         </div>
       </div>`;
     document.getElementById("dash-drafts-btn")?.addEventListener("click", () => {
@@ -172,22 +172,22 @@ export async function renderProfile() {
   const el = document.getElementById("page-profile")!;
   el.innerHTML = `
     <div>
-      <div class="section-label-bar">CURRENT PROFILE</div>
-      <div class="chrome-panel" id="profile-card">
+      <div class="title-md" style="margin-bottom:var(--spacing-md)">CURRENT PROFILE</div>
+      <div class="model-photo-card" id="profile-card">
         <div style="text-align:center;padding:32px">
-          <div class="ui-label">NO PROFILE YET</div>
-          <div class="body-sm" style="color:var(--text-ink-soft);margin-top:8px">Upload and parse your resume to build your profile.</div>
+          <div class="title-sm">NO PROFILE YET</div>
+          <div class="body-sm" style="color:var(--colors-muted);margin-top:8px">Upload and parse your resume to build your profile.</div>
         </div>
       </div>
     </div>
     
-    <div style="display:flex;gap:24px">
+    <div class="flex gap-lg" style="margin-top:var(--spacing-xl)">
       <div style="flex:1">
-        <div class="section-label-bar">UPLOAD RESUME</div>
-        <div class="chrome-panel">
-          <div class="upload-zone" id="upload-zone" style="border:1px dashed var(--border-chrome);text-align:center;padding:32px;cursor:pointer">
-            <div class="ui-label">DROP YOUR PDF RESUME HERE</div>
-            <div class="body-sm" style="margin-top:8px">or click to browse</div>
+        <div class="title-md" style="margin-bottom:var(--spacing-md)">UPLOAD RESUME</div>
+        <div class="model-photo-card">
+          <div class="upload-zone" id="upload-zone" style="border:1px dashed var(--colors-hairline-strong);text-align:center;padding:32px;cursor:pointer">
+            <div class="title-sm">DROP YOUR PDF RESUME HERE</div>
+            <div class="body-sm" style="margin-top:8px;color:var(--colors-muted)">or click to browse</div>
             <input type="file" id="resume-file-input" accept=".pdf" style="display:none" />
           </div>
           <div style="margin-top:16px" id="upload-status"></div>
@@ -195,23 +195,23 @@ export async function renderProfile() {
       </div>
       
       <div style="flex:1">
-        <div class="section-label-bar">PROFILE SETTINGS</div>
-        <div class="chrome-panel" id="settings-card">
+        <div class="title-md" style="margin-bottom:var(--spacing-md)">PROFILE SETTINGS</div>
+        <div class="model-photo-card" id="settings-card" style="padding:24px">
           <div style="margin-bottom:16px">
-            <label class="ui-label" for="grad-year-input">GRADUATION YEAR</label>
-            <div class="body-sm" style="color:var(--text-ink-soft);margin:4px 0">e.g. 2028 — used to detect internship batch eligibility</div>
-            <input class="form-input" id="grad-year-input" type="number" min="2024" max="2032" placeholder="2028" style="width:160px" />
+            <label class="title-sm" for="grad-year-input">GRADUATION YEAR</label>
+            <div class="body-sm" style="color:var(--colors-muted);margin:4px 0">e.g. 2028 — used to detect internship batch eligibility</div>
+            <input class="text-input" id="grad-year-input" type="number" min="2024" max="2032" placeholder="2028" style="width:160px" />
           </div>
           
           <div style="margin-bottom:24px">
-            <label class="ui-label" for="tg-chat-id-input">TELEGRAM CHAT ID</label>
-            <div class="body-sm" style="color:var(--text-ink-soft);margin:4px 0">Find via @BotFather.</div>
-            <input class="form-input" id="tg-chat-id-input" type="text" placeholder="123456789" style="width:100%" />
+            <label class="title-sm" for="tg-chat-id-input">TELEGRAM CHAT ID</label>
+            <div class="body-sm" style="color:var(--colors-muted);margin:4px 0">Find via @BotFather.</div>
+            <input class="text-input" id="tg-chat-id-input" type="text" placeholder="123456789" style="width:100%" />
           </div>
           
           <div style="display:flex;gap:12px;flex-wrap:wrap">
-            <button class="btn-signal" id="save-settings-btn">SAVE SETTINGS</button>
-            <button class="btn-amber" id="send-telegram-btn">TEST TELEGRAM</button>
+            <button class="button-primary" id="save-settings-btn">SAVE SETTINGS</button>
+            <button class="button-primary" id="send-telegram-btn">TEST TELEGRAM</button>
           </div>
           <div id="settings-status" style="margin-top:10px;font-size:11px"></div>
         </div>
@@ -263,16 +263,46 @@ export async function renderProfile() {
       if (profile.telegram_chat_id) tgInput.value = profile.telegram_chat_id;
 
       const gradYearDisplay = profile.graduation_year
-        ? `<span style="color:var(--accent-light);font-weight:600">${profile.graduation_year}</span>`
-        : `<span style="color:var(--text-muted);font-style:italic">Not set — set in  Settings</span>`;
+        ? `<span style="color:var(--colors-ink);font-weight:600">${profile.graduation_year}</span>`
+        : `<span style="color:var(--colors-muted);font-style:italic">Not set</span>`;
 
       const tgDisplay = profile.telegram_chat_id
-        ? `<span style="color:#10b981;font-weight:600">${profile.telegram_chat_id}</span>`
-        : `<span style="color:var(--text-muted);font-style:italic">Not configured</span>`;
+        ? `<span style="color:var(--colors-ink);font-weight:600">${profile.telegram_chat_id}</span>`
+        : `<span style="color:var(--colors-muted);font-style:italic">Not configured</span>`;
 
       card.innerHTML = `
-        <div class="form-group"><div class="card-title">Graduation Year</div><div style="font-size:14px;margin-top:4px">${gradYearDisplay}</div></div><div class="form-group" style="margin-top:12px"><div class="card-title">✈️ Telegram Alerts</div><div style="font-size:14px;margin-top:4px">${tgDisplay}</div></div><div class="form-group" style="margin-top:12px"><div class="card-title">Skills</div><div class="tag-list">${(profile.skills || []).map((s: string) => `<span class="tag">${s}</span>`).join("")}</div></div><div class="form-group"><div class="card-title">Research Areas</div><div class="tag-list">${(profile.research_areas || []).map((s: string) => `<span class="tag">${s}</span>`).join("")}</div></div><div class="form-group"><div class="card-title">Preferred Roles</div><div class="tag-list">${(profile.preferred_roles || []).map((s: string) => `<span class="tag">${s}</span>`).join("")}</div></div><div class="form-group"><div class="card-title">Location Rules</div><div style="font-size:13px;color:var(--text-secondary)">Remote: ${profile.location_rule?.remote_allowed ? "Allowed" : "Not allowed"}<br/>Offline cities: ${(profile.location_rule?.offline_allowed || []).join(", ")}
-          </div></div><div><div class="card-title">Projects (${(profile.projects || []).length})</div>${(profile.projects || []).slice(0, 5).map((p: string) => `<div style="font-size:13px;color:var(--text-secondary);padding:4px 0;border-bottom:1px solid var(--border-subtle)">• ${p}</div>`).join("")}
+        <div style="padding:24px;border-bottom:1px solid var(--colors-hairline)">
+          <div class="title-sm">Graduation Year</div>
+          <div class="body-sm mt-xs">${gradYearDisplay}</div>
+        </div>
+        <div style="padding:24px;border-bottom:1px solid var(--colors-hairline)">
+          <div class="title-sm">Telegram Alerts</div>
+          <div class="body-sm mt-xs">${tgDisplay}</div>
+        </div>
+        <div style="padding:24px;border-bottom:1px solid var(--colors-hairline)">
+          <div class="title-sm">Skills</div>
+          <div class="flex flex-wrap gap-xs mt-sm">${(profile.skills || []).map((s: string) => `<span class="category-tag">${s}</span>`).join("")}</div>
+        </div>
+        <div style="padding:24px;border-bottom:1px solid var(--colors-hairline)">
+          <div class="title-sm">Research Areas</div>
+          <div class="flex flex-wrap gap-xs mt-sm">${(profile.research_areas || []).map((s: string) => `<span class="category-tag">${s}</span>`).join("")}</div>
+        </div>
+        <div style="padding:24px;border-bottom:1px solid var(--colors-hairline)">
+          <div class="title-sm">Preferred Roles</div>
+          <div class="flex flex-wrap gap-xs mt-sm">${(profile.preferred_roles || []).map((s: string) => `<span class="category-tag">${s}</span>`).join("")}</div>
+        </div>
+        <div style="padding:24px;border-bottom:1px solid var(--colors-hairline)">
+          <div class="title-sm">Location Rules</div>
+          <div class="body-sm mt-xs" style="color:var(--colors-muted)">
+            Remote: ${profile.location_rule?.remote_allowed ? "Allowed" : "Not allowed"}<br/>
+            Offline cities: ${(profile.location_rule?.offline_allowed || []).join(", ")}
+          </div>
+        </div>
+        <div style="padding:24px">
+          <div class="title-sm">Projects (${(profile.projects || []).length})</div>
+          <div class="mt-sm">
+            ${(profile.projects || []).slice(0, 5).map((p: string) => `<div class="body-sm" style="color:var(--colors-muted);padding:4px 0;border-bottom:1px solid var(--colors-hairline)">• ${p}</div>`).join("")}
+          </div>
         </div>`;
     } catch {
       // Profile not found yet — that's OK
@@ -381,13 +411,10 @@ export async function renderInternships() {
 
   // ── Eligibility badge ───────────────────────────────────────────────────────
   function eligBadge(status: string) {
-    const map: Record<string, string> = {
-      eligible: "elig-yes", maybe: "elig-maybe", not_eligible: "elig-no", unknown: "elig-unknown",
-    };
     const label: Record<string, string> = {
-      eligible: "✓ Eligible", maybe: "~ Maybe", not_eligible: "✗ Not Eligible", unknown: "? Unknown",
+      eligible: "Eligible", maybe: "Maybe", not_eligible: "Not Eligible", unknown: "Unknown",
     };
-    return `<span class="elig-badge ${map[status] || "elig-unknown"}">${label[status] || status}</span>`;
+    return `<span class="category-tag">${label[status] || status}</span>`;
   }
 
   // ── Deadline urgency chip ───────────────────────────────────────────────────
@@ -395,10 +422,10 @@ export async function renderInternships() {
     if (!deadline) return "";
     const d = new Date(deadline);
     const days = Math.ceil((d.getTime() - Date.now()) / 86400000);
-    if (days < 0) return `<span class="deadline-chip expired">Expired</span>`;
-    if (days <= 3) return `<span class="deadline-chip urgent">${days}d left</span>`;
-    if (days <= 7) return `<span class="deadline-chip soon">⚡ ${days}d left</span>`;
-    return `<span class="deadline-chip ok">${days}d left</span>`;
+    if (days < 0) return `<span class="date-pill">Expired</span>`;
+    if (days <= 3) return `<span class="date-pill">${days}d left</span>`;
+    if (days <= 7) return `<span class="date-pill">${days}d left</span>`;
+    return `<span class="date-pill">${days}d left</span>`;
   }
 
   // ── Score ring (small) ──────────────────────────────────────────────────────
@@ -430,19 +457,33 @@ export async function renderInternships() {
       return;
     }
     list.innerHTML = filtered.map((n: any) => `
-      <div class="intern-card glass-panel" data-id="${n.notice_id}" style="border-left: 3px solid #8a2be2; position: relative; overflow: hidden; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1);"><div class="intern-card-left"><div class="intern-logo" style="box-shadow: 0 0 15px rgba(138, 43, 226, 0.4); background: rgba(255,255,255,0.1); color: #fff;">${(n.company || "?")[0].toUpperCase()}</div></div><div class="intern-card-body"><div class="intern-card-top"><span class="intern-title" style="font-size: 16px; font-weight: 700; color: #fff;">${n.title || "Untitled"}</span>${eligBadge(n.eligibility_status || "unknown")}
-            ${deadlineChip(n.deadline || null)}
-          </div><div class="intern-meta" style="margin-top: 6px;"><span style="color: var(--text-secondary); font-weight: 500;">${n.company || "—"}</span><span style="color: var(--text-muted);">&bull;</span><span>${n.source === "Gmail" ? "📧" : "📡"} ${n.source || "—"}</span>${n.location ? `<span>${n.location}</span>` : ""}
-            ${n.sender_email ? `<span style="font-size:11px; padding: 2px 6px; background: rgba(255,255,255,0.05); border-radius: 4px;">${n.sender_email}</span>` : ""}
-          </div></div><div class="intern-card-right" style="display:flex;flex-direction:column;align-items:flex-end;gap:10px">${scoreRing(n.score || 0)}
-          <div class="intern-actions" style="display:flex;gap:6px">
-            <button class="btn btn-secondary btn-sm view-notice-btn" data-id="${n.notice_id}">Intelligence</button>
-            ${n.apply_link ? `<a class="btn btn-success btn-sm" href="${n.apply_link}" target="_blank">Apply ↗</a>` : ""}
-            <button class="btn btn-sm save-notice-btn ${n.status === 'saved' ? 'btn-success' : 'btn-outline'}" data-id="${n.notice_id}">
-              ${n.status === 'saved' ? '✓ Tracked' : 'Track 📌'}
+      <div class="career-listing-row" data-id="${n.notice_id}">
+        <div style="display:flex;gap:16px;align-items:center;flex:1">
+          <div style="width:48px;height:48px;border-radius:var(--rounded-full);background:var(--colors-surface-card);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);border:1px solid var(--colors-hairline)">${(n.company || "?")[0].toUpperCase()}</div>
+          <div>
+            <div class="title-sm">${n.title || "Untitled"}</div>
+            <div class="body-sm" style="color:var(--colors-muted);margin-top:4px">
+              <span style="color:var(--colors-ink)">${n.company || "—"}</span> &bull; 
+              <span>${n.source === "Gmail" ? "Gmail" : n.source || "—"}</span>
+              ${n.location ? ` &bull; <span>${n.location}</span>` : ""}
+            </div>
+            <div class="flex gap-xs mt-xs">
+              ${eligBadge(n.eligibility_status || "unknown")}
+              ${deadlineChip(n.deadline || null)}
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+          ${scoreRing(n.score || 0)}
+          <div class="flex gap-xs">
+            <button class="button-primary view-notice-btn" style="height:32px;padding:0 16px;font-size:11px" data-id="${n.notice_id}">Intel</button>
+            ${n.apply_link ? `<a class="button-primary" style="height:32px;padding:0 16px;font-size:11px;line-height:30px" href="${n.apply_link}" target="_blank">Apply</a>` : ""}
+            <button class="button-primary save-notice-btn" style="height:32px;padding:0 16px;font-size:11px" data-id="${n.notice_id}">
+              ${n.status === 'saved' ? 'Tracked' : 'Track'}
             </button>
-            <button class="btn btn-sm autopilot-btn btn-primary" data-id="${n.notice_id}">Queue Autopilot ⚡</button>
-          </div></div></div>`).join("");
+          </div>
+        </div>
+      </div>`).join("");
 
     // Wire buttons
     list.querySelectorAll(".view-notice-btn").forEach(btn => {
@@ -592,21 +633,21 @@ export async function renderInternships() {
   // ── Initial render ──────────────────────────────────────────────────────────
   el.innerHTML = `
     <div>
-      <div class="section-label-bar">INTERNSHIP NEWS SCRAPER</div>
-      <div class="chrome-panel" style="margin-bottom:24px">
-        <div class="ui-label" style="margin-bottom:12px">SOURCE REGISTRY</div>
+      <div class="title-md" style="margin-bottom:var(--spacing-md)">INTERNSHIP NEWS SCRAPER</div>
+      <div class="model-photo-card" style="padding:24px;margin-bottom:24px">
+        <div class="title-sm" style="margin-bottom:12px">SOURCE REGISTRY</div>
         <div class="intern-src-tabs" style="display:flex;gap:8px;margin-bottom:12px">
-          <button class="intern-src-tab active" id="srctab-website" data-srctab="website">🌐 WEBSITE</button>
-          <button class="intern-src-tab" id="srctab-telegram" data-srctab="telegram">✈️ TELEGRAM</button>
-          <button class="intern-src-tab" id="srctab-gmail" data-srctab="gmail">📧 GMAIL</button>
+          <button class="intern-src-tab active" id="srctab-website" data-srctab="website">WEB</button>
+          <button class="intern-src-tab" id="srctab-telegram" data-srctab="telegram">TELEGRAM</button>
+          <button class="intern-src-tab" id="srctab-gmail" data-srctab="gmail">GMAIL</button>
         </div>
         <div id="src-website-chips" class="source-chips" style="margin-bottom:12px">${WEB_SOURCES.map(s => `<button class="source-chip ${webSelected.has(s.id) ? "selected" : ""}" data-source="${s.id}" data-group="web">${s.icon} ${s.label}</button>`).join("")}</div>
-        <div id="src-telegram-chips" class="source-chips" style="margin-bottom:12px;display:none">${TG_SOURCES.map(s => `<button class="source-chip ${tgSelected.has(s.id) ? "selected" : ""}" data-source="${s.id}" data-group="tg">${s.icon} ${s.label}<span style="font-size:10px;color:var(--text-ink-soft);margin-left:4px">5 channels</span></button>`).join("")}<div class="body-sm" style="margin-top:8px;color:var(--text-ink-soft)">Scrapes: @JobsAndInternshipsIndia, @internshipsalert, @internship_update, @HiringIndia, @TechJobsIndia</div></div>
-        <div id="src-gmail-chips" class="source-chips" style="margin-bottom:12px;display:none">${GMAIL_SOURCES.map(s => `<button class="source-chip ${gmailSelected.has(s.id) ? "selected" : ""}" data-source="${s.id}" data-group="gmail">${s.icon} ${s.label}</button>`).join("")}<div id="gmail-status-line" class="body-sm" style="margin-top:8px;color:var(--text-ink-soft)">Checking connection…</div></div>
+        <div id="src-telegram-chips" class="source-chips" style="margin-bottom:12px;display:none">${TG_SOURCES.map(s => `<button class="source-chip ${tgSelected.has(s.id) ? "selected" : ""}" data-source="${s.id}" data-group="tg">${s.icon} ${s.label}<span style="font-size:10px;color:var(--colors-muted);margin-left:4px">5 channels</span></button>`).join("")}<div class="body-sm" style="margin-top:8px;color:var(--colors-muted)">Scrapes: @JobsAndInternshipsIndia, @internshipsalert, @internship_update, @HiringIndia, @TechJobsIndia</div></div>
+        <div id="src-gmail-chips" class="source-chips" style="margin-bottom:12px;display:none">${GMAIL_SOURCES.map(s => `<button class="source-chip ${gmailSelected.has(s.id) ? "selected" : ""}" data-source="${s.id}" data-group="gmail">${s.icon} ${s.label}</button>`).join("")}<div id="gmail-status-line" class="body-sm" style="margin-top:8px;color:var(--colors-muted)">Checking connection…</div></div>
         
         <div style="display:flex;align-items:center;gap:12px;margin-top:16px">
-          <button class="btn-signal" id="intern-fetch-btn">FETCH & PROCESS</button>
-          <span id="intern-fetch-status" class="body-sm" style="color:var(--text-ink-soft)"></span>
+          <button class="button-primary" id="intern-fetch-btn">FETCH & PROCESS</button>
+          <span id="intern-fetch-status" class="body-sm" style="color:var(--colors-muted)"></span>
         </div>
         <div id="intern-pipeline-wrap" style="display:none;margin-top:16px">${pipelineHTML(-1)}</div>
       </div>
@@ -726,28 +767,28 @@ export async function renderDrafts() {
 
     el.innerHTML = `
       <div>
-        <div class="section-label-bar">AUTOPILOT QUEUE</div>
-        <div class="chrome-panel" style="margin-bottom:24px">
-          <div class="body-sm" style="color:var(--text-ink)">Manage AI-generated outreach drafts before they are sent.</div>
+        <div class="title-md" style="margin-bottom:var(--spacing-md)">AUTOPILOT QUEUE</div>
+        <div class="model-photo-card" style="padding:24px;margin-bottom:24px">
+          <div class="body-sm" style="color:var(--colors-muted)">Manage AI-generated outreach drafts before they are sent.</div>
         </div>
-        <div class="section-label-bar">DRAFTS (${drafts.length})</div>
+        <div class="title-md" style="margin-bottom:var(--spacing-md)">DRAFTS (${drafts.length})</div>
         <div class="job-list" id="draft-list"></div>
       </div>`;
 
     const list = document.getElementById("draft-list")!;
     list.innerHTML = drafts.map((d: any) => `
-      <div class="chrome-panel-light" id="draft-${d.draft_id}" style="margin-bottom:12px;padding:12px">
+      <div class="newsroom-article-card" id="draft-${d.draft_id}" style="margin-bottom:12px;padding:24px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start">
           <div>
-            <div class="ui-label" style="font-size:14px;color:var(--text-ink)">${d.subject || "(no subject)"}</div>
-            <div class="body-sm" style="color:var(--text-ink-soft);margin-top:4px">${d.company} &bull; ${d.job_title}</div>
+            <div class="title-sm">${d.subject || "(no subject)"}</div>
+            <div class="body-sm mt-xs" style="color:var(--colors-muted)">${d.company} &bull; ${d.job_title}</div>
           </div>
-          <div style="display:flex;align-items:center;gap:12px">
+          <div style="display:flex;align-items:center;gap:16px">
             ${statusChip(d.status)}
-            <div style="display:flex;gap:6px">
-              <button class="btn-amber view-draft-btn" data-draft-id="${d.draft_id}">REVIEW</button>
-              ${d.status !== "approved" && d.status !== "sent" ? `<button class="btn-signal approve-btn" data-draft-id="${d.draft_id}">APPROVE</button>` : ""}
-              ${d.status === "approved" ? `<button class="btn-signal send-btn" data-draft-id="${d.draft_id}">SEND OUTREACH 🚀</button>` : ""}
+            <div style="display:flex;gap:8px">
+              <button class="button-primary view-draft-btn" style="height:36px;padding:0 24px" data-draft-id="${d.draft_id}">REVIEW</button>
+              ${d.status !== "approved" && d.status !== "sent" ? `<button class="button-primary approve-btn" style="height:36px;padding:0 24px" data-draft-id="${d.draft_id}">APPROVE</button>` : ""}
+              ${d.status === "approved" ? `<button class="button-primary send-btn" style="height:36px;padding:0 24px" data-draft-id="${d.draft_id}">SEND</button>` : ""}
             </div>
           </div>
         </div>
@@ -824,36 +865,36 @@ export async function renderRepos() {
 
   el.innerHTML = `
     <div>
-      <div class="section-label-bar">REPO INTELLIGENCE</div>
-      <div class="chrome-panel">
-        <div class="body-sm" style="color:var(--text-ink);margin-bottom:16px">Sync your GitHub repos and use AI to rank them based on role fit.</div>
+      <div class="title-md" style="margin-bottom:var(--spacing-md)">REPO INTELLIGENCE</div>
+      <div class="model-photo-card" style="padding:24px">
+        <div class="body-sm" style="color:var(--colors-muted);margin-bottom:16px">Sync your GitHub repos and use AI to rank them based on role fit.</div>
         <div class="repo-page-wrapper">
           <div class="repo-connect-panel" id="repo-connect-panel">
             <div class="spinner"></div><span style="margin-left:10px">Checking GitHub connection...</span>
           </div>
           <div id="repo-main-content" style="display:none">
-            <div class="repo-toolbar" style="display:flex;justify-content:space-between;align-items:center;background:var(--bg-surface);padding:8px;border:1px solid var(--border-chrome)">
+            <div class="repo-toolbar" style="display:flex;justify-content:space-between;align-items:center;background:var(--colors-surface-card);padding:16px;border:1px solid var(--colors-hairline)">
               <div class="repo-toolbar-left" style="display:flex;gap:12px;align-items:center">
                 <div class="repo-github-badge" id="repo-github-badge"></div>
                 <div class="role-selector-wrap" style="display:flex;align-items:center;gap:8px">
-                  <label class="ui-label">TARGET ROLE</label>
-                  <select class="role-select form-input" id="role-select"></select>
+                  <label class="title-sm">TARGET ROLE</label>
+                  <select class="text-input" id="role-select" style="width:150px;height:36px"></select>
                 </div>
               </div>
               <div class="repo-toolbar-right" style="display:flex;gap:8px">
-                <button class="btn-amber" id="repo-sync-btn">SYNC REPOS</button>
-                <button class="btn-signal" id="repo-analyze-btn">ANALYZE & RANK</button>
+                <button class="button-primary" id="repo-sync-btn">SYNC REPOS</button>
+                <button class="button-primary" id="repo-analyze-btn">ANALYZE</button>
               </div>
             </div>
             <div id="repo-status-bar" class="repo-status-bar" style="display:none;margin-top:12px"></div>
             <div id="top5-section" style="display:none;margin-top:24px">
-              <div class="section-label-bar">TOP 5 REPOSITORIES <span id="active-role-pill" style="float:right"></span></div>
+              <div class="title-md" style="margin-bottom:var(--spacing-sm)">TOP 5 REPOSITORIES <span id="active-role-pill" style="float:right"></span></div>
               <div class="repo-top5-grid" id="repo-top5-grid" style="margin-top:8px"></div>
             </div>
             <div id="all-repos-section" style="display:none;margin-top:24px">
-              <div class="section-label-bar" style="display:flex;justify-content:space-between;align-items:center">
+              <div class="title-md" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--spacing-sm)">
                 <span id="all-repos-count-title">ALL REPOSITORIES</span>
-                <button class="btn-amber" id="toggle-all-repos" style="padding:2px 8px;font-size:10px">SHOW ALL</button>
+                <button class="button-primary" id="toggle-all-repos" style="padding:0 12px;height:32px;font-size:11px">SHOW ALL</button>
               </div>
               <div class="job-list" id="all-repos-list" style="display:none;margin-top:8px"></div>
             </div>
@@ -1033,7 +1074,7 @@ async function loadTop5(el: HTMLElement) {
     grid.innerHTML = data.top5.map((repo: any, idx: number) => renderRepoCard(repo, idx + 1)
     ).join("");
 
-    grid.querySelectorAll(".chrome-panel-light").forEach(card => {
+    grid.querySelectorAll(".newsroom-article-card").forEach(card => {
       card.addEventListener("click", async () => {
         const repoId = (card as HTMLElement).dataset.repoId!;
         await openRepoExpansion(repoId, _currentRole);
@@ -1047,7 +1088,7 @@ async function loadTop5(el: HTMLElement) {
       allList.innerHTML = data.all_repos.slice(5).map((repo: any, i: number) => renderRepoListRow(repo, i + 6)
       ).join("");
 
-      allList.querySelectorAll(".news-row").forEach(row => {
+      allList.querySelectorAll(".career-listing-row").forEach(row => {
         row.addEventListener("click", async () => {
           const repoId = (row as HTMLElement).dataset.repoId!;
           await openRepoExpansion(repoId, _currentRole);
@@ -1090,63 +1131,63 @@ function renderRepoCard(repo: any, rank: number): string {
   const finalPct = Math.round(repo.final_score * 10);
 
   const badges = [
-    repo.has_readme ? `<span class="repo-badge badge-readme">README</span>` : "",
-    repo.has_tests ? `<span class="repo-badge badge-tests">Tests</span>` : "",
-    repo.has_ui ? `<span class="repo-badge badge-ui">UI</span>` : "",
-    repo.has_deployment ? `<span class="repo-badge badge-deploy">Deployed</span>` : "",
-    repo.has_demo_link ? `<span class="repo-badge badge-demo">Demo</span>` : "",
+    repo.has_readme ? `<span class="category-tag">README</span>` : "",
+    repo.has_tests ? `<span class="category-tag">Tests</span>` : "",
+    repo.has_ui ? `<span class="category-tag">UI</span>` : "",
+    repo.has_deployment ? `<span class="category-tag">Deployed</span>` : "",
+    repo.has_demo_link ? `<span class="category-tag">Demo</span>` : "",
   ].filter(Boolean).join("");
 
   return `
-  <div class="chrome-panel-light" data-repo-id="${repo.repo_id}" title="Click to expand full analysis" style="cursor:pointer">
+  <div class="newsroom-article-card" data-repo-id="${repo.repo_id}" title="Click to expand full analysis" style="cursor:pointer;padding:24px">
     <div style="display:flex;justify-content:space-between;align-items:flex-start">
       <div>
-        <div class="ui-label" style="color:${rankColor};font-size:14px">#${rank} <span style="color:var(--text-ink)">${repo.name}</span></div>
-        <div class="body-sm" style="color:var(--text-ink-soft);margin:8px 0">${repo.description || "<em style='opacity:0.5'>No description</em>"}</div>
-        <div style="display:flex;gap:12px;font-size:11px;color:var(--text-ink);margin-bottom:8px">
+        <div class="title-sm" style="color:${rankColor}">#${rank} <span style="color:var(--colors-ink)">${repo.name}</span></div>
+        <div class="body-sm mt-xs" style="color:var(--colors-muted)">${repo.description || "<em style='opacity:0.5'>No description</em>"}</div>
+        <div style="display:flex;gap:12px;font-size:11px;color:var(--colors-ink);margin-bottom:8px;margin-top:8px">
           ${repo.language ? `<span style="font-weight:700;color:${lc}">${repo.language}</span>` : ""}
           ${repo.stars > 0 ? `<span>★ ${repo.stars}</span>` : ""}
           ${repo.forks > 0 ? `<span>⑂ ${repo.forks}</span>` : ""}
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${badges}</div>
       </div>
-      <div style="background:var(--bg-platinum);border:1px solid var(--border-chrome);padding:4px 8px;text-align:center">
-        <div class="display-hero" style="font-size:20px;color:var(--text-on-primary);-webkit-text-stroke:1px var(--text-ink);text-shadow:2px 2px 0 var(--text-ink)">${repo.final_score.toFixed(1)}</div>
-        <div class="ui-label" style="font-size:9px">SCORE</div>
+      <div style="background:var(--colors-surface-card);border:1px solid var(--colors-hairline);padding:8px 16px;text-align:center">
+        <div class="title-md" style="color:var(--colors-ink)">${repo.final_score.toFixed(1)}</div>
+        <div class="body-sm" style="font-size:9px;color:var(--colors-muted);letter-spacing:1px;text-transform:uppercase">SCORE</div>
       </div>
     </div>
     
-    <div style="display:flex;justify-content:space-between;background:var(--bg-canvas);border:1px solid var(--border-chrome);padding:8px">
+    <div style="display:flex;justify-content:space-between;background:transparent;border:1px solid var(--colors-hairline);padding:16px;margin-top:16px">
       ${renderScoreRing(repo.uniqueness_score, "Unique", "#a78bfa")}
       ${renderScoreRing(repo.code_quality_score, "Code", "#00f0ff")}
       ${renderScoreRing(repo.documentation_score, "Docs", "#10b981")}
       ${renderScoreRing(repo.uiux_score, "UI/UX", "#f59e0b")}
     </div>
     
-    ${repo.selection_reason ? `<div style="margin-top:8px;font-size:11px;color:var(--text-ink-soft);border-left:2px solid ${rankColor};padding-left:8px">${repo.selection_reason}</div>` : ""}
-    <div style="margin-top:12px;display:flex;justify-content:space-between">
-      <a href="${repo.html_url}" target="_blank" onclick="event.stopPropagation()" style="color:var(--color-signal);font-weight:700;font-size:11px">VIEW ON GITHUB ↗</a>
-      <span style="color:var(--text-ink-soft);font-size:11px">CLICK TO EXPAND</span>
+    ${repo.selection_reason ? `<div class="body-sm mt-sm" style="color:var(--colors-muted);border-left:2px solid ${rankColor};padding-left:12px">${repo.selection_reason}</div>` : ""}
+    <div style="margin-top:16px;display:flex;justify-content:space-between">
+      <a href="${repo.html_url}" target="_blank" onclick="event.stopPropagation()" style="color:var(--colors-ink);font-weight:700;font-size:11px;text-decoration:underline">VIEW ON GITHUB ↗</a>
+      <span style="color:var(--colors-muted);font-size:11px">CLICK TO EXPAND</span>
     </div>
   </div>`;
 }
 
 function renderRepoListRow(repo: any, rank: number): string {
   return `
-  <div class="news-row" data-repo-id="${repo.repo_id}" style="cursor:pointer;padding:8px">
-    <div style="display:flex;align-items:center;gap:12px">
-      <div style="background:var(--bg-periwinkle);color:var(--text-ink);width:24px;height:24px;text-align:center;line-height:24px;border:1px solid var(--border-chrome);font-weight:700">${repo.name[0].toUpperCase()}</div>
+  <div class="career-listing-row" data-repo-id="${repo.repo_id}" style="cursor:pointer">
+    <div style="display:flex;align-items:center;gap:16px">
+      <div style="background:var(--colors-surface-card);color:var(--colors-ink);width:32px;height:32px;text-align:center;line-height:32px;border:1px solid var(--colors-hairline);font-weight:700">${repo.name[0].toUpperCase()}</div>
       <div>
-        <div style="color:var(--text-ink)">#${rank} ${repo.name}</div>
-        <div style="font-size:10px;font-weight:normal;display:flex;gap:8px">
+        <div class="title-sm" style="color:var(--colors-ink)">#${rank} ${repo.name}</div>
+        <div class="body-sm mt-xs" style="color:var(--colors-muted);display:flex;gap:8px">
           <span>${repo.language || "—"}</span><span>★ ${repo.stars}</span>
-          ${repo.description ? `<span style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${repo.description}</span>` : ""}
+          ${repo.description ? `<span style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${repo.description}</span>` : ""}
         </div>
       </div>
     </div>
     <div style="text-align:right">
-      <div style="color:var(--text-ink);font-size:14px;font-weight:700">${repo.final_score.toFixed(1)} / 10</div>
-      <div style="font-size:10px;font-weight:normal">${repo.analyzed ? "ANALYZED" : "UNANALYZED"}</div>
+      <div class="title-sm" style="color:var(--colors-ink)">${repo.final_score.toFixed(1)} / 10</div>
+      <div class="body-sm" style="font-size:10px;text-transform:uppercase;color:var(--colors-muted)">${repo.analyzed ? "ANALYZED" : "UNANALYZED"}</div>
     </div>
   </div>`;
 }
@@ -1303,17 +1344,17 @@ export async function renderSent() {
 
     el.innerHTML = `
       <div>
-        <div class="section-label-bar">SENT LOG</div>
-        <div class="chrome-panel" style="margin-bottom:24px">
-          <div class="body-sm" style="color:var(--text-ink)">Record of all outgoing messages and pitches.</div>
+        <div class="title-md" style="margin-bottom:var(--spacing-md)">SENT LOG</div>
+        <div class="model-photo-card" style="padding:24px;margin-bottom:24px">
+          <div class="body-sm" style="color:var(--colors-muted)">Record of all outgoing messages and pitches.</div>
         </div>
-        <div class="section-label-bar">SENT MESSAGES (${log.length})</div>
+        <div class="title-md" style="margin-bottom:var(--spacing-md)">SENT MESSAGES (${log.length})</div>
         <div class="job-list">${log.map((s: any) => `
-          <div class="chrome-panel-light" style="margin-bottom:12px;padding:8px">
+          <div class="newsroom-article-card" style="margin-bottom:12px;padding:24px">
             <div style="display:flex;justify-content:space-between;align-items:center">
               <div>
-                <div class="ui-label" style="font-size:14px;color:var(--text-ink)">${s.subject || "—"}</div>
-                <div class="body-sm" style="color:var(--text-ink-soft);margin-top:4px">${s.recipient} &bull; ${s.sent_at ? new Date(s.sent_at).toLocaleString() : "—"}</div>
+                <div class="title-sm" style="color:var(--colors-ink)">${s.subject || "—"}</div>
+                <div class="body-sm mt-xs" style="color:var(--colors-muted)">${s.recipient} &bull; ${s.sent_at ? new Date(s.sent_at).toLocaleString() : "—"}</div>
               </div>
               ${statusChip(s.status)}
             </div>
@@ -1343,39 +1384,45 @@ export async function renderApplied() {
     } else {
       el.innerHTML = `
         <div>
-          <div class="section-label-bar" style="display:flex;justify-content:space-between;align-items:center;">
+          <div class="title-md" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--spacing-md)">
             TRACKER
           </div>
-          <div class="chrome-panel" style="margin-bottom:24px">
-            <div class="body-sm" style="color:var(--text-ink)">Track your sent applications and follow-ups.</div>
+          <div class="model-photo-card" style="padding:24px;margin-bottom:24px">
+            <div class="body-sm" style="color:var(--colors-muted)">Track your sent applications and follow-ups.</div>
           </div>
-          <div class="section-label-bar">APPLICATIONS (${apps.length})</div>
+          <div class="title-md" style="margin-bottom:var(--spacing-md)">APPLICATIONS (${apps.length})</div>
           <div class="job-list" id="applied-list"></div>
         </div>`;
       const list = document.getElementById("applied-list")!;
       list.innerHTML = apps.map((a: any) => `
-      <div class="chrome-panel-light applied-row" id="app-${a.applied_id}" style="margin-bottom:12px;padding:12px">
-        <div style="display:flex;align-items:center;gap:12px">
-          <div style="background:var(--bg-periwinkle);color:var(--text-ink);width:32px;height:32px;text-align:center;line-height:32px;border:1px solid var(--border-chrome);font-weight:700">${(a.company || "?")[0].toUpperCase()}</div>
-          <div style="flex:1">
-            <div class="ui-label" style="font-size:14px;color:var(--text-ink)">${a.title || "—"}</div>
-            <div class="body-sm" style="color:var(--text-ink-soft);margin-top:4px">
-              <span style="font-weight:700">${a.company || "—"}</span> &bull; <span>${a.source || "—"}</span> &bull; <span>Tracked: ${a.updated_at ? new Date(a.updated_at).toLocaleDateString() : "—"}</span>
+      <div class="career-listing-row" id="app-${a.applied_id}">
+        <div style="display:flex;align-items:center;gap:16px;flex:1">
+          <div style="background:var(--colors-surface-card);color:var(--colors-ink);width:48px;height:48px;border-radius:var(--rounded-full);text-align:center;line-height:48px;border:1px solid var(--colors-hairline);font-family:var(--font-mono)">${(a.company || "?")[0].toUpperCase()}</div>
+          <div>
+            <div class="title-sm" style="color:var(--colors-ink)">${a.title || "—"}</div>
+            <div class="body-sm mt-xs" style="color:var(--colors-muted)">
+              <span style="font-weight:700;color:var(--colors-ink)">${a.company || "—"}</span> &bull; <span>${a.source || "—"}</span> &bull; <span>Tracked: ${a.updated_at ? new Date(a.updated_at).toLocaleDateString() : "—"}</span>
             </div>
-            ${a.notes ? `<div style="font-size:11px;color:var(--text-ink-soft);margin-top:4px">📝 NOTES: ${a.notes}</div>` : ""}
-        </div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:12px"><span class="badge ${STATUS_COLORS[a.status] || "badge-new"}" style="font-size: 11px; font-weight: 700; letter-spacing: 0.5px;">${a.status}</span><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn btn-danger btn-sm unmark-btn" data-app-id="${a.applied_id}">Remove</button></div></div></div>`).join("");
+            ${a.notes ? `<div class="body-sm mt-xs" style="color:var(--colors-muted)">📝 NOTES: ${a.notes}</div>` : ""}
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:12px">
+          <span class="category-tag">${a.status}</span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="button-primary unmark-btn" style="height:32px;padding:0 16px;font-size:11px" data-app-id="${a.applied_id}">Remove</button></div>
+        </div>
+      </div>`).join("");
 
-    list.querySelectorAll(".unmark-btn").forEach((btn) => {
-      btn.addEventListener("click", async () => {
-        const appId = (btn as HTMLElement).dataset.appId!;
-        if (!confirm("Remove from Tracker? The notice will reappear in your feed.")) return;
-        try {
-          await api.deleteAppliedNotice(appId);
-          toast("Removed from Tracker.", "success");
-          renderApplied();
-        } catch (e: any) { toast(e.message, "error"); }
+      list.querySelectorAll(".unmark-btn").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const appId = (btn as HTMLElement).dataset.appId!;
+          if (!confirm("Remove from Tracker? The notice will reappear in your feed.")) return;
+          try {
+            await api.deleteAppliedNotice(appId);
+            toast("Removed from Tracker.", "success");
+            renderApplied();
+          } catch (e: any) { toast(e.message, "error"); }
+        });
       });
-    });
     } // End of else block
 
     document.getElementById("btn-sync-gmail")?.addEventListener("click", async (e) => {
@@ -1442,11 +1489,7 @@ export async function renderFreelancing() {
 
   function flScoreRing(score: number): string {
     const pct = Math.round(score * 100);
-    const r = 18, c = 2 * Math.PI * r;
-    const col = pct >= 70 ? "var(--success)" : pct >= 40 ? "var(--warning)" : "var(--danger)";
-    return `<div class="score-ring" title="Score: ${pct}%"><svg width="48" height="48" viewBox="0 0 48 48"><circle cx="24" cy="24" r="${r}" fill="none" stroke="var(--border)" stroke-width="3"/><circle cx="24" cy="24" r="${r}" fill="none" stroke="${col}" stroke-width="3"
-          stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - score)}"
-          stroke-linecap="round" transform="rotate(-90 24 24)"/></svg><span class="score-ring-label" style="color:${col}">${pct}</span></div>`;
+    return `<div style="background:var(--colors-surface-card);border:1px solid var(--colors-hairline);padding:8px 16px;text-align:center"><div class="title-md" style="color:var(--colors-ink)">${pct}</div><div class="body-sm" style="font-size:9px;color:var(--colors-muted);letter-spacing:1px;text-transform:uppercase">SCORE</div></div>`;
   }
 
   function budgetBadge(gig: any): string {
@@ -1462,18 +1505,35 @@ export async function renderFreelancing() {
   }
 
   function gigCard(gig: any): string {
-    const statusCls = gig.status === "saved" ? "status-saved" : gig.status === "applied" ? "status-applied" : gig.status === "in_progress" ? "status-progress" : "";
-    const statusLabel = gig.status && gig.status !== "new" ? `<span class="fl-status-chip ${statusCls}">${gig.status.replace("_", " ")}</span>` : "";
+    const statusLabel = gig.status && gig.status !== "new" ? `<span class="category-tag">${gig.status.replace("_", " ")}</span>` : "";
     const clientInfo = gig.client_rating ? `<span class="client-rating">⭐ ${gig.client_rating.toFixed(1)}</span>` : "";
-    const timeline = gig.delivery_time_days ? `<span class="timeline-badge">${gig.delivery_time_days}d</span>` : "";
+    const timeline = gig.delivery_time_days ? `<span class="date-pill">${gig.delivery_time_days}d</span>` : "";
 
-    return `<div class="freelance-card" data-gig-id="${gig.id}"><div class="fl-card-header"><div class="fl-card-info"><div class="fl-card-title">${gig.title || "Untitled Gig"}</div><div class="fl-card-meta"><span class="source-badge source-${gig.source?.toLowerCase() || ''}">${gig.source || "Unknown"}</span>${clientInfo}${timeline}${statusLabel}
-          </div></div>${flScoreRing(gig.score || 0)}
-      </div>${budgetBadge(gig)}
-      ${skillTags(gig.required_skills)}
-      ${gig.matched_skills?.length ? `<div class="matched-label">✓ Matched: ${gig.matched_skills.join(", ")}</div>` : ""}
-      <div class="fl-card-actions">${gig.apply_link ? `<a href="${gig.apply_link}" target="_blank" class="btn btn-primary btn-sm">Apply </a>` : ""}
-        <button class="btn btn-secondary btn-sm fl-save-btn" data-id="${gig.id}" data-status="${gig.status}">${gig.status === "saved" ? "★ Saved" : "☆ Save"}</button><button class="btn btn-secondary btn-sm fl-progress-btn" data-id="${gig.id}">${gig.status === "in_progress" ? " In Progress" : "▶ Start"}</button><button class="btn btn-secondary btn-sm fl-detail-btn" data-id="${gig.id}">Score </button></div></div>`;
+    return `<div class="newsroom-article-card" data-gig-id="${gig.id}" style="padding:24px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div style="flex:1">
+          <div class="title-sm" style="color:var(--colors-ink)">${gig.title || "Untitled Gig"}</div>
+          <div class="body-sm mt-xs" style="color:var(--colors-muted)">
+            <span style="font-weight:700;color:var(--colors-ink)">${gig.source || "Unknown"}</span>${clientInfo}${timeline}
+          </div>
+          ${budgetBadge(gig)}
+          ${skillTags(gig.required_skills)}
+          ${gig.matched_skills?.length ? `<div class="body-sm mt-xs" style="color:var(--colors-ink)">✓ Matched: ${gig.matched_skills.join(", ")}</div>` : ""}
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:12px">
+          <div style="display:flex;gap:12px;align-items:center">
+            ${statusLabel}
+            ${flScoreRing(gig.score || 0)}
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+            ${gig.apply_link ? `<a href="${gig.apply_link}" target="_blank" class="button-primary" style="height:32px;padding:0 16px;font-size:11px;line-height:30px">Apply</a>` : ""}
+            <button class="button-primary fl-save-btn" style="height:32px;padding:0 16px;font-size:11px" data-id="${gig.id}" data-status="${gig.status}">${gig.status === "saved" ? "Saved" : "Save"}</button>
+            <button class="button-primary fl-progress-btn" style="height:32px;padding:0 16px;font-size:11px" data-id="${gig.id}">${gig.status === "in_progress" ? "In Progress" : "Start"}</button>
+            <button class="button-primary fl-detail-btn" style="height:32px;padding:0 16px;font-size:11px" data-id="${gig.id}">Score</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
   }
 
   function renderGigList(gigs: any[]) {
@@ -1584,13 +1644,13 @@ export async function renderFreelancing() {
   // ── Render the page ────────────────────────────────────────────────────
   el.innerHTML = `
     <div>
-      <div class="section-label-bar">FREELANCE HUB</div>
-      <div class="chrome-panel" style="margin-bottom:24px">
-        <div class="ui-label" style="margin-bottom:12px">FREELANCE SOURCES</div>
+      <div class="title-md" style="margin-bottom:var(--spacing-md)">FREELANCE HUB</div>
+      <div class="model-photo-card" style="padding:24px;margin-bottom:24px">
+        <div class="title-sm" style="margin-bottom:12px">FREELANCE SOURCES</div>
         <div class="source-chips" id="fl-source-chips" style="margin-bottom:12px">${FREELANCE_SOURCES.map(s => `<button class="source-chip ${flSelected.has(s.id) ? "selected" : ""}" data-source="${s.id}">${s.icon} ${s.label}</button>`).join("")}</div>
-        <div style="display:flex;align-items:center;gap:12px">
-          <button class="btn-signal" id="fl-fetch-btn">FETCH GIGS</button>
-          <span id="fl-fetch-status" class="body-sm" style="color:var(--text-ink-soft)"></span>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:16px">
+          <button class="button-primary" id="fl-fetch-btn">FETCH GIGS</button>
+          <span id="fl-fetch-status" class="body-sm" style="color:var(--colors-muted)"></span>
         </div>
         <div id="fl-pipeline-wrap" style="display:none;margin-top:16px">${flPipelineHTML(-1)}</div>
       </div>
