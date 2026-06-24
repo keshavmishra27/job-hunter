@@ -28,7 +28,7 @@ async def mark_applied(req: MarkAppliedRequest, db: AsyncSession = Depends(get_d
     if req.status not in VALID_STATUSES:
         raise HTTPException(400, f"Invalid status. Must be one of: {VALID_STATUSES}")
 
-    # ensure notice exists
+                          
     nres = await db.execute(select(Notice).where(Notice.id == req.notice_id))
     notice = nres.scalar_one_or_none()
     if not notice:

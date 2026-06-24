@@ -31,14 +31,14 @@ import re
 from loguru import logger
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Domain expansion map
-# key   → normalised canonical skill/domain name
-# value → list of skills/terms to ALSO search for
-# ─────────────────────────────────────────────────────────────────────────────
+                                                                               
+                      
+                                                
+                                                 
+                                                                               
 
 DOMAIN_EXPANSION_MAP: dict[str, list[str]] = {
-    # ── GenAI / Agentic AI / LLM ──────────────────────────────────────────
+                                                                            
     "genai": [
         "Machine Learning", "Deep Learning", "NLP", "Computer Vision",
         "Data Science", "Data Analytics", "Python", "TensorFlow", "PyTorch",
@@ -78,7 +78,7 @@ DOMAIN_EXPANSION_MAP: dict[str, list[str]] = {
         "Generative AI", "Computer Vision", "Deep Learning", "PyTorch", "Python",
     ],
 
-    # ── Machine Learning ──────────────────────────────────────────────────
+                                                                            
     "machine learning": [
         "Deep Learning", "Data Science", "Python", "Statistics",
         "Scikit-learn", "Data Analytics", "AI", "TensorFlow", "PyTorch",
@@ -104,7 +104,7 @@ DOMAIN_EXPANSION_MAP: dict[str, list[str]] = {
         "Deep Learning", "Machine Learning", "TensorFlow", "Python", "AI",
     ],
 
-    # ── NLP ───────────────────────────────────────────────────────────────
+                                                                            
     "nlp": [
         "Machine Learning", "Deep Learning", "Transformers", "Python",
         "Text Mining", "Data Science", "LLM", "AI",
@@ -114,7 +114,7 @@ DOMAIN_EXPANSION_MAP: dict[str, list[str]] = {
         "Text Mining", "Data Science", "LLM",
     ],
 
-    # ── Computer Vision ───────────────────────────────────────────────────
+                                                                            
     "computer vision": [
         "Machine Learning", "Deep Learning", "Image Processing", "OpenCV",
         "Python", "CNN", "AI", "PyTorch", "TensorFlow",
@@ -127,7 +127,7 @@ DOMAIN_EXPANSION_MAP: dict[str, list[str]] = {
         "Computer Vision", "Image Processing", "Python", "Deep Learning",
     ],
 
-    # ── Data Science / Analytics ──────────────────────────────────────────
+                                                                            
     "data science": [
         "Data Analytics", "SQL", "Python", "Statistics", "Power BI",
         "Tableau", "Excel", "Machine Learning", "Pandas", "NumPy",
@@ -147,7 +147,7 @@ DOMAIN_EXPANSION_MAP: dict[str, list[str]] = {
         "Data Science", "Python", "Machine Learning", "Pandas",
     ],
 
-    # ── Web Development ───────────────────────────────────────────────────
+                                                                            
     "web development": [
         "Frontend", "Backend", "React", "Node.js", "REST API",
         "Django", "Flask", "FastAPI", "Full Stack",
@@ -178,7 +178,7 @@ DOMAIN_EXPANSION_MAP: dict[str, list[str]] = {
         "FastAPI", "Django", "Flask", "Node.js", "REST API", "Python", "Web Development",
     ],
 
-    # ── Cloud / DevOps ────────────────────────────────────────────────────
+                                                                            
     "aws": [
         "Cloud Computing", "DevOps", "GCP", "Azure", "Docker", "Kubernetes",
     ],
@@ -199,7 +199,7 @@ DOMAIN_EXPANSION_MAP: dict[str, list[str]] = {
         "Infrastructure", "Automation",
     ],
 
-    # ── Automation / RPA ──────────────────────────────────────────────────
+                                                                            
     "automation": [
         "RPA", "Selenium", "Python", "Scripting", "DevOps", "AI",
     ],
@@ -207,7 +207,7 @@ DOMAIN_EXPANSION_MAP: dict[str, list[str]] = {
         "Automation", "QA", "Testing", "Python", "Web Scraping",
     ],
 
-    # ── Databases ─────────────────────────────────────────────────────────
+                                                                            
     "sql": [
         "Data Science", "Data Analytics", "Database", "PostgreSQL", "MySQL",
     ],
@@ -218,7 +218,7 @@ DOMAIN_EXPANSION_MAP: dict[str, list[str]] = {
         "Database", "Backend", "NoSQL",
     ],
 
-    # ── Languages (generic tech adjacency) ────────────────────────────────
+                                                                            
     "python": [
         "Machine Learning", "Data Science", "Automation", "Backend",
         "Scripting", "AI",
@@ -238,17 +238,17 @@ DOMAIN_EXPANSION_MAP: dict[str, list[str]] = {
 }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Keyword group templates
-#
-# Each template specifies:
-#   terms   – list of skill/role terms to join as "X OR Y intern"
-#   label   – short human-readable label for the group
-#   relevance – one of: "primary", "high", "related", "broad"
-# ─────────────────────────────────────────────────────────────────────────────
+                                                                               
+                         
+ 
+                          
+                                                                 
+                                                      
+                                                             
+                                                                               
 
-# Domain → ordered keyword group definitions
-# Defined once; we pick the groups whose trigger skills appear on the resume.
+                                            
+                                                                             
 _DOMAIN_GROUPS: dict[str, list[dict]] = {
     "ai_genai": [
         {
@@ -474,13 +474,13 @@ _DOMAIN_GROUPS: dict[str, list[dict]] = {
     ],
 }
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Skill → domain resolver
-# Each entry: (normalised-skill-fragment, domain-key)
-# ─────────────────────────────────────────────────────────────────────────────
+                                                                               
+                         
+                                                     
+                                                                               
 
 _SKILL_DOMAIN_MAP: list[tuple[str, str]] = [
-    # AI / GenAI
+                
     ("genai", "ai_genai"),
     ("generative", "ai_genai"),
     ("agentic", "ai_genai"),
@@ -498,7 +498,7 @@ _SKILL_DOMAIN_MAP: list[tuple[str, str]] = [
     ("faiss", "ai_genai"),
     ("chromadb", "ai_genai"),
     ("pinecone", "ai_genai"),
-    # ML
+        
     ("machine learning", "ml"),
     ("tensorflow", "ml"),
     ("pytorch", "ml"),
@@ -507,22 +507,22 @@ _SKILL_DOMAIN_MAP: list[tuple[str, str]] = [
     ("sklearn", "ml"),
     ("xgboost", "ml"),
     ("lightgbm", "ml"),
-    # ML sub-domains (add ai_genai too via fallthrough)
+                                                       
     ("deep learning", "ml"),
     ("neural network", "ml"),
-    # NLP
+         
     ("nlp", "nlp"),
     ("natural language", "nlp"),
     ("spacy", "nlp"),
     ("nltk", "nlp"),
     ("bert", "nlp"),
-    # Computer Vision
+                     
     ("computer vision", "computer_vision"),
     ("opencv", "computer_vision"),
     ("image processing", "computer_vision"),
     ("yolo", "computer_vision"),
     ("cnn", "computer_vision"),
-    # Data Science
+                  
     ("data science", "data_science"),
     ("data analytics", "data_science"),
     ("data analysis", "data_science"),
@@ -531,7 +531,7 @@ _SKILL_DOMAIN_MAP: list[tuple[str, str]] = [
     ("matplotlib", "data_science"),
     ("tableau", "data_science"),
     ("power bi", "data_science"),
-    # Web / Full Stack
+                      
     ("full stack", "web_fullstack"),
     ("fullstack", "web_fullstack"),
     ("web development", "web_fullstack"),
@@ -551,7 +551,7 @@ _SKILL_DOMAIN_MAP: list[tuple[str, str]] = [
     ("node.js", "backend"),
     ("nodejs", "backend"),
     ("express", "backend"),
-    # DevOps / Cloud
+                    
     ("docker", "devops_cloud"),
     ("kubernetes", "devops_cloud"),
     ("devops", "devops_cloud"),
@@ -560,12 +560,12 @@ _SKILL_DOMAIN_MAP: list[tuple[str, str]] = [
     ("azure", "devops_cloud"),
     ("terraform", "devops_cloud"),
     ("ci/cd", "devops_cloud"),
-    # Automation
+                
     ("selenium", "automation"),
     ("playwright", "automation"),
     ("automation", "automation"),
     ("rpa", "automation"),
-    # Data Engineering
+                      
     ("spark", "data_engineering"),
     ("kafka", "data_engineering"),
     ("airflow", "data_engineering"),
@@ -575,8 +575,8 @@ _SKILL_DOMAIN_MAP: list[tuple[str, str]] = [
     ("postgresql", "data_engineering"),
 ]
 
-# AI sibling domains — if the candidate is in any of these, all sibling groups
-# should also be included at "related" relevance floor.
+                                                                              
+                                                       
 _AI_SIBLING_DOMAINS: set[str] = {"ai_genai", "ml", "nlp", "computer_vision"}
 
 
@@ -593,7 +593,7 @@ def _detect_domains(skills: list[str], preferred_roles: list[str]) -> set[str]:
         if fragment in all_text:
             detected.add(domain)
 
-    # Explicit role keyword fallbacks
+                                     
     role_text = " ".join(_normalise(r) for r in preferred_roles)
     if "ai" in role_text or "ml" in role_text:
         detected.add("ai_genai")
@@ -621,10 +621,10 @@ def _build_groups(domains: set[str]) -> list[dict]:
     Collect and merge keyword groups from all detected domains.
     Deduplicate by relevance tier, prefer higher-priority relevance.
     """
-    # relevance ordering
+                        
     relevance_rank = {"primary": 0, "high": 1, "related": 2, "broad": 3}
 
-    # For AI candidates: ai_genai is always primary domain → its groups first
+                                                                             
     ordered_domains: list[str] = []
     priority_order = ["ai_genai", "ml", "nlp", "computer_vision",
                       "data_science", "web_fullstack", "frontend", "backend",
@@ -632,27 +632,27 @@ def _build_groups(domains: set[str]) -> list[dict]:
     for d in priority_order:
         if d in domains:
             ordered_domains.append(d)
-    # any remaining domains not in priority_order
+                                                 
     for d in domains:
         if d not in ordered_domains:
             ordered_domains.append(d)
 
-    seen_keywords: dict[str, str] = {}  # normalised_terms → best_relevance
+    seen_keywords: dict[str, str] = {}                                     
     all_groups: list[dict] = []
 
     for domain in ordered_domains:
         for group in _DOMAIN_GROUPS.get(domain, []):
-            # Build the OR-query string
+                                       
             kw_str = " OR ".join(group["terms"])
             key = _normalise(kw_str)
             new_rel = group["relevance"]
 
             if key in seen_keywords:
-                # Keep whichever relevance is higher priority
+                                                             
                 existing_rel = seen_keywords[key]
                 if relevance_rank[new_rel] < relevance_rank[existing_rel]:
                     seen_keywords[key] = new_rel
-                    # Update the existing entry in all_groups
+                                                             
                     for g in all_groups:
                         if _normalise(g["keywords"]) == key:
                             g["relevance"] = new_rel
@@ -689,18 +689,18 @@ def expand_keywords(
         logger.warning("[KeywordExpander] No skills or roles provided; returning empty list.")
         return []
 
-    # Step 1: detect domains from resume
+                                        
     domains = _detect_domains(skills, preferred_roles)
 
-    # Step 2: expand AI sibling domains automatically
+                                                     
     domains = _merge_ai_siblings(domains)
 
     logger.info(f"[KeywordExpander] Detected domains: {domains}")
 
-    # Step 3: build keyword groups
+                                  
     groups = _build_groups(domains)
 
-    # Step 4: cap at max_groups
+                               
     result = groups[:max_groups]
 
     logger.info(

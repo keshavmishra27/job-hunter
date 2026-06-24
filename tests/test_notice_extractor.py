@@ -21,12 +21,12 @@ def test_extract_from_html_basic_fields():
     notice = mod.extract_from_html(html)
 
     assert 'Software Engineering Intern' in notice.get('title', '')
-    # company may not be a first-class field; ensure raw_text contains company name
+                                                                                   
     assert 'Acme' in notice.get('raw_text', '')
     assert 'Bengaluru' in (notice.get('location') or '')
     assert '30,000' in (notice.get('stipend') or '') or '30000' in (notice.get('stipend') or '')
     assert any('3rd' in s or 'pre-final' in s.lower() for s in [notice.get('eligibility_text') or ''])
     assert isinstance(notice.get('links'), list)
-    # ensure we captured the official portal link
+                                                 
     links = [l.get('url', '') for l in notice.get('links', [])]
     assert any('careers.example.com' in u for u in links)

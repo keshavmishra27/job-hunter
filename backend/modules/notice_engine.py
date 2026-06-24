@@ -13,7 +13,7 @@ class NoticeEngine:
     """
     
     def __init__(self):
-        # Initialize connections to various sources if needed
+                                                             
         pass
 
     async def ingest_notices(self) -> List[Dict[str, Any]]:
@@ -23,8 +23,8 @@ class NoticeEngine:
         """
         logger.info("Ingesting notices from various sources...")
         notices = []
-        # TODO: Implement actual ingestion logic from pipeline.py / capability_router.py
-        # For now, this serves as the structural endpoint for the Notice Engine.
+                                                                                        
+                                                                                
         return notices
 
     async def classify_and_store(self, notice: Dict[str, Any]):

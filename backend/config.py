@@ -8,7 +8,7 @@ ROOT_DIR = Path(__file__).parent.parent
 DB_PATH = ROOT_DIR / "data" / "job_hunter.db"
 
 class Settings(BaseSettings):
-    # pydantic-settings reads .env automatically — no os.getenv() needed
+                                                                        
     model_config = SettingsConfigDict(env_file=str(ROOT_DIR / ".env"), env_file_encoding="utf-8", extra="ignore")
 
     database_url: str = f"sqlite+aiosqlite:///{DB_PATH.as_posix()}"
@@ -33,15 +33,15 @@ class Settings(BaseSettings):
     github_token: str = ""
     apify_token: str = ""
 
-    # Gmail / IMAP inbox scanning settings
-    # Pydantic auto-maps IMAP_USER, IMAP_PASSWORD, etc. from .env
+                                          
+                                                                 
     imap_user: str = ""
     imap_password: str = ""
     imap_host: str = "imap.gmail.com"
     imap_port: int = 993
     gmail_days_back: int = 7
 
-    # Convenience aliases that the Gmail module uses
+                                                    
     @property
     def gmail_user(self) -> str:
         return self.imap_user

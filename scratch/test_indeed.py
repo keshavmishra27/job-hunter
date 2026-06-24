@@ -28,11 +28,11 @@ print(f"Body size: {len(resp.text)} chars")
 
 soup = BeautifulSoup(resp.text, "lxml")
 
-# Check for CAPTCHA / blocking
+                              
 title = soup.title.get_text() if soup.title else "No title"
 print(f"Page title: {title}")
 
-# Check known card selectors
+                            
 for sel in ["div.job_seen_beacon", "div[data-jk]", ".jobsearch-ResultsList", 
             ".mosaic-zone", "#mosaic-provider-jobcards", ".job_seen_beacon",
             "td.resultContent", ".resultContent", "a.jcs-JobTitle"]:
@@ -40,7 +40,7 @@ for sel in ["div.job_seen_beacon", "div[data-jk]", ".jobsearch-ResultsList",
     if items:
         print(f"\n'{sel}': {len(items)} matches")
 
-# Check for JSON-LD data
+                        
 scripts = soup.find_all("script", type="application/ld+json")
 for s in scripts:
     try:
@@ -52,13 +52,13 @@ for s in scripts:
     except:
         pass
 
-# Check for any heading or error message
+                                        
 for h in soup.select("h1, h2, h3"):
     text = h.get_text(strip=True)
     if text:
         print(f"Heading: {text}")
 
-# Save HTML for inspection
+                          
 with open("scratch/indeed_page.html", "w", encoding="utf-8") as f:
     f.write(resp.text)
 print("\nSaved to scratch/indeed_page.html")

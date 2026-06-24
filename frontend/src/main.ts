@@ -13,7 +13,7 @@ const PAGE_MAP: Record<string, { title: string; subtitle: string; render: () => 
 };
 
 async function navigate(page: string) {
-  // Show Loading Animation
+  
   toggleLoadingAnimation(true);
 
   document.querySelectorAll("[data-page]").forEach((el) => el.classList.remove("active"));
@@ -35,12 +35,12 @@ async function navigate(page: string) {
   const subtitleEl = document.getElementById("page-subtitle");
   if (subtitleEl) subtitleEl.textContent = meta.subtitle;
 
-  // Let loading screen show for a minimum duration to be visible
+  
   await new Promise(r => setTimeout(r, 600));
 
   await meta.render();
 
-  // Hide Loading Animation
+  
   toggleLoadingAnimation(false);
 }
 

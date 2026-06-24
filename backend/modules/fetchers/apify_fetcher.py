@@ -28,10 +28,10 @@ class BaseApifyFetcher(BaseFetcher):
         logger.info(f"[{self.source_name}] Calling Apify Actor {self.ACTOR_ID} with input: {run_input}")
         
         try:
-            # Start the actor and wait for it to finish
+                                                       
             run = await self.client.actor(self.ACTOR_ID).call(run_input=run_input, timeout_secs=timeout_secs)
             
-            # Fetch results from the default dataset
+                                                    
             if isinstance(run, dict):
                 dataset_id = run.get("defaultDatasetId")
             else:
@@ -43,7 +43,7 @@ class BaseApifyFetcher(BaseFetcher):
                 
             dataset_client = self.client.dataset(dataset_id)
             
-            # Fetch all items asynchronously
+                                            
             list_page = await dataset_client.list_items()
             items = list_page.items
             
@@ -61,9 +61,9 @@ class ApifyInternshalaFetcher(BaseApifyFetcher):
     async def fetch(self, keywords: list[str], location: str = "", **kwargs) -> list[RawJob]:
         results: list[RawJob] = []
         
-        # Apify Internshala scraper usually takes a URL or search query. 
-        # The unfenced-group/internshala-scraper accepts proxy configuration and startUrls or keyword.
-        # Let's map it based on actor schema
+                                                                         
+                                                                                                      
+                                            
         for keyword in keywords[:2]:
             run_input = {
                 "search": keyword,
@@ -72,9 +72,9 @@ class ApifyInternshalaFetcher(BaseApifyFetcher):
                 "max": 15,
             }
             if location and location.lower() != "india":
-                # For internshala, the unfenced actor might not have native location filter unless via URL.
-                # If we need exact URLs, we'd build them. Let's try simple search first.
-                # For WFH we can append "work from home" to the search or use a URL.
+                                                                                                           
+                                                                                        
+                                                                                    
                 if "remote" in location.lower() or "home" in location.lower():
                     run_input["search"] = f"work from home {keyword}"
                 else:
@@ -88,7 +88,7 @@ class ApifyInternshalaFetcher(BaseApifyFetcher):
                 loc = item.get("locationNames", [])
                 loc_str = ", ".join(loc) if isinstance(loc, list) else str(loc)
                 
-                # Try to get stipend, duration, etc.
+                                                    
                 stipend = item.get("stipend", {}).get("salary") or item.get("stipend")
                 duration = item.get("duration")
                 
@@ -133,7 +133,7 @@ class ApifyLinkedInFetcher(BaseApifyFetcher):
         run_input = {
             "keyword": query,
             "location": location or "India",
-            "f_JT": "I", # Internship
+            "f_JT": "I",             
             "limit": 25,
             "saveDescription": True
         }

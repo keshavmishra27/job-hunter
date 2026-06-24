@@ -10,9 +10,9 @@ import re
 from loguru import logger
 from backend.modules.ranker import TECH_KEYWORDS_SET
 
-# Base advantage by source (0.0 to 1.0, higher is better/less crowded)
+                                                                      
 SOURCE_CROWD_LEVEL = {
-    # Low competition (direct/niche)
+                                    
     "CompanyCareers": 0.90,
     "Wellfound":      0.80,
     "WorkAtAStartup": 0.85,
@@ -23,13 +23,13 @@ SOURCE_CROWD_LEVEL = {
     "Internshala":    0.70,
     "Indeed":         0.70,
     "LinkedIn":       0.70,
-    # Medium competition
+                        
     "Naukri":         0.45,
     "Foundit":        0.50,
     "Freshersworld":  0.45,
 }
 
-# Heuristic keywords for company size
+                                     
 STARTUP_KEYWORDS = {"startup", "early-stage", "seed", "series a", "small team", "founding", "stealth"}
 LARGE_COMPANY_KEYWORDS = {"mnc", "fortune 500", "established", "enterprise", "global team"}
 
@@ -66,7 +66,7 @@ def _recency_advantage(item: dict) -> tuple[float, str | None]:
 
 def _source_crowd_advantage(source: str) -> tuple[float, str | None]:
     """Calculate advantage based on source platform."""
-    # Match the source string exactly or fuzzy
+                                              
     base_score = 0.5
     reason = f"Standard platform ({source})"
     
@@ -101,11 +101,11 @@ def _role_specificity_advantage(title: str) -> tuple[float, str | None]:
     """Calculate advantage based on how niche the role is."""
     title_lower = title.lower()
     
-    # Generic penalization
+                          
     if title_lower == "intern" or title_lower == "developer" or title_lower == "engineer":
         return 0.1, "Extremely generic title"
         
-    # Check for niche techs in the title
+                                        
     niche_count = 0
     for tech in TECH_KEYWORDS_SET:
         if " " in tech:
@@ -125,8 +125,8 @@ def _role_specificity_advantage(title: str) -> tuple[float, str | None]:
 
 def _applicant_signal_advantage(item: dict) -> tuple[float, str | None]:
     """Use real applicant counts if available (Future-proofing)."""
-    # Currently fetchers don't populate this, but we'll reserve the spot.
-    # If None, the parent function redistributes weight.
+                                                                         
+                                                        
     return None, None
 
 
@@ -153,7 +153,7 @@ def estimate_competition(item: dict) -> dict:
     if src_reason: reasons.append(src_reason)
         
     co_score, co_reason = _company_size_advantage(item)
-    # Only append reason if it's a strong signal, omit "Unknown company size" noise
+                                                                                   
     if co_score != 0.5: reasons.append(co_reason)
         
     role_score, role_reason = _role_specificity_advantage(item.get("title", ""))
@@ -170,22 +170,22 @@ def estimate_competition(item: dict) -> dict:
             0.15 * app_score
         )
     else:
-        # Redistribute the 0.15 weight if no applicant signal
+                                                             
         advantage = (
             0.40 * rec_score +
             0.35 * src_score +
             0.25 * co_score
         )
         
-    # Boost slightly if it's highly specific role
+                                                 
     if role_score >= 0.7:
         advantage = min(advantage + 0.1, 1.0)
         
-    # Cap between 0 and 1
+                         
     advantage = max(0.0, min(1.0, advantage))
 
-    # Clean up reasons (max 3, sorted by importance heuristically)
-    # Just return top 3
+                                                                  
+                       
     final_reasons = reasons[:3] if reasons else ["No strong signals"]
     
     return {

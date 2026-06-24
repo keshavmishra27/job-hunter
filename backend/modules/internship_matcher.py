@@ -3,7 +3,7 @@ from datetime import datetime
 from loguru import logger
 
 
-# Words that indicate a year is a graduation year (including common typos like "gards")
+                                                                                       
 _GRAD_TRIGGERS = [
     "grad", "grads", "gard", "gards", "graduate", "graduates",
     "batch", "passout", "pass out", "pass-out",
@@ -41,14 +41,14 @@ def detect_year_fit(text: str | None, grad_year: int | None = None) -> str:
         return "unknown"
     t = text.lower()
 
-    # Explicit 3rd-year / pre-final confirmation
+                                                
     CONFIRM = ["3rd year", "3rd-year", "third year", "pre-final", "prefinal",
                "pre final", "pre-final year", "prefinal year", "3rd"]
     for trig in CONFIRM:
         if trig in t:
             return "eligible"
 
-    # Explicit exclusions that make a posting off-limits
+                                                        
     EXCLUDE = [
         "final year only", "only final year", "final year students only",
         "post graduate", "postgraduate", "post-graduate",
@@ -58,13 +58,13 @@ def detect_year_fit(text: str | None, grad_year: int | None = None) -> str:
         "minimum 2 years", "minimum 3 years", "minimum 5 years",
         "2+ years", "3+ years", "5+ years",
         "1-2 years", "1-3 years", "2-3 years", "2-5 years",
-        "experience: 1", "experience: 2", "experience: 3",  # Indeed format
+        "experience: 1", "experience: 2", "experience: 3",                 
     ]
     for excl in EXCLUDE:
         if excl in t:
             return "not_eligible"
 
-    # Grad year check (KEY FIX)
+                               
     if grad_year:
         mentioned = _extract_grad_years(t)
         if mentioned:
@@ -75,7 +75,7 @@ def detect_year_fit(text: str | None, grad_year: int | None = None) -> str:
                 logger.debug(f"[YearFit] Grad year {grad_year} ∉ {mentioned} → not_eligible")
                 return "not_eligible"
 
-    # No year constraint found → open internship
+                                                
     return "eligible"
 
 

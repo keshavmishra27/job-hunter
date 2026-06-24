@@ -27,7 +27,7 @@ class UpworkFetcher(BaseFetcher):
                     logger.warning(f"[Upwork] RSS feed returned {resp.status_code}")
                     return jobs
 
-                # Parse RSS XML
+                               
                 text = resp.text
                 items = re.findall(r"<item>(.*?)</item>", text, re.DOTALL)
 
@@ -37,10 +37,10 @@ class UpworkFetcher(BaseFetcher):
                     description = _xml_tag(item, "description") or ""
                     pub_date = _xml_tag(item, "pubDate")
 
-                    # Extract budget from description
+                                                     
                     budget_min, budget_max, budget_type = _parse_upwork_budget(description)
 
-                    # Extract skills from description
+                                                     
                     skills = _parse_upwork_skills(description)
 
                     posted = None
@@ -68,7 +68,7 @@ class UpworkFetcher(BaseFetcher):
                             "currency": "USD",
                             "required_skills": skills,
                             "remote_only": True,
-                            "payment_verified": True,  # Upwork has escrow
+                            "payment_verified": True,                     
                         },
                     ))
 
@@ -97,7 +97,7 @@ def _clean_html(text: str) -> str:
 
 def _parse_upwork_budget(desc: str) -> tuple[float | None, float | None, str | None]:
     text = desc.lower()
-    # "Budget: $500-$1000" or "Hourly Range: $25-$50"
+                                                     
     hourly = re.search(r"hourly\s*range?\s*:?\s*\$?([\d,.]+)\s*-\s*\$?([\d,.]+)", text)
     if hourly:
         return float(hourly.group(1).replace(",", "")), float(hourly.group(2).replace(",", "")), "hourly"

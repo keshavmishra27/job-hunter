@@ -33,11 +33,11 @@ FETCHERS = {
 
 @router.post("/fetch")
 async def fetch_internships(user_id: str, sources: list[str] = Query(default=["companycareers", "govtportal"]), db: AsyncSession = Depends(get_db)):
-    # very small MVP: fetch from fetchers, normalize, detect eligibility, score, and save
+                                                                                         
     keywords = ["internship"]
     all_raw = []
 
-    # Get applied history
+                         
     from backend.models import Application
     applied_history = await db.execute(
         select(Application.job_fingerprint, Application.canonical_url).where(Application.user_id == user_id)
@@ -70,7 +70,7 @@ async def fetch_internships(user_id: str, sources: list[str] = Query(default=["c
         if not settings.company_career_hosts:
             warnings.append("No COMPANY_CAREER_HOSTS configured; company career fetch will be skipped.")
 
-    # load user profile for scoring and alerts
+                                              
     telegram_chat_id = None
     try:
         from backend.models.user import UserProfile
@@ -87,7 +87,7 @@ async def fetch_internships(user_id: str, sources: list[str] = Query(default=["c
     except Exception:
         profile_dict = {"preferred_roles": [], "skills": [], "location_rule": {}, "preferred_companies": [], "graduation_year": None}
 
-    # simple dedupe by title+company
+                                    
     seen = set()
     added = 0
     for item in normalized:
@@ -95,7 +95,7 @@ async def fetch_internships(user_id: str, sources: list[str] = Query(default=["c
         if key in seen:
             continue
         seen.add(key)
-        # initial eligibility from raw text (now with graduation year awareness)
+                                                                                
         grad_year = profile_dict.get("graduation_year")
         eligibility = detect_year_fit((item.get("title") or "") + " " + (item.get("description") or ""), grad_year)
 
@@ -105,8 +105,8 @@ async def fetch_internships(user_id: str, sources: list[str] = Query(default=["c
             if existing.scalar_one_or_none():
                 continue
 
-        # attempt to fetch the apply/source link and extract richer fields
-        # Skip for Telegram and Gmail — already extracted or not applicable
+                                                                          
+                                                                           
         parsed = {}
         apply_link = item.get("apply_link")
         is_telegram = (item.get("source") or "").startswith("Telegram/")
@@ -120,7 +120,7 @@ async def fetch_internships(user_id: str, sources: list[str] = Query(default=["c
                             parsed = extract_from_pdf_bytes(resp.content)
                         else:
                             parsed = extract_from_html(resp.text, base_url=apply_link)
-                        # clean and resolve links (follow redirects, strip tracking params)
+                                                                                           
                         try:
                             parsed_links = parsed.get("links") or []
                             parsed["links"] = await clean_and_resolve_links(parsed_links, base_url=apply_link, follow=True)
@@ -128,33 +128,33 @@ async def fetch_internships(user_id: str, sources: list[str] = Query(default=["c
                             pass
             except Exception:
                 parsed = {}
-        # fallback: parse description text if no parsed content
+                                                               
         if not parsed:
             parsed = parse_text_fields(item.get("description") or "")
 
         portal = None
         links = parsed.get("links") or []
-        # prefer explicit portal links
+                                      
         for l in links:
             if l.get("kind") in ("portal", "google_form"):
                 portal = l.get("url")
                 break
 
-        # For government portals, require explicit eligibility and a valid future deadline
+                                                                                          
         try:
             if (item.get("source") or "").lower() == "govtportal":
-                # prefer parsed eligibility_text if available
+                                                             
                 gov_elig = parsed.get("eligibility_text") or eligibility
                 gov_deadline = parsed.get("deadline")
                 from datetime import timezone
                 now = datetime.now(tz=timezone.utc)
                 if not gov_elig:
-                    # skip notices that don't mention eligibility for target students
+                                                                                     
                     continue
                 if not gov_deadline:
-                    # skip if no deadline found
+                                               
                     continue
-                # ensure deadline is in the future
+                                                  
                 try:
                     d = gov_deadline
                     if isinstance(d, str):
@@ -164,13 +164,13 @@ async def fetch_internships(user_id: str, sources: list[str] = Query(default=["c
                     if d < now:
                         continue
                 except Exception:
-                    # if parsing fails, conservatively skip
+                                                           
                     continue
 
         except Exception:
             pass
 
-        # Determine source_type
+                               
         extra = item.get("extra") or {}
         if is_gmail:
             src_type = "email"
@@ -179,7 +179,7 @@ async def fetch_internships(user_id: str, sources: list[str] = Query(default=["c
         else:
             src_type = "website"
 
-        # Gmail may carry deadline in extra
+                                           
         notice_deadline = parsed.get("deadline")
         if not notice_deadline and extra.get("deadline"):
             try:
@@ -207,7 +207,7 @@ async def fetch_internships(user_id: str, sources: list[str] = Query(default=["c
             content_hash=item.get("fingerprint"),
         )
         db.add(notice)
-        # add extracted links
+                             
         for l in links:
             try:
                 nl = NoticeLink(notice_id=notice.id, url=l.get("url"), kind=l.get("kind"))
@@ -215,7 +215,7 @@ async def fetch_internships(user_id: str, sources: list[str] = Query(default=["c
             except Exception:
                 continue
 
-        # score the notice immediately and create alert if relevant
+                                                                   
         try:
             notice_dict = {
                 "id": notice.id,
@@ -239,11 +239,11 @@ async def fetch_internships(user_id: str, sources: list[str] = Query(default=["c
 
     await db.commit()
 
-    # --- Auto-send eligible notices to Telegram ---
+                                                    
     tg_sent = 0
     if telegram_chat_id and added > 0:
         try:
-            # Re-fetch all new notices to send to Telegram
+                                                          
             q = await db.execute(select(Notice).order_by(Notice.fetched_at.desc()).limit(added))
             new_notices = q.scalars().all()
             for n in new_notices:
@@ -257,7 +257,7 @@ async def fetch_internships(user_id: str, sources: list[str] = Query(default=["c
                     "score": n.score or 0,
                     "breakdown": n.score_breakdown or {},
                 }
-                # Only send eligible notices with score >= 4.0
+                                                              
                 if n.eligibility_status in ("eligible", "maybe", None) and (n.score or 0) >= 4.0:
                     result = await send_notice_to_telegram(telegram_chat_id, n_dict, score_info)
                     if result.get("ok"):
@@ -274,7 +274,7 @@ async def fetch_internships(user_id: str, sources: list[str] = Query(default=["c
 
 @router.get("/ranked/{user_id}")
 async def get_ranked_internships(user_id: str, limit: int = 20, sources: list[str] = Query(default=["companycareers", "govtportal"]), db: AsyncSession = Depends(get_db)):
-    # load user profile to tailor scoring; reuse UserProfile if exists
+                                                                      
     try:
         from backend.models.user import UserProfile
         res = await db.execute(select(UserProfile).where(UserProfile.user_id == user_id))
@@ -291,7 +291,7 @@ async def get_ranked_internships(user_id: str, limit: int = 20, sources: list[st
 
     if sources:
         lowered = [s.lower() for s in sources]
-        # Build conditions: exact match + pattern match only for selected source types
+                                                                                      
         conditions = [func.lower(Notice.source).in_(lowered)]
         if "telegram" in lowered:
             conditions.append(Notice.source.like("Telegram/%"))
@@ -321,7 +321,7 @@ async def get_ranked_internships(user_id: str, limit: int = 20, sources: list[st
         result = score_notice_detailed(n_dict, profile_dict, github_repos=None)
         n.score = result["score"]
         n.score_breakdown = result["breakdown"]
-        # attach matched skills/roles if present
+                                                
         try:
             n._matched_skills = result.get("matched_skills", [])
             n._matched_roles = result.get("matched_roles", [])
@@ -333,7 +333,7 @@ async def get_ranked_internships(user_id: str, limit: int = 20, sources: list[st
 
     await db.commit()
 
-    # Fetch user's applied notices to attach status and applied_id
+                                                                  
     applied_res = await db.execute(
         select(AppliedNotice).where(AppliedNotice.user_id == user_id)
     )
@@ -367,13 +367,13 @@ async def get_project_match(notice_id: str, user_id: str = "demo-user-1", db: As
     """Match a notice against the user's GitHub repos by skills/languages/keywords."""
     from backend.models.github import RepoEntry
 
-    # Get the notice
+                    
     res = await db.execute(select(Notice).where(Notice.id == notice_id))
     notice = res.scalar_one_or_none()
     if not notice:
         raise HTTPException(404, "Notice not found")
 
-    # Get user's repos
+                      
     repo_res = await db.execute(
         select(RepoEntry).where(RepoEntry.user_id == user_id)
     )
@@ -381,14 +381,14 @@ async def get_project_match(notice_id: str, user_id: str = "demo-user-1", db: As
     if not repos:
         return {"matches": [], "notice_keywords": []}
 
-    # Extract keywords from the notice (title + raw_text + description)
+                                                                       
     notice_text = " ".join(filter(None, [
         notice.title or "",
         notice.raw_text or "",
         notice.eligibility_text or "",
     ])).lower()
 
-    # Common tech/skill keywords to look for
+                                            
     TECH_KEYWORDS = {
         "python", "java", "javascript", "typescript", "react", "angular", "vue",
         "node", "nodejs", "express", "django", "flask", "fastapi", "spring",
@@ -411,16 +411,16 @@ async def get_project_match(notice_id: str, user_id: str = "demo-user-1", db: As
         "agile", "scrum", "jira",
     }
 
-    # Find which tech keywords appear in the notice
+                                                   
     notice_keywords = set()
     for kw in TECH_KEYWORDS:
         if kw in notice_text:
             notice_keywords.add(kw)
 
-    # Also check title words as potential keywords
+                                                  
     title_words = set(w.lower().strip(".,;:!?()[]") for w in (notice.title or "").split() if len(w) > 2)
 
-    # Score each repo
+                     
     matches = []
     for repo in repos:
         if repo.is_fork or repo.is_archived:
@@ -429,7 +429,7 @@ async def get_project_match(notice_id: str, user_id: str = "demo-user-1", db: As
         score = 0.0
         reasons = []
 
-        # 1) Language match (40% weight)
+                                        
         repo_languages = set()
         if repo.languages_all and isinstance(repo.languages_all, dict):
             repo_languages = {lang.lower() for lang in repo.languages_all.keys()}
@@ -441,7 +441,7 @@ async def get_project_match(notice_id: str, user_id: str = "demo-user-1", db: As
             score += 0.4 * min(len(lang_overlap) / max(len(notice_keywords & TECH_KEYWORDS), 1), 1.0)
             reasons.append(f"Languages: {', '.join(sorted(lang_overlap))}")
 
-        # 2) Topic match (30% weight)
+                                     
         repo_topics = set(t.lower() for t in (repo.topics or []))
         topic_text = " ".join(repo_topics)
         repo_desc = (repo.description or "").lower()
@@ -457,7 +457,7 @@ async def get_project_match(notice_id: str, user_id: str = "demo-user-1", db: As
             score += 0.3 * min(len(kw_matches) / max(len(notice_keywords), 1), 1.0)
             reasons.append(f"Keywords: {', '.join(sorted(kw_matches))}")
 
-        # 3) Title word overlap (20% weight)
+                                            
         repo_words = set(repo_name.replace("-", " ").replace("_", " ").split())
         repo_words |= set(repo_desc.split()) if repo_desc else set()
         repo_words |= repo_topics
@@ -465,7 +465,7 @@ async def get_project_match(notice_id: str, user_id: str = "demo-user-1", db: As
         if title_overlap:
             score += 0.2 * min(len(title_overlap) / max(len(title_words), 1), 1.0)
 
-        # 4) Bonus for recent activity (10% weight)
+                                                   
         if repo.last_push:
             from datetime import timedelta
             if (datetime.utcnow() - repo.last_push) < timedelta(days=90):
@@ -483,7 +483,7 @@ async def get_project_match(notice_id: str, user_id: str = "demo-user-1", db: As
                 "reasons": reasons,
             })
 
-    # Sort by match percentage, top 5
+                                     
     matches.sort(key=lambda m: m["match_pct"], reverse=True)
     matches = matches[:5]
 
@@ -532,7 +532,7 @@ async def send_to_telegram(
         "graduation_year": getattr(profile, 'graduation_year', None),
     }
 
-    # Fetch and score notices
+                             
     q = await db.execute(select(Notice).order_by(Notice.fetched_at.desc()).limit(100))
     notices = q.scalars().all()
 
@@ -547,7 +547,7 @@ async def send_to_telegram(
         }
         scored = score_notice_detailed(n_dict, profile_dict, github_repos=None)
 
-        # Filter: only eligible + above min_score
+                                                 
         elig = n.eligibility_status or "unknown"
         score = scored.get("score", 0)
         if elig == "not_eligible" or score < min_score:

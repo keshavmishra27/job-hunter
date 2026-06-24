@@ -1,11 +1,11 @@
 :root {
-  /* Nintendo 2001 Colors */
+  
   --color-primary: #e60012;
   --color-signal: #f68d1f;
   --color-amber: #ecab37;
   --color-nav-gold: #e48600;
   
-  --bg-canvas: #7a8aba; /* periwinkle */
+  --bg-canvas: #7a8aba; 
   --bg-canvas-soft: #9fbee7;
   --bg-lavender: #acace7;
   --bg-ice: #c0d5e6;
@@ -45,7 +45,7 @@ body {
   font-size: 18px;
 }
 
-/* Nintendo Typography */
+
 .ui-label {
   font-family: "VT323", monospace;
   font-size: 16px;
@@ -69,7 +69,7 @@ body {
   line-height: 1.4;
 }
 
-/* Page constraints */
+
 .main-content {
   width: 830px;
   margin: 0 auto;
@@ -79,7 +79,7 @@ body {
   flex-direction: column;
 }
 
-/* Nintendo Navigation */
+
 .nav-bar {
   background-color: var(--bg-carbon);
   height: 28px;
@@ -138,7 +138,7 @@ body {
   text-decoration: underline;
 }
 
-/* Nintendo Buttons */
+
 .btn-amber {
   background-color: var(--color-amber);
   color: var(--text-ink);
@@ -183,7 +183,7 @@ body {
   border-right: 2px solid #ffb96b;
 }
 
-/* Nintendo Panels */
+
 .chrome-panel {
   background-color: var(--bg-canvas);
   border-top: 2px solid var(--bg-ice);
@@ -283,7 +283,7 @@ body {
   align-items: center;
 }
 
-/* Page containers */
+
 
 
 .hero-band-dark {
@@ -298,7 +298,7 @@ body {
   padding: 96px 48px;
 }
 
-/* Typography Utility Classes */
+
 .display-xl {
   font-family: var(--font-display);
   font-size: 54px;
@@ -332,7 +332,7 @@ body {
 }
 
 
-/* PlayStation Top Navigation */
+
 .primary-nav {
   display: flex;
   justify-content: space-between;
@@ -389,7 +389,7 @@ body {
   align-items: center;
 }
 
-/* Page containers */
+
 
 
 .page {
@@ -427,7 +427,7 @@ body {
   padding: 96px 48px;
 }
 
-/* Typography Utility Classes */
+
 .display-xl {
   font-family: var(--font-display);
   font-size: 54px;
@@ -544,7 +544,7 @@ code {
   min-height: 100vh;
 }
 
-/* Competition Badges */
+
 .competition-badge {
   font-size: 10px;
   font-weight: 700;
@@ -1412,7 +1412,7 @@ code {
   background: transparent;
 }
 
-/* ── Repo Intelligence ────────────────────────────────────────────── */
+
 
 .repo-page-wrapper {
   min-height: 60vh;
@@ -1425,7 +1425,7 @@ code {
   justify-content: center;
 }
 
-/* GitHub connect card */
+
 .github-connect-card {
   max-width: 560px;
   margin: 48px auto;
@@ -1461,7 +1461,7 @@ code {
   color: var(--accent);
 }
 
-/* Connected badge */
+
 .github-connected-badge {
   display: inline-flex;
   align-items: center;
@@ -1480,7 +1480,7 @@ code {
   border-radius: 50%;
 }
 
-/* Toolbar */
+
 .repo-toolbar {
   display: flex;
   align-items: center;
@@ -1551,7 +1551,7 @@ code {
   color: var(--accent);
 }
 
-/* Status bar */
+
 .repo-status-bar {
   display: flex;
   align-items: center;
@@ -1565,7 +1565,7 @@ code {
   margin-bottom: 24px;
 }
 
-/* Loading state */
+
 .repo-loading {
   display: flex;
   align-items: center;
@@ -1577,7 +1577,7 @@ code {
   color: var(--text-secondary);
 }
 
-/* Top-5 cards grid */
+
 .repo-top5-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -1720,7 +1720,7 @@ code {
   border: 1px solid rgba(245, 158, 11, 0.15);
 }
 
-/* Score mini rings on card */
+
 .repo-card-scores {
   display: flex;
   justify-content: space-around;
@@ -1782,7 +1782,7 @@ code {
   color: var(--text-muted);
 }
 
-/* Expansion Modal*/
+
 
 .expansion-header {
   display: flex;
@@ -1861,7 +1861,7 @@ code {
   color: var(--text-muted);
 }
 
-/* Signals grid */
+
 .signals-grid {
   display: flex;
   flex-wrap: wrap;
@@ -1890,7 +1890,7 @@ code {
   color: var(--text-muted);
 }
 
-/* Stats row */
+
 .expansion-stats-row {
   display: flex;
   gap: 16px;
@@ -1921,7 +1921,7 @@ code {
   margin-top: 2px;
 }
 
-/* Folder tree */
+
 .repo-folder-tree {
   display: flex;
   flex-wrap: wrap;
@@ -1945,7 +1945,7 @@ code {
   border-top: 1px solid var(--border-subtle);
 }
 
-/* Expandable Signals & Reasons */
+
 .signal-expandable {
   cursor: pointer;
   transition: all 0.2s ease;
@@ -2026,7 +2026,7 @@ code {
   line-height: 1.5;
 }
 
-/* Improvement Tips*/
+
 .improvement-tips-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -2081,9 +2081,9 @@ code {
   line-height: 1.5;
 }
 
-/* ── Internship News Scraper ─────────────────────────────────────────────── */
 
-/* Source registry header */
+
+
 .intern-src-header {
   display: flex;
   align-items: center;
@@ -2119,7 +2119,7 @@ code {
   cursor: not-allowed;
 }
 
-/* Pipeline stepper */
+
 .intern-pipeline {
   display: flex;
   align-items: center;
@@ -2208,7 +2208,7 @@ code {
   background: rgba(16, 185, 129, 0.3);
 }
 
-/* Filter tabs */
+
 .intern-tabs {
   display: flex;
   gap: 4px;
@@ -2240,14 +2240,14 @@ code {
   border-bottom-color: var(--accent);
 }
 
-/* Notice feed */
+
 .intern-feed {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-/* Notice card */
+
 .intern-card {
   display: flex;
   align-items: flex-start;
@@ -2328,7 +2328,7 @@ code {
   height: 48px;
 }
 
-/* Eligibility badges */
+
 .elig-badge {
   display: inline-flex;
   align-items: center;
@@ -2365,7 +2365,7 @@ code {
   border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
-/* Deadline urgency */
+
 .deadline-chip {
   display: inline-flex;
   align-items: center;
@@ -2413,7 +2413,7 @@ code {
   }
 }
 
-/* Modal raw text */
+
 .intern-raw-text {
   font-size: 20px;
   color: var(--text-secondary);
@@ -2427,7 +2427,7 @@ code {
   border: 1px solid var(--border-subtle);
 }
 
-/* Link kind label */
+
 .intern-link-kind {
   font-size: 10px;
   font-weight: 700;
@@ -2440,7 +2440,7 @@ code {
   border: 1px solid rgba(255, 71, 133, 0.2);
 }
 
-/* ── Freelancing Card overrides (Playful) ────────────────────────────── */
+
 .freelance-card {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
@@ -2562,14 +2562,14 @@ code {
   border: 1px solid rgba(245, 158, 11, 0.2);
 }
 
-/* ── Applied Jobs (Bugatti cleanup) ──────────────────────────────────── */
+
 .bugatti-caption {
   font-family: var(--font-body);
   font-size: 20px;
   color: var(--text-secondary);
 }
 
-/* --- PLAYSTATION CANVAS SYSTEM OVERRIDES --- */
+
 
 .canvas-light {
   --bg-base: #ffffff;
@@ -2696,7 +2696,7 @@ code {
 
 .intern-card-body {
   flex-grow: 1;
-  min-width: 0; /* allows text truncation */
+  min-width: 0; 
 }
 
 .intern-card-top {

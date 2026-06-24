@@ -56,7 +56,7 @@ Return a JSON object in this format:
 }
 """
         if not self.llm_client:
-            # Mock or default logic if LLM is not configured for testing
+                                                                        
             body_lower = email_body.lower()
             if "unfortunately" in body_lower or "regret" in body_lower:
                 return "Rejected", "Profile mismatch"
@@ -68,11 +68,11 @@ Return a JSON object in this format:
                 return "Offer", None
             return "Other", None
 
-        # Here we would call the actual LLM Client
+                                                  
         try:
-            # response = await self.llm_client.generate(system_prompt, email_body)
-            # data = json.loads(response)
-            # return data.get("status", "Other"), data.get("reason", None)
+                                                                                  
+                                         
+                                                                          
             pass
         except Exception as e:
             logger.error(f"Failed to classify email: {e}")
@@ -86,7 +86,7 @@ Return a JSON object in this format:
         if not application.thread_id:
             return False
 
-        # If it's been > 14 days and status is still "applied" or similar
+                                                                         
         days_since_apply = (datetime.now(timezone.utc).replace(tzinfo=None) - application.applied_at).days
         if days_since_apply > 14 and application.status in ["applied"]:
             application.status = "No Response"

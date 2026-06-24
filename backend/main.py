@@ -38,7 +38,7 @@ async def lifespan(app: FastAPI):
     logger.info("Initialising database tables...")
     await init_db()
 
-    # Lightweight schema migrations — safely add new columns if missing
+                                                                       
     from sqlalchemy import text
     async with engine.begin() as conn:
         migrations = [
@@ -48,7 +48,7 @@ async def lifespan(app: FastAPI):
             "ALTER TABLE notices ADD COLUMN sender_email VARCHAR",
             "ALTER TABLE notices ADD COLUMN subject VARCHAR",
             "ALTER TABLE sources ADD COLUMN category VARCHAR DEFAULT 'internship'",
-            # Phase 1: Enhanced source model columns
+                                                    
             "ALTER TABLE sources ADD COLUMN source_group VARCHAR DEFAULT 'internship'",
             "ALTER TABLE sources ADD COLUMN fetch_mode VARCHAR DEFAULT 'html'",
             "ALTER TABLE sources ADD COLUMN auth_requirement VARCHAR DEFAULT 'none'",
@@ -57,7 +57,7 @@ async def lifespan(app: FastAPI):
             "ALTER TABLE sources ADD COLUMN last_fetch_at DATETIME",
             "ALTER TABLE sources ADD COLUMN last_fetch_status VARCHAR",
             "ALTER TABLE sources ADD COLUMN last_fetch_count INTEGER",
-            # Phase 3: Unified opportunity model columns
+                                                        
             "ALTER TABLE opportunities ADD COLUMN source_group VARCHAR",
             "ALTER TABLE opportunities ADD COLUMN location VARCHAR",
             "ALTER TABLE opportunities ADD COLUMN mode VARCHAR",
@@ -70,16 +70,16 @@ async def lifespan(app: FastAPI):
             "ALTER TABLE opportunities ADD COLUMN eligibility_status VARCHAR",
             "ALTER TABLE opportunities ADD COLUMN deadline DATETIME",
             "ALTER TABLE opportunities ADD COLUMN stipend VARCHAR",
-            # Phase 4: Resume Autopilot fields
+                                              
             "ALTER TABLE resumes ADD COLUMN role_tag VARCHAR",
             "ALTER TABLE resumes ADD COLUMN parsed_skills JSON",
             "ALTER TABLE resumes ADD COLUMN parsed_summary VARCHAR",
-            # Phase 2 (Autopilot Tracker Overhaul)
+                                                  
             "ALTER TABLE application_tracker ADD COLUMN resume_used_id VARCHAR",
             "ALTER TABLE application_tracker ADD COLUMN answers_used JSON",
             "ALTER TABLE application_tracker ADD COLUMN portal_type VARCHAR",
             "ALTER TABLE application_tracker ADD COLUMN screenshot_path VARCHAR",
-            # Phase 5: Gmail Tracker Sync fields
+                                                
             "ALTER TABLE applications ADD COLUMN thread_id VARCHAR",
             "ALTER TABLE applications ADD COLUMN resume_used VARCHAR",
             "ALTER TABLE applications ADD COLUMN response_date DATETIME",
@@ -90,9 +90,9 @@ async def lifespan(app: FastAPI):
                 await conn.execute(text(stmt))
                 logger.info(f"[Migration] Applied: {stmt}")
             except Exception:
-                pass  # Column already exists — fine
+                pass                                
 
-    # Seed source registry into DB
+                                  
     from backend.database import AsyncSessionLocal
     from backend.modules.source_registry import seed_sources_to_db
     async with AsyncSessionLocal() as seed_db:

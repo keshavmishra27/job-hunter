@@ -3,7 +3,7 @@ Opportunity Classifier — determines which lane (internship / notice / freelanc
 an opportunity belongs to, based on source and keyword analysis.
 """
 
-# ─── Source-based classification (highest priority) ──────────────────────────
+                                                                               
 
 FREELANCE_SOURCE_KEYS = {
     "upwork", "fiverr", "freelancer", "guru", "toptal", "contra",
@@ -23,7 +23,7 @@ INTERNSHIP_SOURCE_KEYS = {
     "workatastartup", "remoteok", "weworkremotely",
 }
 
-# ─── Keyword-based classification (fallback) ─────────────────────────────────
+                                                                               
 
 FREELANCE_SIGNALS = frozenset({
     "freelance", "freelancer", "gig", "contract work", "project-based",
@@ -48,7 +48,7 @@ def classify(normalized: dict, source_key: str) -> str:
     """
     key = source_key.lower().replace(".", "").replace(" ", "").replace("-", "")
 
-    # 1. Source-based (highest priority — source identity is unambiguous)
+                                                                         
     if key in FREELANCE_SOURCE_KEYS or any(key.startswith(f) for f in FREELANCE_SOURCE_KEYS):
         return "freelance"
     if key in NOTICE_SOURCE_KEYS or source_key.startswith("Telegram/"):
@@ -56,12 +56,12 @@ def classify(normalized: dict, source_key: str) -> str:
     if key in INTERNSHIP_SOURCE_KEYS:
         return "internship"
 
-    # 2. Check if opportunity_type was already set by the fetcher
+                                                                 
     opp_type = normalized.get("opportunity_type", "")
     if opp_type in ("internship", "freelance", "notice"):
         return opp_type
 
-    # 3. Keyword-based fallback for unknown/mixed sources
+                                                         
     text = " ".join(filter(None, [
         normalized.get("title", ""),
         normalized.get("description", ""),
@@ -73,5 +73,5 @@ def classify(normalized: dict, source_key: str) -> str:
     if freelance_hits > internship_hits and freelance_hits >= 2:
         return "freelance"
 
-    # Default to internship
+                           
     return "internship"

@@ -6,6 +6,14 @@ Job Hunter is a professional grade, full stack application designed to accelerat
 
 2. **GitHub Repository Intelligence Engine**: Syncs developer portfolios directly from GitHub, performs deep static analysis of repositories (checking structure, README content, test coverage, CI/CD pipelines, containerization, and deployment readiness), scores them against 8 custom engineering profiles (Backend, Frontend, Fullstack, MLOps, DevOps, Agentic AI, Data Science, and Mobile), and generates actionable improvement tips to transform raw side projects into production ready repositories.
 
+## 🌐 Live Demo
+
+You can view the fully interactive static demo of Job Hunter hosted on GitHub Pages:
+**[View Live Demo](https://keshavmishra27.github.io/job-hunter/)**
+
+> [!NOTE]
+> The demo is a static build running mocked API responses to showcase the frontend UI and the interactive 3D animations without requiring the backend server to be active. To deploy your own demo, navigate to `demo/` and run `npm run deploy`.
+
 ---
 
 ## System Architecture

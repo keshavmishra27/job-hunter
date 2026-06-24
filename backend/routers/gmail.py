@@ -45,7 +45,7 @@ async def gmail_connect():
     try:
         mail = imaplib.IMAP4_SSL(settings.gmail_imap_host, settings.gmail_imap_port)
         mail.login(settings.gmail_user, settings.gmail_app_password)
-        # Check mailbox stats
+                             
         status, data = mail.select("INBOX", readonly=True)
         msg_count = int(data[0]) if status == "OK" else 0
         mail.logout()
@@ -92,7 +92,7 @@ async def gmail_sync(user_id: str = "demo-user-1", db: AsyncSession = Depends(ge
                     "apply_link": j.apply_link,
                     "sender": j.extra.get("sender_email", ""),
                 }
-                for j in raw_jobs[:20]  # preview first 20
+                for j in raw_jobs[:20]                    
             ],
         }
     except Exception as e:

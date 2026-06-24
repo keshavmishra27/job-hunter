@@ -4,11 +4,11 @@ from docx.shared import Pt, Inches
 def create_doc():
     doc = docx.Document()
 
-    # Title
+           
     title = doc.add_heading('How Job Hunter Scrapes Internships', 0)
-    title.alignment = 1  # Center
+    title.alignment = 1          
 
-    # 1. Overview
+                 
     doc.add_heading('1. Overview', level=1)
     doc.add_paragraph(
         "The platform aggregates internship opportunities from multiple sources across the web. "
@@ -16,7 +16,7 @@ def create_doc():
         "The fetchers run asynchronously, allowing the system to scrape multiple sources concurrently for high performance."
     )
 
-    # 2. Scraping Indeed
+                        
     doc.add_heading('2. Scraping Indeed', level=1)
     doc.add_paragraph("Indeed is scraped using a custom IndeedFetcher class.")
     
@@ -35,7 +35,7 @@ def create_doc():
     p.add_run("For each card, the fetcher visits the detailed job page concurrently (max 5 at a time) to extract the full job description. It also checks for expired listings by looking for phrases like 'this job has expired' or 'this job is no longer available'. If an expiration phrase is found, the job is discarded.")
     p.style = 'List Bullet'
 
-    # 3. Scraping Internshala
+                             
     doc.add_heading('3. Scraping Internshala', level=1)
     doc.add_paragraph("Internshala is scraped using the InternshalaFetcher class.")
     
@@ -54,7 +54,7 @@ def create_doc():
     p.add_run("It smartly infers if a job is remote or hybrid by analyzing the location string, searching for 'work from home', 'remote', or 'hybrid' keywords.")
     p.style = 'List Bullet'
 
-    # 4. Other Scraped Portals
+                              
     doc.add_heading('4. Other Scraped Portals', level=1)
     doc.add_paragraph("The platform is also built to extract from other portals like:")
     
@@ -68,7 +68,7 @@ def create_doc():
     p.add_run("Uses similar request and BeautifulSoup parsing mechanisms to scrape job titles, companies, locations, and descriptions.")
     p.style = 'List Bullet'
 
-    # 5. Telegram Channel Scraping
+                                  
     doc.add_heading('5. Telegram Channel Scraping', level=1)
     doc.add_paragraph("The Telegram scraper (TelegramChannelFetcher) is highly unique. It does not require a Bot token or an API key, meaning it operates entirely independently of the Telegram API.")
     

@@ -21,7 +21,7 @@ async def generate_draft(user_id: str, job_id: str, db: AsyncSession = Depends(g
     from backend.models import User
     from backend.models.opportunity import Opportunity
     
-    # Try legacy job_posts table first, then unified opportunities table
+                                                                        
     job_result = await db.execute(select(JobPost).where(JobPost.id == job_id))
     job = job_result.scalar_one_or_none()
     
@@ -34,7 +34,7 @@ async def generate_draft(user_id: str, job_id: str, db: AsyncSession = Depends(g
             "description": job.description,
         }
     else:
-        # Fallback: check the unified opportunities table
+                                                         
         opp_result = await db.execute(select(Opportunity).where(Opportunity.id == job_id))
         opp = opp_result.scalar_one_or_none()
         if not opp:

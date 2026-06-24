@@ -8,7 +8,7 @@ def _text_of(notice: dict) -> str:
     return " ".join(parts).lower()
 
 
-# Words that indicate a year is a graduation year (including common typos like "gards")
+                                                                                       
 _GRAD_TRIGGERS = [
     "grad", "grads", "gard", "gards", "graduate", "graduates",
     "batch", "passout", "pass out", "pass-out",
@@ -35,7 +35,7 @@ def _extract_grad_years(text: str) -> set[int]:
         if trigger not in t:
             continue
         for m in re.finditer(re.escape(trigger), t):
-            # Scan ±100 chars around the trigger for 4-digit years
+                                                                  
             window_start = max(0, m.start() - 100)
             window_end   = min(len(t), m.end() + 100)
             context = t[window_start:window_end]
@@ -48,13 +48,13 @@ def _extract_grad_years(text: str) -> set[int]:
 def _year_fit_score(notice: dict, profile: dict | None = None) -> float:
     t = _text_of(notice)
 
-    # Explicit 3rd-year/pre-final confirmation -> full score
+                                                            
     CONFIRM = ["3rd year", "3rd-year", "third year", "pre-final", "prefinal", "pre final", "3rd"]
     for kw in CONFIRM:
         if kw in t:
             return 1.0
 
-    # Explicit exclusion of pre-final/undergrad students -> 0
+                                                             
     EXCLUDE = [
         "final year only", "only final year", "final year students only",
         "post graduate", "postgraduate", "post-graduate",
@@ -66,9 +66,9 @@ def _year_fit_score(notice: dict, profile: dict | None = None) -> float:
         if kw in t:
             return 0.0
 
-    # --- Graduation year check (KEY FIX) ---
-    # If the posting explicitly targets specific graduation years,
-    # check whether the user's graduation year is in that list.
+                                             
+                                                                  
+                                                               
     if profile:
         user_grad_year = profile.get("graduation_year")
         if user_grad_year:
@@ -85,7 +85,7 @@ def _year_fit_score(notice: dict, profile: dict | None = None) -> float:
                     )
                     return 0.0
 
-    # No year restriction mentioned -> treat as open to all years
+                                                                 
     return 1.0
 
 
@@ -123,7 +123,7 @@ def _location_score(notice: dict, profile: dict) -> float:
 
 
 def _company_score(notice: dict, profile: dict) -> float:
-    # Simple heuristic: prefer recognized company names in preferred_companies
+                                                                              
     preferred_companies = [c.lower() for c in (profile.get("preferred_companies") or [])]
     if not preferred_companies:
         return 0.5
@@ -136,7 +136,7 @@ def _company_score(notice: dict, profile: dict) -> float:
 def _deadline_urgency_score(notice: dict) -> float:
     d = notice.get("deadline")
     if not d:
-        # if no deadline, treat as medium relevance
+                                                   
         return 0.5
     try:
         if isinstance(d, str):
@@ -161,7 +161,7 @@ def score_notice_detailed(notice: dict, profile: dict, github_repos: list[dict] 
     comp = _company_score(notice, profile)
     urgency = _deadline_urgency_score(notice)
 
-    # weights (sum to 1)
+                        
     weights = {
         "year_fit": 0.25,
         "role_match": 0.20,

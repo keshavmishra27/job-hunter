@@ -29,7 +29,7 @@ def _format_notice_message(notice: dict, score_info: dict | None = None) -> str:
     location = notice.get("location") or ""
     apply_link = notice.get("apply_link") or notice.get("portal_link") or ""
 
-    # Score breakdown
+                     
     score_text = ""
     if score_info:
         score_val = score_info.get("score", 0)
@@ -54,7 +54,7 @@ def _format_notice_message(notice: dict, score_info: dict | None = None) -> str:
         if matched_projects:
             score_text += f"\n📁 Projects: {', '.join(matched_projects[:3])}"
 
-    # Eligibility
+                 
     elig = notice.get("eligibility_status") or ""
     elig_emoji = {"eligible": "✅", "maybe": "🟡", "not_eligible": "❌"}.get(elig, "❓")
 
@@ -100,7 +100,7 @@ async def send_telegram_message(
             if data.get("ok"):
                 logger.success(f"[TelegramSender] Sent to chat {chat_id}")
             else:
-                # Retry without parse_mode if Markdown fails
+                                                            
                 logger.warning(
                     f"[TelegramSender] Markdown failed ({data.get('description')}), retrying as plain text"
                 )
@@ -145,13 +145,13 @@ async def send_eligible_notices(
     for i, notice in enumerate(notices):
         score_info = score_infos[i] if score_infos and i < len(score_infos) else None
 
-        # Filter: must be eligible or maybe
+                                           
         elig = notice.get("eligibility_status") or "unknown"
         if elig == "not_eligible":
             skipped += 1
             continue
 
-        # Filter: minimum score
+                               
         score = 0
         if score_info:
             score = score_info.get("score", 0)
@@ -166,7 +166,7 @@ async def send_eligible_notices(
         if result.get("ok"):
             sent += 1
 
-        # Small delay to avoid Telegram rate limits (30 msgs/sec)
+                                                                 
         await asyncio.sleep(0.15)
 
     logger.info(f"[TelegramSender] Sent {sent} notices, skipped {skipped}")

@@ -8,11 +8,11 @@ class AutopilotQueue:
     def _normalize_company(name: str) -> str:
         if not name:
             return "unknown"
-        # lowercase and remove common suffixes
+                                              
         name = name.lower()
         name = re.sub(r'\b(inc|ltd|llc|pvt|private|limited|corp|corporation)\b', '', name)
         name = re.sub(r'[^a-z0-9]', ' ', name)
-        # remove extra spaces
+                             
         name = ' '.join(name.split())
         return name
 
@@ -42,11 +42,11 @@ class AutopilotQueue:
         t1 = AutopilotQueue._normalize_role(title1)
         t2 = AutopilotQueue._normalize_role(title2)
         
-        # If very similar strings
+                                 
         if SequenceMatcher(None, t1, t2).ratio() > 0.7:
             return True
             
-        # Semantic similarity fallback
+                                      
         if t1 and t2:
             try:
                 model = get_semantic_model()
@@ -67,7 +67,7 @@ class AutopilotQueue:
         company_groups = defaultdict(list)
         
         for job in ranked_opportunities:
-            # find if company exists
+                                    
             company_name = job.get("company")
             found_company_key = None
             for key in company_groups.keys():
@@ -80,11 +80,11 @@ class AutopilotQueue:
                 
             jobs_in_company = company_groups[found_company_key]
             
-            # check if we already have max per company
+                                                      
             if len(jobs_in_company) >= max_per_company:
                 continue
                 
-            # check if same role already exists in this company
+                                                               
             is_dup_role = False
             for existing_job in jobs_in_company:
                 if AutopilotQueue._is_same_role(existing_job.get("title"), job.get("title")):

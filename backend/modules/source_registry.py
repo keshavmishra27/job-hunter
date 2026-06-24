@@ -17,12 +17,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.models.source import Source
 
 
-# ─── Seed Data ──────────────────────────────────────────────────────────────────
-# Each entry fully describes a source's identity and capabilities.
-# This is the SINGLE place where new sources are declared.
+                                                                                  
+                                                                  
+                                                          
 
 SEED_SOURCES: list[dict] = [
-    # ── Internship Boards ───────────────────────────────────────────────
+                                                                          
     {"name": "Internshala",      "source_type": "internship_board",  "source_group": "internship", "category": "internship",  "base_url": "https://internshala.com",          "parser_type": "internshala",       "fetch_mode": "apify",    "auth_requirement": "none",    "reliability": "high",         "fallback_modes": ["browser", "manual"]},
     {"name": "Indeed",           "source_type": "internship_board",  "source_group": "internship", "category": "internship",  "base_url": "https://indeed.com",               "parser_type": "indeed",            "fetch_mode": "apify",    "auth_requirement": "none",    "reliability": "high",         "fallback_modes": ["browser", "manual"]},
     {"name": "LinkedIn",         "source_type": "internship_board",  "source_group": "internship", "category": "internship",  "base_url": "https://linkedin.com",             "parser_type": "linkedin",          "fetch_mode": "apify",    "auth_requirement": "session", "reliability": "medium",       "fallback_modes": ["browser", "manual"]},
@@ -31,12 +31,12 @@ SEED_SOURCES: list[dict] = [
     {"name": "Freshersworld",    "source_type": "internship_board",  "source_group": "internship", "category": "internship",  "base_url": "https://freshersworld.com",        "parser_type": "freshersworld",     "fetch_mode": "html",     "auth_requirement": "none",    "reliability": "medium",       "fallback_modes": ["browser", "manual"]},
     {"name": "Cutshort",         "source_type": "internship_board",  "source_group": "internship", "category": "internship",  "base_url": "https://cutshort.io",              "parser_type": "cutshort",          "fetch_mode": "html",     "auth_requirement": "none",    "reliability": "medium",       "fallback_modes": ["browser", "manual"]},
 
-    # ── Startup Boards ──────────────────────────────────────────────────
+                                                                          
     {"name": "Wellfound",        "source_type": "startup_board",     "source_group": "startup",    "category": "internship",  "base_url": "https://wellfound.com",            "parser_type": "wellfound",         "fetch_mode": "apify",    "auth_requirement": "none",    "reliability": "medium",       "fallback_modes": ["browser", "manual"], "enabled": False},
     {"name": "WorkAtAStartup",   "source_type": "startup_board",     "source_group": "startup",    "category": "internship",  "base_url": "https://workatastartup.com",       "parser_type": "workatastartup",    "fetch_mode": "html",     "auth_requirement": "none",    "reliability": "medium",       "fallback_modes": ["browser", "manual"], "enabled": False},
     {"name": "TrueUp",           "source_type": "startup_board",     "source_group": "startup",    "category": "internship",  "base_url": "https://www.trueup.io",            "parser_type": "trueup",            "fetch_mode": "html",     "auth_requirement": "none",    "reliability": "low",          "fallback_modes": ["browser", "manual"], "enabled": False},
 
-    # ── Remote Boards ───────────────────────────────────────────────────
+                                                                          
     {"name": "Arc.dev",          "source_type": "remote_board",      "source_group": "remote",     "category": "internship",  "base_url": "https://arc.dev",                  "parser_type": "arcdev",            "fetch_mode": "html",     "auth_requirement": "none",    "reliability": "medium",       "fallback_modes": ["browser", "manual"], "enabled": False},
     {"name": "Himalayas",        "source_type": "remote_board",      "source_group": "remote",     "category": "internship",  "base_url": "https://himalayas.app",            "parser_type": "himalayas",         "fetch_mode": "api",      "auth_requirement": "none",    "reliability": "high",         "fallback_modes": ["html", "manual"], "enabled": False},
     {"name": "Otta",             "source_type": "remote_board",      "source_group": "remote",     "category": "internship",  "base_url": "https://app.otta.com",             "parser_type": "otta",              "fetch_mode": "html",     "auth_requirement": "none",    "reliability": "low",          "fallback_modes": ["browser", "manual"], "enabled": False},
@@ -47,16 +47,16 @@ SEED_SOURCES: list[dict] = [
     {"name": "Andela",           "source_type": "remote_board",      "source_group": "remote",     "category": "internship",  "base_url": "https://andela.com",               "parser_type": "andela",            "fetch_mode": "html",     "auth_requirement": "none",    "reliability": "low",          "fallback_modes": ["browser", "manual"], "enabled": False},
     {"name": "Deel",             "source_type": "remote_board",      "source_group": "remote",     "category": "internship",  "base_url": "https://www.deel.com",             "parser_type": "deel",              "fetch_mode": "html",     "auth_requirement": "none",    "reliability": "low",          "fallback_modes": ["browser", "manual"], "enabled": False},
     
-    # ── Discovery Engines ───────────────────────────────────────────────
+                                                                          
     {"name": "DuckDuckGo ATS",   "source_type": "discovery_engine",  "source_group": "discovery",  "category": "internship",  "base_url": "https://html.duckduckgo.com",      "parser_type": "duckduckgo",        "fetch_mode": "html",     "auth_requirement": "none",    "reliability": "medium",       "fallback_modes": []},
 
-    # ── Notice Channels ─────────────────────────────────────────────────
+                                                                          
     {"name": "CompanyCareers",   "source_type": "notice_channel",    "source_group": "notice",     "category": "notice",      "base_url": None,                               "parser_type": "company_career",    "fetch_mode": "html",     "auth_requirement": "none",    "reliability": "medium",       "fallback_modes": ["manual"]},
     {"name": "GovtPortal",       "source_type": "notice_channel",    "source_group": "notice",     "category": "notice",      "base_url": None,                               "parser_type": "govt_portal",       "fetch_mode": "html",     "auth_requirement": "none",    "reliability": "medium",       "fallback_modes": ["manual"]},
     {"name": "Telegram",         "source_type": "notice_channel",    "source_group": "notice",     "category": "notice",      "base_url": None,                               "parser_type": "telegram",          "fetch_mode": "telegram", "auth_requirement": "api_key", "reliability": "high",         "fallback_modes": ["manual"]},
     {"name": "Gmail",            "source_type": "notice_channel",    "source_group": "notice",     "category": "notice",      "base_url": None,                               "parser_type": "gmail",             "fetch_mode": "imap",     "auth_requirement": "oauth",   "reliability": "high",         "fallback_modes": ["manual"]},
 
-    # ── Freelance Boards ────────────────────────────────────────────────
+                                                                          
     {"name": "Upwork",           "source_type": "freelance_board",   "source_group": "freelance",  "category": "freelance",   "base_url": "https://www.upwork.com",           "parser_type": "upwork",            "fetch_mode": "html",     "auth_requirement": "none",    "reliability": "high",         "fallback_modes": ["browser", "manual"]},
     {"name": "Fiverr",           "source_type": "freelance_board",   "source_group": "freelance",  "category": "freelance",   "base_url": "https://www.fiverr.com",           "parser_type": "fiverr",            "fetch_mode": "html",     "auth_requirement": "none",    "reliability": "medium",       "fallback_modes": ["browser", "manual"]},
     {"name": "Freelancer",       "source_type": "freelance_board",   "source_group": "freelance",  "category": "freelance",   "base_url": "https://www.freelancer.com",       "parser_type": "freelancer_com",    "fetch_mode": "html",     "auth_requirement": "none",    "reliability": "medium",       "fallback_modes": ["browser", "manual"]},
@@ -74,7 +74,7 @@ SEED_SOURCES: list[dict] = [
 ]
 
 
-# ─── Startup Seed ───────────────────────────────────────────────────────────────
+                                                                                  
 
 async def seed_sources_to_db(db: AsyncSession) -> int:
     """Upsert seed sources into the DB.  Existing rows are updated (not replaced)
@@ -84,7 +84,7 @@ async def seed_sources_to_db(db: AsyncSession) -> int:
         result = await db.execute(select(Source).where(Source.name == seed["name"]))
         existing = result.scalar_one_or_none()
         if existing:
-            # Update capability metadata but preserve user toggles
+                                                                  
             existing.source_type = seed["source_type"]
             existing.source_group = seed["source_group"]
             existing.category = seed["category"]
@@ -94,7 +94,7 @@ async def seed_sources_to_db(db: AsyncSession) -> int:
             existing.auth_requirement = seed.get("auth_requirement", "none")
             existing.reliability = seed.get("reliability", "medium")
             existing.fallback_modes = seed.get("fallback_modes")
-            # DO NOT overwrite: enabled, last_fetch_at, last_fetch_status, last_fetch_count
+                                                                                           
         else:
             source = Source(
                 name=seed["name"],
@@ -117,7 +117,7 @@ async def seed_sources_to_db(db: AsyncSession) -> int:
     return upserted
 
 
-# ─── DB Query Helpers ───────────────────────────────────────────────────────────
+                                                                                  
 
 async def get_enabled_sources(db: AsyncSession, group: str | None = None) -> list[Source]:
     """Get all enabled sources, optionally filtered by source_group."""
@@ -203,9 +203,9 @@ async def update_fetch_status(
     await db.commit()
 
 
-# ─── Backward-Compatible Helpers ────────────────────────────────────────────────
-# These return the seed data as plain dicts (no DB needed).
-# Used by existing code that hasn't migrated to DB queries yet.
+                                                                                  
+                                                           
+                                                               
 
 def get_all_sources() -> list[dict]:
     """Return all seed sources as dicts (backward compat)."""
@@ -227,14 +227,14 @@ def get_source_groups() -> list[str]:
     return sorted({s["source_group"] for s in SEED_SOURCES})
 
 
-# ─── Fetcher Key Mapping ────────────────────────────────────────────────────────
-# Maps lowercase source keys (used in API calls) to display names.
+                                                                                  
+                                                                  
 
 SOURCE_KEY_TO_NAME: dict[str, str] = {}
 for _src in SEED_SOURCES:
     _key = _src["name"].lower().replace(".", "").replace(" ", "")
     SOURCE_KEY_TO_NAME[_key] = _src["name"]
-    # Also add the parser_type as a key for convenience
+                                                       
     if _src.get("parser_type"):
         SOURCE_KEY_TO_NAME[_src["parser_type"]] = _src["name"]
 

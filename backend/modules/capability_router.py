@@ -32,7 +32,7 @@ from backend.modules.adapter_registry import get_adapter
 from backend.modules.fetchers.base_fetcher import BaseFetcher, RawJob
 
 
-# ─── Fetch Modes ─────────────────────────────────────────────────────────────
+                                                                               
 
 class FetchMode(str, Enum):
     HTML = "html"
@@ -53,21 +53,21 @@ class FetchUnavailableError(Exception):
     pass
 
 
-# ─── Fetch Result ────────────────────────────────────────────────────────────
+                                                                               
 
 @dataclass
 class FetchResult:
     """Result of fetching from a single source."""
     source_name: str
     items: list[RawJob] = field(default_factory=list)
-    status: str = "success"          # success | partial | failed | blocked | skipped
-    mode_used: str = "html"          # which fetch_mode actually worked
+    status: str = "success"                                                          
+    mode_used: str = "html"                                            
     modes_tried: list[str] = field(default_factory=list)
     error: str | None = None
     duration_ms: int = 0
 
 
-# ─── Capability Router ──────────────────────────────────────────────────────
+                                                                              
 
 class CapabilityRouter:
     """
@@ -105,7 +105,7 @@ class CapabilityRouter:
                 error=f"No adapter registered for parser_type: {parser_type}",
             )
 
-        # Build the ordered list of modes to try
+                                                
         primary = source.fetch_mode or "html"
         fallbacks = source.fallback_modes or []
         modes_to_try = [primary] + [m for m in fallbacks if m != primary]
@@ -137,7 +137,7 @@ class CapabilityRouter:
                     )
                     return result
                 else:
-                    # Empty result — try next mode
+                                                  
                     logger.debug(
                         f"[CapRouter] {source.name}: {mode} returned 0 items, trying next"
                     )
@@ -161,7 +161,7 @@ class CapabilityRouter:
                 )
                 continue
 
-        # All modes exhausted
+                             
         elapsed = (datetime.utcnow() - start).total_seconds() * 1000
         result.duration_ms = int(elapsed)
         result.status = "failed"
@@ -190,17 +190,17 @@ class CapabilityRouter:
           - 'manual':   no-op — source only accepts manual URL import
         """
         if mode == "manual":
-            # Manual sources never auto-fetch
+                                             
             raise FetchUnavailableError("Manual sources require manual import")
 
         if mode == "browser":
-            # Browser automation is stubbed for now.
-            # When Playwright is available, inject a browser page here.
+                                                    
+                                                                       
             raise FetchUnavailableError(
                 "Browser automation not yet implemented — falling back"
             )
 
-        # For html, api, imap, telegram: use the adapter's native fetch()
+                                                                         
         fetcher: BaseFetcher = adapter_cls()
         return await fetcher.fetch(keywords, location=location, **kwargs)
 
@@ -248,7 +248,7 @@ class CapabilityRouter:
         return fetch_results
 
 
-# ─── Module-level singleton ─────────────────────────────────────────────────
+                                                                              
 
 _router_instance: CapabilityRouter | None = None
 

@@ -35,7 +35,7 @@ async def enrich_opportunity(opp: dict, timeout: int = 10) -> dict:
     if not apply_link or not apply_link.startswith(("http://", "https://")):
         return opp
 
-    # Skip enrichment for Telegram / Gmail — already extracted or not applicable
+                                                                                
     source = (opp.get("source") or "")
     if source.startswith("Telegram/") or source == "Gmail":
         return opp
@@ -54,7 +54,7 @@ async def enrich_opportunity(opp: dict, timeout: int = 10) -> dict:
             else:
                 parsed = extract_from_html(resp.text, base_url=apply_link)
 
-            # Clean and resolve links
+                                     
             try:
                 raw_links = parsed.get("links") or []
                 parsed["links"] = await clean_and_resolve_links(
@@ -65,13 +65,13 @@ async def enrich_opportunity(opp: dict, timeout: int = 10) -> dict:
 
     except Exception as e:
         logger.debug(f"[Enrichment] Failed to fetch {apply_link}: {e}")
-        # Fall back to parsing existing description text
+                                                        
         parsed = parse_text_fields(opp.get("description") or "")
 
     if not parsed:
         parsed = parse_text_fields(opp.get("description") or "")
 
-    # Apply enriched data
+                         
     if parsed.get("raw_text") and not opp.get("description"):
         opp["description"] = parsed["raw_text"]
 
@@ -87,7 +87,7 @@ async def enrich_opportunity(opp: dict, timeout: int = 10) -> dict:
     if parsed.get("stipend") and not opp.get("stipend"):
         opp["stipend"] = parsed["stipend"]
 
-    # Extract portal / application link
+                                       
     links = parsed.get("links") or []
     for link in links:
         if link.get("kind") in ("portal", "google_form"):

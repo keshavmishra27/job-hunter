@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from loguru import logger
 
 
-# ─── Freelance-specific weights (sum to 1.0) ────────────────────────────────
+                                                                              
 
 FREELANCE_WEIGHTS = {
     "skill_match":        0.30,
@@ -21,7 +21,7 @@ FREELANCE_WEIGHTS = {
     "project_relevance":  0.10,
 }
 
-# Shared tech keywords for skill matching (reuse from ranker module)
+                                                                    
 _TECH_KEYWORDS: set[str] | None = None
 
 
@@ -59,7 +59,7 @@ def _extract_tech(text: str) -> set[str]:
     return found
 
 
-# ─── Individual Factor Scorers ──────────────────────────────────────────────
+                                                                              
 
 def _skill_match(opp: dict, profile: dict) -> tuple[float, list[str]]:
     """Score 0–1 based on tech keyword overlap between gig and user skills."""
@@ -78,7 +78,7 @@ def _skill_match(opp: dict, profile: dict) -> tuple[float, list[str]]:
         if re.search(rf'(?<!\w){re.escape(s)}(?!\w)', text):
             matched.append(s)
 
-    # Also check required_skills list directly
+                                              
     req_skills = [s.lower() for s in (opp.get("required_skills") or [])]
     for rs in req_skills:
         for ps in profile_skills:
@@ -102,19 +102,19 @@ def _budget_fit(opp: dict, profile: dict) -> float:
     budget_max = opp.get("budget_max")
 
     if budget_min is None and budget_max is None:
-        return 0.5  # No budget info → neutral
+        return 0.5                            
 
-    # Use the max budget as the primary signal (best-case scenario)
+                                                                   
     budget = budget_max or budget_min or 0
 
-    # User's rate expectations (from profile or defaults)
+                                                         
     user_min_rate = profile.get("hourly_rate_min", 10)
     user_max_rate = profile.get("hourly_rate_max", 50)
 
     budget_type = opp.get("budget_type", "fixed")
 
     if budget_type == "hourly":
-        # Compare hourly rate directly
+                                      
         if budget >= user_max_rate:
             return 1.0
         elif budget >= user_min_rate:
@@ -122,7 +122,7 @@ def _budget_fit(opp: dict, profile: dict) -> float:
         else:
             return max(0.1, budget / max(user_min_rate, 1))
     else:
-        # Fixed price — anything > $100 is reasonable for a student freelancer
+                                                                              
         if budget >= 500:
             return 1.0
         elif budget >= 200:
@@ -150,7 +150,7 @@ def _task_clarity(opp: dict) -> float:
 
     score = 0.0
 
-    # Description length
+                        
     desc_len = len(desc)
     if desc_len > 500:
         score += 0.35
@@ -161,19 +161,19 @@ def _task_clarity(opp: dict) -> float:
     else:
         score += 0.05
 
-    # Deliverables present
+                          
     if deliverables and len(deliverables) > 20:
         score += 0.25
     elif deliverables:
         score += 0.10
 
-    # Required skills listed
+                            
     if len(req_skills) >= 3:
         score += 0.25
     elif len(req_skills) >= 1:
         score += 0.15
 
-    # Deadline/timeline mentioned
+                                 
     if opp.get("delivery_time_days") or opp.get("deadline"):
         score += 0.15
 
@@ -192,17 +192,17 @@ def _client_quality(opp: dict) -> float:
     verified = opp.get("payment_verified", False)
     reviews = opp.get("client_reviews_count", 0)
 
-    score = 0.3  # base for unknown clients
+    score = 0.3                            
 
-    # Rating contribution (0–0.5)
+                                 
     if rating is not None:
         score = min(rating / 5.0, 1.0) * 0.5
 
-    # Payment verified bonus
+                            
     if verified:
         score += 0.25
 
-    # Review count bonus
+                        
     if reviews and reviews > 0:
         review_score = min(math.log(reviews + 1) / math.log(100), 1.0) * 0.25
         score += review_score
@@ -231,19 +231,19 @@ def _deadline_fit(opp: dict) -> float:
             pass
 
     if days is None:
-        return 0.5  # No timeline info → neutral
+        return 0.5                              
 
     if days < 0:
-        return 0.0  # Expired
+        return 0.0           
     if days <= 2:
-        return 0.3  # Too rushed
+        return 0.3              
     if days <= 7:
-        return 0.7  # Tight but doable
+        return 0.7                    
     if days <= 30:
-        return 1.0  # Sweet spot
+        return 1.0              
     if days <= 90:
-        return 0.8  # Reasonable
-    return 0.6  # Very long term
+        return 0.8              
+    return 0.6                  
 
 
 def _project_relevance(opp: dict, profile: dict, github_repos: list[dict] | None = None) -> tuple[float, list[str]]:
@@ -274,7 +274,7 @@ def _project_relevance(opp: dict, profile: dict, github_repos: list[dict] | None
                     best_score = ps
                     matched_projects.append(project)
 
-    # GitHub repo matching (simplified)
+                                       
     if github_repos:
         for repo in github_repos:
             repo_text = " ".join(filter(None, [
@@ -294,7 +294,7 @@ def _project_relevance(opp: dict, profile: dict, github_repos: list[dict] | None
     return min(best_score, 1.0), matched_projects[:5]
 
 
-# ─── Main Scoring Functions ─────────────────────────────────────────────────
+                                                                              
 
 def score_freelance(opp: dict, profile: dict, github_repos: list[dict] | None = None) -> dict:
     """
@@ -358,7 +358,7 @@ def rank_freelance(
         if not _hard_filter_freelance(opp, profile):
             continue
         sc = score_freelance(opp, profile, github_repos)
-        # Drop garbage matches below 20%
+                                        
         if sc["score"] < 0.20:
             continue
         opp["score"] = sc["score"]

@@ -10,7 +10,7 @@ DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "job_hunter.db")
 conn = sqlite3.connect(DB_PATH)
 conn.row_factory = sqlite3.Row
 
-# 1. User profile
+                 
 print("=" * 60)
 print("USER PROFILE")
 print("=" * 60)
@@ -26,7 +26,7 @@ for row in rows:
     print(f"  preferred_roles: {roles}")
     print(f"  location_rule: {loc}")
 
-# 2. GitHub repos
+                 
 print("\n" + "=" * 60)
 print("GITHUB REPOS")
 print("=" * 60)
@@ -44,7 +44,7 @@ for repo in repos[:10]:
     print(f"    topics: {topics}")
     print(f"    description: {(repo['description'] or 'None')[:80]}")
 
-# 3. Current stored job match scores
+                                    
 print("\n" + "=" * 60)
 print("SAMPLE STORED JOB MATCHES (first 10 by score)")
 print("=" * 60)
@@ -65,7 +65,7 @@ for m in matches:
     print(f"    matched_projects: {mp}")
     print(f"    desc length: {desc_len} chars")
 
-# 4. Test new scoring logic
+                           
 print("\n" + "=" * 60)
 print("LIVE TEST: new _project_overlap logic")
 print("=" * 60)
@@ -98,7 +98,7 @@ for r in github_repos_data[:5]:
     repo_techs = _extract_tech_from_text(repo_text)
     print(f"    [{r['name']}] -> tech: {repo_techs if repo_techs else 'NONE'}")
 
-# Test 5 random jobs
+                    
 print("\n  Testing against 5 jobs from DB:")
 sample_jobs = conn.execute("""
     SELECT j.title, j.company, j.description FROM job_posts j

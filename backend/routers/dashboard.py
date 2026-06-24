@@ -22,7 +22,7 @@ async def dashboard_stats(user_id: str, db: AsyncSession = Depends(get_db)):
     )
     sent_count = await db.scalar(select(func.count()).select_from(SentEmail).where(SentEmail.status == "sent"))
 
-    # Freelance stats
+                     
     freelance_gigs = await db.scalar(
         select(func.count()).select_from(Opportunity).where(Opportunity.opportunity_type == "freelance")
     )
@@ -41,7 +41,7 @@ async def dashboard_analytics(user_id: str, db: AsyncSession = Depends(get_db)):
     """
     Returns outcome measurement analytics based on Application tracker data.
     """
-    # Base query for user's applications
+                                        
     base_query = select(Application).where(Application.user_id == user_id)
     result = await db.execute(base_query)
     applications = result.scalars().all()
@@ -53,7 +53,7 @@ async def dashboard_analytics(user_id: str, db: AsyncSession = Depends(get_db)):
 
     response_rate = (responses / total_sent * 100) if total_sent > 0 else 0
 
-    # Best Resume Calculation (Interview + Offer rate)
+                                                      
     resume_stats = {}
     for app in applications:
         res = app.resume_used or "Unknown"
@@ -78,7 +78,7 @@ async def dashboard_analytics(user_id: str, db: AsyncSession = Depends(get_db)):
                 worst_rate = rate
                 worst_resume = res
 
-    # Source Success Rate
+                         
     source_stats = {}
     for app in applications:
         src = app.source or "Unknown"

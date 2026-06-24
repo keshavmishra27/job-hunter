@@ -27,5 +27,5 @@ async def init_db():
         from backend.models import (
             user, job, draft, sent_email, follow_up, application, github,
             source, notice, alert, applied_notice, opportunity
-        )  # noqa: F401
+        )              
         await conn.run_sync(Base.metadata.create_all)

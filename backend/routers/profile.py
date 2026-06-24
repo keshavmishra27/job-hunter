@@ -118,7 +118,7 @@ async def update_profile(user_id: str, update: ProfileUpdate, db: AsyncSession =
     profile = result.scalar_one_or_none()
 
     if not profile:
-        # Create minimal profile so user can save settings without a resume
+                                                                           
         profile = UserProfile(user_id=user_id)
         db.add(profile)
 

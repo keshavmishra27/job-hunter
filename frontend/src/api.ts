@@ -91,7 +91,7 @@ export const api = {
   syncGmailApplications: (userId: string) =>
     req<any>(`/applications/sync-gmail?user_id=${userId}`, { method: "POST" }),
 
-  // --- GitHub Intelligence ---
+  
   githubConnect: (token: string, userId = USER_ID) =>
     req<any>("/github/connect", {
       method: "POST",
@@ -120,7 +120,7 @@ export const api = {
   githubRoles: () =>
     req<{ roles: Array<{ id: string; label: string; description: string }> }>("/github/roles"),
 
-  // --- Internships endpoints
+  
   fetchInternships: (userId: string, sources: string[]) =>
     req<any>(`/internships/fetch?user_id=${userId}&${sources.map((s) => `sources=${s}`).join("&")}`, { method: "POST" }),
 
@@ -134,7 +134,7 @@ export const api = {
       `/internships/${noticeId}/project-match?user_id=${userId}`
     ),
 
-  // applied notices (save/view/dismiss)
+  
   markAppliedNotice: (payload: { user_id: string; notice_id: string; status?: string; notes?: string }) =>
     req<any>(`/applied/mark`, { method: "POST", body: JSON.stringify(payload) }),
 
@@ -145,21 +145,21 @@ export const api = {
 
   deleteAppliedNotice: (appliedId: string) => req<any>(`/applied/${appliedId}`, { method: "DELETE" }),
 
-  // --- Profile Settings ---
+  
   updateProfile: (userId: string, update: { graduation_year?: number; telegram_chat_id?: string; preferred_roles?: string[]; skills?: string[] }) =>
     req<any>(`/profile/${userId}`, {
       method: "PATCH",
       body: JSON.stringify(update),
     }),
 
-  // --- Telegram ---
+  
   sendToTelegram: (userId: string, minScore = 4.0, limit = 20) =>
     req<{ sent: number; skipped: number; chat_id: string }>(
       `/internships/send-telegram/${userId}?min_score=${minScore}&limit=${limit}`,
       { method: "POST" },
     ),
 
-  // --- Gmail ---
+  
   gmailStatus: () =>
     req<{ connected: boolean; email?: string; imap_host?: string; days_back?: number }>("/gmail/status"),
 
@@ -171,7 +171,7 @@ export const api = {
       `/gmail/sync?user_id=${userId}`, { method: "POST" },
     ),
 
-  // --- Freelancing (Lane 3) ---
+  
   fetchFreelanceJobs: (userId: string, sources: string[]) =>
     req<{ fetched: number; unique: number; ranked: number; saved: number; top_5: any[] }>(
       `/freelance/fetch?user_id=${userId}&${sources.map(s => `sources=${s}`).join("&")}`,
@@ -197,7 +197,7 @@ export const api = {
       `/freelance/stats/${userId}`,
     ),
 
-  // --- Sources ---
+  
   getSources: () =>
     req<any[]>("/sources/"),
 

@@ -35,16 +35,16 @@ class ResumeSelector:
         if not resumes:
             return None
             
-        # 1. Classify the JD into a role_tag
+                                            
         classified_tag = ResumeSelector.classify_role(job_description)
         
-        # 2. Find the resume with matching role_tag
+                                                   
         if classified_tag:
             for r in resumes:
                 if r.role_tag == classified_tag:
                     return r
                     
-        # 3. Fall back to highest cosine similarity
+                                                   
         best_resume = None
         best_score = -1.0
         

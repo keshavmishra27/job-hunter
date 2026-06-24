@@ -312,7 +312,7 @@ GENERAL_TIPS = [
 def generate_signal_reasons(analysis: dict) -> dict:
     reasons = {}
     for signal_key, info in SIGNAL_REASONS.items():
-        # Return reasons for ALL signals (both present and missing)
+                                                                   
         reasons[signal_key] = info
     return reasons
 

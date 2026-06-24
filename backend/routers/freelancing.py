@@ -37,7 +37,7 @@ from loguru import logger
 
 router = APIRouter(prefix="/freelance", tags=["Freelancing"])
 
-# ─── Fetcher Registry ───────────────────────────────────────────────────────
+                                                                              
 
 FETCHERS = {
     "upwork":       UpworkFetcher,
@@ -57,7 +57,7 @@ FETCHERS = {
 }
 
 
-# ─── Helpers ─────────────────────────────────────────────────────────────────
+                                                                               
 
 async def _load_profile(user_id: str, db: AsyncSession) -> dict:
     result = await db.execute(select(UserProfile).where(UserProfile.user_id == user_id))
@@ -104,7 +104,7 @@ async def _load_github_repos(user_id: str, db: AsyncSession) -> list[dict]:
     ]
 
 
-# ─── Routes ──────────────────────────────────────────────────────────────────
+                                                                               
 
 @router.post("/fetch")
 async def fetch_freelance_jobs(
@@ -116,12 +116,12 @@ async def fetch_freelance_jobs(
     profile_dict = await _load_profile(user_id, db)
     github_repos = await _load_github_repos(user_id, db)
 
-    # Build keywords from profile
+                                 
     keywords = (profile_dict.get("preferred_roles") or [])[:3] + (profile_dict.get("skills") or [])[:5]
     if not keywords:
         keywords = ["python", "web development", "ai"]
 
-    # Fetch from selected sources
+                                 
     import asyncio
     all_raw = []
     fetch_tasks = []
@@ -139,24 +139,24 @@ async def fetch_freelance_jobs(
             continue
         all_raw.extend(res)
 
-    # Normalize
+               
     normalized = normalize_many(all_raw)
 
-    # Dedup against existing opportunities
+                                          
     existing_result = await db.execute(
         select(Opportunity.content_hash).where(Opportunity.opportunity_type == "freelance")
     )
     existing_hashes = {row[0] for row in existing_result.fetchall() if row[0]}
     unique = deduplicate(normalized, existing_hashes)
 
-    # Score and store
-    # Classify (should all be freelance, but classifier confirms)
+                     
+                                                                 
     freelance_items = [item for item in unique if classify(item, item.get("source", "")) == "freelance"]
 
-    # Rank using freelance scoring engine
+                                         
     ranked = rank_freelance(freelance_items, profile_dict, github_repos)
 
-    # Store in DB
+                 
     saved = 0
     for item in ranked:
         opp = Opportunity(
@@ -176,7 +176,7 @@ async def fetch_freelance_jobs(
         )
         db.add(opp)
 
-        # Store freelance-specific details
+                                          
         details = FreelanceDetails(
             opportunity_id=opp.id,
             budget_min=item.get("budget_min"),
@@ -229,7 +229,7 @@ async def get_ranked_freelance(
     profile_dict = await _load_profile(user_id, db)
     github_repos = await _load_github_repos(user_id, db)
 
-    # Build query
+                 
     query = select(Opportunity).where(Opportunity.opportunity_type == "freelance")
 
     if sources:
@@ -239,10 +239,10 @@ async def get_ranked_freelance(
     result = await db.execute(query.order_by(Opportunity.fetched_at.desc()).limit(200))
     opportunities = result.scalars().all()
 
-    # Re-score with current profile
+                                   
     opp_dicts = []
     for opp in opportunities:
-        # Load freelance details
+                                
         fd_result = await db.execute(
             select(FreelanceDetails).where(FreelanceDetails.opportunity_id == opp.id)
         )
@@ -279,16 +279,16 @@ async def get_ranked_freelance(
 
     ranked = rank_freelance(opp_dicts, profile_dict, github_repos)
 
-    # Update scores in DB
+                         
     for item in ranked:
         opp_id = item["id"]
         await db.execute(
             select(Opportunity).where(Opportunity.id == opp_id)
         )
-        # Simple approach: we already have the scores in the dict
+                                                                 
         pass
 
-    # Check tracking status for each
+                                    
     tracking_result = await db.execute(
         select(ApplicationTracker).where(
             ApplicationTracker.user_id == user_id,
@@ -376,7 +376,7 @@ async def get_freelance_detail(opportunity_id: str, db: AsyncSession = Depends(g
 
 
 class StatusUpdateRequest(BaseModel):
-    status: str  # saved / applied / in_progress / completed / dismissed
+    status: str                                                         
     notes: str | None = None
 
 
@@ -392,13 +392,13 @@ async def update_freelance_status(
     if req.status not in VALID:
         raise HTTPException(400, f"Invalid status. Must be one of: {VALID}")
 
-    # Check opportunity exists
+                              
     opp_result = await db.execute(select(Opportunity).where(Opportunity.id == opportunity_id))
     opp = opp_result.scalar_one_or_none()
     if not opp:
         raise HTTPException(404, "Opportunity not found")
 
-    # Upsert tracker
+                    
     existing = await db.execute(
         select(ApplicationTracker).where(
             ApplicationTracker.opportunity_id == opportunity_id,
@@ -433,7 +433,7 @@ async def update_freelance_status(
         )
         db.add(tracker)
 
-    # Also update the opportunity's status field
+                                                
     opp.status = req.status
     await db.commit()
 
@@ -476,7 +476,7 @@ async def get_freelance_stats(user_id: str, db: AsyncSession = Depends(get_db)):
     }
 
 
-# ─── Helpers ─────────────────────────────────────────────────────────────────
+                                                                               
 
 def _format_budget(
     budget_min: float | None,

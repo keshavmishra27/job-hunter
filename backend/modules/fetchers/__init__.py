@@ -18,7 +18,7 @@ from backend.modules.fetchers.extended_fetchers import (
     WellfoundFetcher,
     WorkAtAStartupFetcher,
     TelegramChannelFetcher,
-    # Additional job board fetchers
+                                   
     ArcJobsFetcher,
     HimalayasFetcher,
     OttaFetcher,
@@ -33,7 +33,7 @@ from backend.modules.fetchers.extended_fetchers import (
 from backend.modules.fetchers.gmail_fetcher import GmailFetcher
 from backend.modules.fetchers.duckduckgo_fetcher import DuckDuckGoFetcher
 
-# Freelance fetchers
+                    
 from backend.modules.fetchers.upwork_fetcher import UpworkFetcher
 from backend.modules.fetchers.freelance_fetchers import (
     FiverrFetcher,
@@ -53,18 +53,18 @@ from backend.modules.fetchers.freelance_fetchers import (
 
 __all__ = [
     "BaseFetcher", "RawJob",
-    # Internship / job board fetchers
+                                     
     "ApifyInternshalaFetcher", "ApifyLinkedInFetcher", "ApifyIndeedFetcher",
     "ApifyWellfoundFetcher", "ApifyNaukriFetcher",
     "InternshalaFetcher", "IndeedFetcher", "CompanyCareerFetcher", "GovtPortalFetcher",
     "LinkedInFetcher", "FounditFetcher", "FreshersworldFetcher", "CutshortFetcher",
     "WellfoundFetcher", "WorkAtAStartupFetcher", "TelegramChannelFetcher",
     "GmailFetcher", "DuckDuckGoFetcher",
-    # Additional job board fetchers
+                                   
     "ArcJobsFetcher", "HimalayasFetcher", "OttaFetcher", "TuringJobsFetcher",
     "LandingJobsFetcher", "PangianFetcher", "PowerToFlyFetcher",
     "AndelaFetcher", "DeelCareersFetcher", "TrueUpFetcher",
-    # Freelance fetchers
+                        
     "UpworkFetcher", "FiverrFetcher", "FreelancerComFetcher",
     "GuruFetcher", "ToptalFetcher", "ContraFetcher",
     "PeoplePerHourFetcher", "ArcFetcher", "TuringFetcher",

@@ -12,7 +12,7 @@ class AnswerEngine:
     }
     
     def __init__(self):
-        # Initialize LLM client here
+                                    
         pass
         
     def classify_question(self, question: str) -> str:
@@ -43,6 +43,6 @@ class AnswerEngine:
         q_type = self.classify_question(question)
         prompt = self.build_prompt(question, q_type, context)
         
-        # TODO: Call OpenRouter/OpenAI API with `prompt`
-        # Using a dummy response for now to demonstrate architecture
+                                                        
+                                                                    
         return f"[Answer generated via '{q_type}' template using LLM]\nPrompt used: {prompt}"
